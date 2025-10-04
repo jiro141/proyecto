@@ -1,19 +1,29 @@
-
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { BounceLoader } from "react-spinners";
 import { useLocation } from "react-router-dom";
 import { FaRegTrashCan } from "react-icons/fa6";
+import { FaSearch } from "react-icons/fa";
 import useDepartamentos from "../hooks/useDepartamentos";
 import useUbicaciones from "../hooks/useUbicaciones";
 import useLugaresConsumo from "../hooks/useLugaresConsumo";
 import Modal from "./Modal";
 import { deleteItem } from "../api/controllers/Inventario";
 
-const Tables = ({ columns, data, loading, title, onAdd, tipo, refetch }) => {
+const Tables = ({
+  columns,
+  data,
+  loading,
+  title,
+  onAdd,
+  onSearch,
+  tipo,
+  refetch,
+}) => {
   const location = useLocation();
   const isSubInventario =
-    location.pathname.startsWith("/inventario/") &&
-    location.pathname !== "/inventario";
+    (location.pathname.startsWith("/inventario/") &&
+      location.pathname !== "/inventario") ||
+    location.pathname === "/Proveedores";
 
   const { departamentos } = useDepartamentos();
   const { ubicaciones } = useUbicaciones();
@@ -22,6 +32,18 @@ const Tables = ({ columns, data, loading, title, onAdd, tipo, refetch }) => {
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [selectedItemName, setSelectedItemName] = useState("");
+
+  // 🔎 Estado del buscador
+  const [query, setQuery] = useState("");
+
+  // 🔎 Debounce para onSearch
+  useEffect(() => {
+    if (!onSearch) return;
+    const delay = setTimeout(() => {
+      onSearch(query);
+    }, 500); // medio segundo
+    return () => clearTimeout(delay);
+  }, [query, onSearch]);
 
   const idToName = useMemo(() => {
     return {
@@ -53,6 +75,7 @@ const Tables = ({ columns, data, loading, title, onAdd, tipo, refetch }) => {
 
   return (
     <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+      {/* Header */}
       <div className="px-6 py-4 bg-[#0b2c4d] border-b flex justify-between items-center">
         <h2
           className={`text-lg font-semibold text-white ${
@@ -61,17 +84,39 @@ const Tables = ({ columns, data, loading, title, onAdd, tipo, refetch }) => {
         >
           {title}
         </h2>
-        {isSubInventario && (
-          <button
-            className="bg-[#e53935] hover:bg-[#c2302d] text-white font-medium py-2 px-4 rounded"
-            onClick={() => onAdd && onAdd(null)}
-          >
-            Agregar
-          </button>
-        )}
+
+        <div className="flex items-center gap-3">
+          {/* 🔎 Buscador (opcional) */}
+          {onSearch && (
+            <div className="relative">
+              <FaSearch
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={14}
+              />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar..."
+                className="pl-8 pr-3 py-1 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fff] text-black"
+              />
+            </div>
+          )}
+
+          {/* Botón Agregar */}
+          {isSubInventario && (
+            <button
+              className="bg-[#e53935] hover:bg-[#c2302d] text-white font-medium py-2 px-4 rounded"
+              onClick={() => onAdd && onAdd(null)}
+            >
+              Agregar
+            </button>
+          )}
+        </div>
       </div>
 
-      <table className="w-full text-sm text-left text-gray-200 dark:text-gray-200">
+      {/* Tabla */}
+      <table className="w-full text-sm text-left text-gray-200 dark:text-gray-200 ">
         <thead className="text-xs uppercase bg-[#0b2c4d] text-white">
           <tr>
             {columns.map((col) => (
@@ -137,6 +182,7 @@ const Tables = ({ columns, data, loading, title, onAdd, tipo, refetch }) => {
         </tbody>
       </table>
 
+      {/* Modal de confirmación */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}

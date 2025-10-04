@@ -10,6 +10,7 @@ import InventarioHome from "../pages/InventarioHome";
 import EppLayout from "../layouts/InventoryLayout/EppLayout";
 import StockLayout from "../layouts/InventoryLayout/StockLayout";
 import ConsumiblesLayout from "../layouts/InventoryLayout/ConsumiblesLayout";
+import ProveedoresHome from "../pages/ProveedoresHome";
 
 const AppRouter = () => {
   return (
@@ -29,6 +30,7 @@ const AppRouter = () => {
               <Route path="stock" element={<StockLayout />} />
               <Route path="consumibles" element={<ConsumiblesLayout />} />
             </Route>
+            <Route path="Proveedores" element={<ProveedoresHome />} />
           </Route>
         </Route>
 

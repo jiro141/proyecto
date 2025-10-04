@@ -25,7 +25,6 @@ export default function InventarioHome() {
     useInventario("consumibles");
   const { data: stockData, loading: stockLoading } = useInventario("stock");
   const { movimientos, loading, refetch: fetchMovimientos } = useMovimientos();
-  console.log(movimientos, "movimientos");
 
   return (
     <div className="flex flex-col md:flex-row gap-6 p-6">

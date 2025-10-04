@@ -1,13 +1,17 @@
 import React from "react";
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, width }) => {
   if (!isOpen) return null;
+
+  // 🧠 Si se pasa width, úsalo; si no, usa el valor por defecto
+  const modalWidth = width ? width : "max-w-lg";
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white w-full max-w-lg rounded-lg shadow-lg relative">
-        
-        {/* Encabezado con fondo azul y texto blanco */}
+      <div
+        className={`bg-white w-full ${modalWidth} rounded-lg shadow-lg relative`}
+      >
+        {/* Encabezado */}
         <div className="flex justify-between items-center px-6 py-4 bg-[#0b2c4d] rounded-t-lg">
           <h2 className="text-lg font-semibold text-white">{title}</h2>
           <button
@@ -20,7 +24,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
         </div>
 
         {/* Contenido */}
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto max-h-[80vh]">{children}</div>
       </div>
     </div>
   );

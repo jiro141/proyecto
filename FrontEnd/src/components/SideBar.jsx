@@ -8,6 +8,8 @@ import {
   FaChevronDown,
   FaChevronUp,
   FaTools,
+  FaTruckLoading,
+  FaUserFriends,
 } from "react-icons/fa";
 import { FaHelmetSafety } from "react-icons/fa6";
 import { LuDrill } from "react-icons/lu";
@@ -60,6 +62,15 @@ const SideBar = () => {
             </NavLink>
           </div>
         )}
+
+        <NavLink to="/Proveedores" className="sidebar-link">
+          <FaTruckLoading />
+          Proveedores
+        </NavLink>
+        <NavLink to="/reportes" className="sidebar-link">
+          <FaUserFriends />
+          Clientes
+        </NavLink>
 
         <NavLink to="/reportes" className="sidebar-link">
           <GrDocumentPdf />

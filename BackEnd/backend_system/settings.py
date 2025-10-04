@@ -39,8 +39,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "usuarios",
-    "inventario",
+    "inventario.apps.InventarioConfig",
     "corsheaders",
+    "reportes",
 ]
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (

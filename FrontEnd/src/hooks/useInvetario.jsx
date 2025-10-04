@@ -5,37 +5,46 @@ import {
   getConsumibles,
 } from "../api/controllers/Inventario";
 
+// Mapa de controladores según el tipo
 const controllerMap = {
   epp: getEpp,
   stock: getStock,
   consumibles: getConsumibles,
 };
 
-const useInventario = (tipo) => {
+export default function useInventario(tipo, search = "") {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
 
+  /** ======================
+   * Obtener datos del inventario
+   * ====================== */
   const fetchData = useCallback(async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      setError(null);
+
       const controller = controllerMap[tipo];
-      if (!controller) throw new Error("Tipo de inventario no válido");
-      const result = await controller();
+      if (!controller)
+        throw new Error(`Tipo de inventario "${tipo}" no válido`);
+
+      // 🚀 Soporte para búsqueda (si el controlador lo acepta)
+      const result = await controller(search);
       setData(result);
-      setError("");
     } catch (err) {
       setError(err.message || "Error al obtener datos");
     } finally {
       setLoading(false);
     }
-  }, [tipo]);
+  }, [tipo, search]);
 
+  /** ======================
+   * Ejecutar al montar o cuando cambia tipo o search
+   * ====================== */
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   return { data, loading, error, refetch: fetchData };
-};
-
-export default useInventario;
+}

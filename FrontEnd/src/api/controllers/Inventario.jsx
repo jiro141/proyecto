@@ -4,8 +4,8 @@ import AuthApi from "../AuthApi";
  * Obtener todos los elementos de EPP
  * @returns {Promise<Array>} Lista de EPPs
  */
-export const getEpp = async () => {
-  const response = await AuthApi.get("/inventario/epp/");
+export const getEpp = async (search = "") => {
+  const response = await AuthApi.get(`/inventario/epp/?search=${search}`);
   return response.data;
 };
 
@@ -13,8 +13,8 @@ export const getEpp = async () => {
  * Obtener todos los elementos de Stock
  * @returns {Promise<Array>} Lista de stock
  */
-export const getStock = async () => {
-  const response = await AuthApi.get("/inventario/stock/");
+export const getStock = async (search = "") => {
+  const response = await AuthApi.get(`/inventario/stock/?search=${search}`);
   return response.data;
 };
 
@@ -22,15 +22,24 @@ export const getStock = async () => {
  * Obtener todos los elementos de Consumibles
  * @returns {Promise<Array>} Lista de consumibles
  */
-export const getConsumibles = async () => {
-  const response = await AuthApi.get("/inventario/consumibles/");
+export const getConsumibles = async (search = "") => {
+  const response = await AuthApi.get(
+    `/inventario/consumibles/?search=${search}`
+  );
   return response.data;
 };
-export const getMovimientos = async () => {
-  const response = await AuthApi.get("/inventario/movimientos/");
+export const getMovimientos = async (search = "") => {
+  const response = await AuthApi.get(
+    `/inventario/movimientos/?search=${search}`
+  );
   return response.data;
 };
-
+export const getProveedores = async (search = "") => {
+  const response = await AuthApi.get(
+    `/inventario/proveedores/?search=${search}`
+  );
+  return response.data;
+};
 
 /**
  * Crear un nuevo elemento (genérico)
@@ -70,5 +79,16 @@ export const deleteItem = async (tipo, id) => {
  */
 export const getItemById = async (tipo, id) => {
   const response = await AuthApi.get(`/inventario/${tipo}/${id}/`);
+  return response.data;
+};
+
+/**
+ * Obtener proveedores con búsqueda opcional
+ * @param {string} search
+ */
+export const getProveedoresSearch = async (search = "") => {
+  const response = await AuthApi.get(
+    `/inventario/proveedores/?search=${search}`
+  );
   return response.data;
 };

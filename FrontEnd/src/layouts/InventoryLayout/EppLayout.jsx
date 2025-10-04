@@ -12,7 +12,8 @@ const columns = [
 ];
 
 export default function EppLayout() {
-  const { data, loading, error, refetch } = useInventario("epp");
+  const [search, setSearch] = useState("");
+  const { data, loading, error, refetch } = useInventario("epp",search);
   const [isModalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -62,6 +63,7 @@ export default function EppLayout() {
         refetch={refetch}
         tipo={"epp"}
         onAdd={handleAddOrEdit}
+        onSearch={setSearch}
       />
 
       <Modal

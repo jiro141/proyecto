@@ -8,7 +8,6 @@ const useMovimientos = () => {
   const fetchMovimientos = async () => {
     try {
       const res = await getMovimientos();
-      console.log(res);
       
       setMovimientos(res.data);
     } catch (err) {

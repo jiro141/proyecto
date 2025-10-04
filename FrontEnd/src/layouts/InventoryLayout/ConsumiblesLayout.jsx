@@ -8,6 +8,7 @@ import { createItem } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
 import useUbicaciones from "../../hooks/useUbicaciones";
 import useLugaresConsumo from "../../hooks/useLugaresConsumo";
+import { updateItem } from "../../api/controllers/Inventario";
 const columns = [
   { key: "name", label: "Nombre" },
   { key: "modelo", label: "Modelo" },
@@ -19,7 +20,9 @@ const columns = [
 ];
 
 export default function ConsumiblesLayout() {
-  const { data, loading, error, refetch } = useInventario("consumibles");
+  const [search, setSearch] = useState("");
+  const { data, loading, error, refetch } = useInventario("consumibles",search);
+  
   const { departamentos, refetch: refetchDepartamentos } = useDepartamentos();
   const { ubicaciones, refetch: refetchUbicaciones } = useUbicaciones();
   const { lugares, refetch: refetchLugares } = useLugaresConsumo();
@@ -28,15 +31,22 @@ export default function ConsumiblesLayout() {
   const [isDeptModalOpen, setDeptModalOpen] = useState(false);
 
   const handleSubmit = async (formData) => {
-    try {
+  try {
+    if (editItem && editItem.id) {
+      await updateItem("consumibles", editItem.id, formData);
+      toast.success("Consumible actualizado con éxito");
+    } else {
       await createItem("consumibles", formData);
       toast.success("Consumible creado con éxito");
-      setModalOpen(false);
-      refetch();
-    } catch {
-      toast.error("Error al crear consumible");
     }
-  };
+    setModalOpen(false);
+    setEditItem(null);
+    refetch();
+  } catch (err) {
+    console.error("Error al guardar consumible:", err);
+    toast.error("Error al guardar consumible");
+  }
+};
 
   const handleNewDept = async (formData) => {
     try {
@@ -107,6 +117,7 @@ export default function ConsumiblesLayout() {
         tipo={"consumibles"}
         loading={loading}
         onAdd={handleAddOrEdit}
+        onSearch={setSearch}
       />
 
       <Modal

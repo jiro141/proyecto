@@ -5,6 +5,7 @@ import StepForm from "../../components/StepForm";
 import useInventario from "../../hooks/useInvetario";
 import useDepartamentos from "../../hooks/useDepartamentos";
 import { createItem } from "../../api/controllers/Inventario";
+import { updateItem } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
 const columns = [
   { key: "name", label: "Nombre" },
@@ -15,7 +16,8 @@ const columns = [
 ];
 
 export default function StockLayout() {
-  const { data, loading, error, refetch } = useInventario("stock");
+  const [search, setSearch] = useState("");
+  const { data, loading, error, refetch } = useInventario("stock", search);
   const { departamentos, refetch: refetchDepartamentos } = useDepartamentos();
   const [editItem, setEditItem] = useState(null);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -23,13 +25,19 @@ export default function StockLayout() {
 
   const handleSubmit = async (formData) => {
     try {
-      await createItem("stock", formData);
-      toast.success("Stock creado exitosamente");
+      if (editItem && editItem.id) {
+        await updateItem("stock", editItem.id, formData);
+        toast.success("Stock actualizado exitosamente");
+      } else {
+        await createItem("stock", formData);
+        toast.success("Stock creado exitosamente");
+      }
       setModalOpen(false);
+      setEditItem(null);
       refetch();
     } catch (err) {
-      console.error(err);
-      toast.error("Error al crear el stock");
+      console.error("Error al guardar stock:", err);
+      toast.error("Error al guardar stock");
     }
   };
 
@@ -86,6 +94,7 @@ export default function StockLayout() {
         tipo={"departamentos"}
         loading={loading}
         onAdd={handleAddOrEdit}
+        onSearch={setSearch}
       />
 
       {/* Modal para agregar stock */}

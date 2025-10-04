@@ -1,6 +1,11 @@
 from django.db import models
 
 
+# ==========================
+# MODELOS BASE
+# ==========================
+
+
 class LugarConsumo(models.Model):
     name = models.CharField(max_length=100)
 
@@ -22,10 +27,33 @@ class Departamento(models.Model):
         return self.name
 
 
+# ==========================
+# PROVEEDOR
+# ==========================
+
+
+class Proveedor(models.Model):
+    name = models.CharField(max_length=100)
+    direccion = models.CharField(max_length=255)
+    telefono = models.CharField(max_length=20)
+    encargado = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+# ==========================
+# PRODUCTOS (relación uno-a-muchos con proveedor)
+# ==========================
+
+
 class EPP(models.Model):
     name = models.CharField(max_length=100)
     unidades = models.IntegerField()
     monto = models.FloatField()
+    proveedor = models.ForeignKey(
+        Proveedor, on_delete=models.SET_NULL, null=True, blank=True, related_name="epps"
+    )
 
     def __str__(self):
         return self.name
@@ -37,6 +65,13 @@ class Stock(models.Model):
     departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
     unidades = models.IntegerField()
     monto = models.FloatField()
+    proveedor = models.ForeignKey(
+        Proveedor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="stocks",
+    )
 
     def __str__(self):
         return self.name
@@ -50,28 +85,28 @@ class Consumible(models.Model):
     monto = models.FloatField()
     consumo = models.ForeignKey(LugarConsumo, on_delete=models.CASCADE)
     ubicacion = models.ForeignKey(Ubicacion, on_delete=models.CASCADE)
+    proveedor = models.ForeignKey(
+        Proveedor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="consumibles",
+    )
 
     def __str__(self):
         return self.name
 
 
-class Proveedor(models.Model):
-    name = models.CharField(max_length=100)
-    direccion = models.CharField(max_length=255)
-    telefono = models.CharField(max_length=20)
-    consumible = models.ForeignKey(Consumible, on_delete=models.CASCADE)
-    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
-    epp = models.ForeignKey(EPP, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.name
+# ==========================
+# MOVIMIENTOS DE INVENTARIO
+# ==========================
 
 
 class MovimientoInventario(models.Model):
     TIPO_CHOICES = (
-        ('entrada', 'Entrada'),
-        ('salida', 'Salida'),
-        ('ajuste', 'Ajuste'),
+        ("entrada", "Entrada"),
+        ("salida", "Salida"),
+        ("ajuste", "Ajuste"),
     )
 
     fecha = models.DateTimeField(auto_now_add=True)
@@ -79,16 +114,12 @@ class MovimientoInventario(models.Model):
     cantidad = models.IntegerField()
     observacion = models.TextField(blank=True)
 
-    stock = models.ForeignKey(
-        Stock, on_delete=models.CASCADE, null=True, blank=True)
-    epp = models.ForeignKey(
-        EPP, on_delete=models.CASCADE, null=True, blank=True)
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE, null=True, blank=True)
+    epp = models.ForeignKey(EPP, on_delete=models.CASCADE, null=True, blank=True)
     consumible = models.ForeignKey(
-        Consumible, on_delete=models.CASCADE, null=True, blank=True)
+        Consumible, on_delete=models.CASCADE, null=True, blank=True
+    )
 
     def __str__(self):
         producto = self.stock or self.epp or self.consumible
         return f"{self.tipo.upper()} - {producto} - {self.cantidad}u - {self.fecha.strftime('%d/%m/%Y')}"
-
-
-
