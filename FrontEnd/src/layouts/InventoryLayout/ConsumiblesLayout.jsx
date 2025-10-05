@@ -118,6 +118,7 @@ export default function ConsumiblesLayout() {
         loading={loading}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
+        
       />
 
       <Modal

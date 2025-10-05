@@ -64,6 +64,7 @@ export default function EppLayout() {
         tipo={"epp"}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
+        
       />
 
       <Modal

@@ -10,6 +10,7 @@ import {
   FaTools,
   FaTruckLoading,
   FaUserFriends,
+  FaHammer
 } from "react-icons/fa";
 import { FaHelmetSafety } from "react-icons/fa6";
 import { LuDrill } from "react-icons/lu";
@@ -57,7 +58,7 @@ const SideBar = () => {
               Ferretería
             </NavLink>
             <NavLink to="/inventario/consumibles" className="sidebar-sublink">
-              <LuDrill />
+              <FaHammer />
               Consumibles
             </NavLink>
           </div>

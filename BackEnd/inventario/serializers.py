@@ -38,10 +38,11 @@ class ConsumibleSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+# 🔹 Aquí viene la parte importante
 class ProveedorSerializer(serializers.ModelSerializer):
-    epps = EPPSerializer(many=True, read_only=True)
-    stocks = StockSerializer(many=True, read_only=True)
-    consumibles = ConsumibleSerializer(many=True, read_only=True)
+    epps = EPPSerializer(many=True, required=False)
+    stocks = StockSerializer(many=True, required=False)
+    consumibles = ConsumibleSerializer(many=True, required=False)
 
     class Meta:
         model = Proveedor
@@ -55,6 +56,41 @@ class ProveedorSerializer(serializers.ModelSerializer):
             "stocks",
             "consumibles",
         ]
+
+    def create(self, validated_data):
+        epps_data = validated_data.pop("epps", [])
+        stocks_data = validated_data.pop("stocks", [])
+        consumibles_data = validated_data.pop("consumibles", [])
+
+        # 🔸 Crear el proveedor primero
+        proveedor = Proveedor.objects.create(**validated_data)
+
+        # 🔸 Crear EPPs asociados
+        for epp in epps_data:
+            EPP.objects.create(proveedor=proveedor, **epp)
+
+        # 🔸 Crear Stocks asociados
+        for stock in stocks_data:
+            Stock.objects.create(proveedor=proveedor, **stock)
+
+        # 🔸 Crear Consumibles asociados
+        for cons in consumibles_data:
+            Consumible.objects.create(proveedor=proveedor, **cons)
+
+        return proveedor
+
+    def update(self, instance, validated_data):
+        # Actualizar los campos básicos del proveedor
+        instance.name = validated_data.get("name", instance.name)
+        instance.direccion = validated_data.get("direccion", instance.direccion)
+        instance.telefono = validated_data.get("telefono", instance.telefono)
+        instance.encargado = validated_data.get("encargado", instance.encargado)
+        instance.save()
+
+        # Puedes también permitir actualizar artículos si lo deseas
+        # (por simplicidad, solo actualizamos proveedor aquí)
+
+        return instance
 
 
 class MovimientoInventarioSerializer(serializers.ModelSerializer):

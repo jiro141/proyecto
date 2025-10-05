@@ -1,15 +1,16 @@
 import React from "react";
 
-const Modal = ({ isOpen, onClose, title, children, width }) => {
+const Modal = ({ isOpen, onClose, title, children, width, height }) => {
   if (!isOpen) return null;
 
   // 🧠 Si se pasa width, úsalo; si no, usa el valor por defecto
   const modalWidth = width ? width : "max-w-lg";
+  const modalHeight = height ? height : "";
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div
-        className={`bg-white w-full ${modalWidth} rounded-lg shadow-lg relative`}
+        className={`bg-white w-full ${modalWidth} rounded-lg shadow-lg relative ${modalHeight}`}
       >
         {/* Encabezado */}
         <div className="flex justify-between items-center px-6 py-4 bg-[#0b2c4d] rounded-t-lg">

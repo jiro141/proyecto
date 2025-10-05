@@ -95,6 +95,7 @@ export default function StockLayout() {
         loading={loading}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
+        
       />
 
       {/* Modal para agregar stock */}

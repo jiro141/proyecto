@@ -18,6 +18,7 @@ const Tables = ({
   onSearch,
   tipo,
   refetch,
+  
 }) => {
   const location = useLocation();
   const isSubInventario =
