@@ -46,7 +46,7 @@ export default function InventarioHome() {
       </div>
       <div className="w-full md:w-1/3">
         <Tables
-          title="Stock"
+          title="Ferreteria"
           columns={columns.stock}
           data={stockData}
           loading={stockLoading}

@@ -1,15 +1,15 @@
+# reportes/urls.py
 from django.urls import path
-from . import views
+from .views import (
+    ClienteListCreateView, ClienteDetailView,
+    ReporteListCreateView, ReporteDetailView,
+    ReporteConfigView
+)
 
 urlpatterns = [
-    # Clientes
-    path("clientes/", views.ClienteListCreateView.as_view(), name="cliente-list-create"),
-    path("clientes/<int:pk>/", views.ClienteDetailView.as_view(), name="cliente-detail"),
-
-    # Reportes
-    path("reportes/", views.ReporteListCreateView.as_view(), name="reporte-list-create"),
-    path("reportes/<int:pk>/", views.ReporteDetailView.as_view(), name="reporte-detail"),
-
-    # Configuración de reportes
-    path("config/", views.ReporteConfigView.as_view(), name="reporte-config"),
+    path("clientes/", ClienteListCreateView.as_view(), name="cliente-list"),
+    path("clientes/<int:pk>/", ClienteDetailView.as_view(), name="cliente-detail"),
+    path("reporte/", ReporteListCreateView.as_view(), name="reporte-list"),
+    path("reporte/<int:pk>/", ReporteDetailView.as_view(), name="reporte-detail"),
+    path("reporte/config/", ReporteConfigView.as_view(), name="reporte-config"),
 ]

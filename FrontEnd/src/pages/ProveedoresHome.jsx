@@ -8,7 +8,7 @@ import useProveedores from "../hooks/useProveedores";
 import ArticulosProveedor from "../features/proveedores/ArticulosProveedor";
 
 const columns = [
-  { key: "name", label: "Nombre" },
+  { key: "name", label: "Nombre de la Empresa" },
   { key: "direccion", label: "Dirección" },
   { key: "telefono", label: "Teléfono" },
   { key: "encargado", label: "Encargado" },
@@ -45,7 +45,7 @@ export default function ProveedoresHome() {
   const formSteps = [
     {
       fields: [
-        { name: "name", label: "Nombre", required: true },
+        { name: "name", label: "Nombre de la Empresa", required: true },
         { name: "direccion", label: "Dirección", required: true },
         { name: "telefono", label: "Teléfono", required: true },
         { name: "encargado", label: "Encargado", required: true },

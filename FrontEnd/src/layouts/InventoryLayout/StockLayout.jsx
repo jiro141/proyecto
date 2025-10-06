@@ -4,6 +4,7 @@ import Modal from "../../components/Modal";
 import StepForm from "../../components/StepForm";
 import useInventario from "../../hooks/useInvetario";
 import useDepartamentos from "../../hooks/useDepartamentos";
+import useProveedores from "../../hooks/useProveedores";
 import { createItem } from "../../api/controllers/Inventario";
 import { updateItem } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
@@ -11,6 +12,7 @@ const columns = [
   { key: "name", label: "Nombre" },
   { key: "modelo", label: "Modelo" },
   { key: "departamento", label: "Departamento" },
+  { key: "proveedor", label: "Proveedor" },
   { key: "unidades", label: "Unidades" },
   { key: "monto", label: "Monto" },
 ];
@@ -19,9 +21,11 @@ export default function StockLayout() {
   const [search, setSearch] = useState("");
   const { data, loading, error, refetch } = useInventario("stock", search);
   const { departamentos, refetch: refetchDepartamentos } = useDepartamentos();
+  const { proveedores, refetch: refetchProveedores } = useProveedores();
   const [editItem, setEditItem] = useState(null);
   const [isModalOpen, setModalOpen] = useState(false);
   const [isDeptModalOpen, setDeptModalOpen] = useState(false);
+  const [isProvModalOpen, setProvModalOpen] = useState(false);
 
   const handleSubmit = async (formData) => {
     try {
@@ -47,6 +51,18 @@ export default function StockLayout() {
     setDeptModalOpen(false);
     toast.success("Departamento creado exitosamente");
   };
+  const handleNewProveedor = async (formData) => {
+    try {
+      await createItem("proveedores", formData);
+      toast.success("Proveedor creado exitosamente");
+      refetchProveedores();
+      setProvModalOpen(false);
+      refetch();
+    } catch (err) {
+      console.error("Error al crear proveedor:", err);
+      toast.error("Error al crear proveedor");
+    }
+  };
   const handleAddOrEdit = (item = null) => {
     setEditItem(item); // null para nuevo, objeto para editar
     setModalOpen(true);
@@ -56,6 +72,13 @@ export default function StockLayout() {
       fields: [
         { name: "name", label: "Nombre", required: true },
         { name: "modelo", label: "Modelo", required: true },
+        {
+          name: "proveedor",
+          label: "Proveedor",
+          type: "select",
+          options: proveedores.map((p) => ({ label: p.name, value: p.id })),
+          required: true,
+        },
         {
           name: "departamento",
           label: "Departamento",
@@ -71,6 +94,17 @@ export default function StockLayout() {
           label: "Nuevo Departamento",
           onClick: () => setDeptModalOpen(true),
         },
+        { label: "Nuevo Proveedor", onClick: () => setProvModalOpen(true) },
+      ],
+    },
+  ];
+  const provForm = [
+    {
+      fields: [
+        { name: "name", label: "Nombre", required: true },
+        { name: "direccion", label: "Dirección", required: true },
+        { name: "telefono", label: "Teléfono", required: true },
+        { name: "encargado", label: "Encargado" },
       ],
     },
   ];
@@ -95,14 +129,18 @@ export default function StockLayout() {
         loading={loading}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
-        
       />
 
       {/* Modal para agregar stock */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setModalOpen(false)}
-        title="Agregar Stock"
+        title={
+          editItem
+            ? "Editar Ferretería industrial"
+            : "Agregar Ferretería industrial"
+        }
+        width="max-w-2xl"
       >
         <StepForm
           steps={stockFormStep}
@@ -121,6 +159,17 @@ export default function StockLayout() {
           steps={deptForm}
           onSubmit={handleNewDept}
           initialValues={editItem || {}}
+        />
+      </Modal>
+      <Modal
+        isOpen={isProvModalOpen}
+        onClose={() => setProvModalOpen(false)}
+        title="Nuevo Proveedor"
+      >
+        <StepForm
+          steps={provForm}
+          onSubmit={handleNewProveedor}
+          initialValues={{}}
         />
       </Modal>
     </div>

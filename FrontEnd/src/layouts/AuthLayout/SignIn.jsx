@@ -80,7 +80,7 @@ const SignIn = () => {
               )}
             </div>
           </div>
-          <div style={{ textAlign: "center" }}>
+          {/* <div style={{ textAlign: "center" }}>
             <button
               className="buttom-register"
               onClick={() => setMode(isLogin ? "register" : "login")}
@@ -89,7 +89,7 @@ const SignIn = () => {
                 ? "¿No tienes cuenta? Regístrate"
                 : "¿Ya tienes cuenta? Inicia sesión"}
             </button>
-          </div>
+          </div> */}
         </div>
         <div className="auth-right">
           <img src={logo4} alt="Logo empresa" />

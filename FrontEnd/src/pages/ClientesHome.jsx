@@ -1,0 +1,170 @@
+import React, { useState } from "react";
+import Modal from "../components/Modal";
+import StepForm from "../components/StepForm";
+import Tables from "../components/Tables";
+import Accordion from "../components/Accordion"; // 🧩 asegúrate de tener este componente
+import { FaFileAlt } from "react-icons/fa"; // 🧩 icono para reportes
+import { createCliente, updateCliente } from "../api/controllers/Clientes";
+import { createItem } from "../api/controllers/Inventario";
+import { toast } from "react-toastify";
+import useClientes from "../hooks/useClientes";
+
+const columns = [
+  { key: "nombre", label: "Nombre de la Empresa" },
+  { key: "rif", label: "R.I.F" },
+  { key: "encargado", label: "Encargado" },
+  { key: "telefono", label: "Teléfono" },
+  { key: "direccion", label: "Dirección" },
+  { key: "correo_electronico", label: "Correo Electronico" },
+];
+
+export default function ClientesHome() {
+  const [search, setSearch] = useState("");
+  const { clientes, loading, error, refetch } = useClientes(search);
+  const [editItem, setEditItem] = useState(null);
+  const [isModalOpen, setModalOpen] = useState(false);
+
+  const handleSubmit = async (formData) => {
+    try {
+      if (editItem && editItem.id) {
+        await updateCliente(editItem.id, formData);
+        toast.success("Cliente actualizado con éxito");
+      } else {
+        // 🧱 1️⃣ Crear el cliente
+        const newCliente = await createCliente(formData);
+
+        // 🗺️ 2️⃣ Crear la ubicación (solo requiere name)
+        const ubicacionPayload = {
+          name: `${formData.direccion}, Cliente ${formData.nombre}`,
+        };
+        await createItem("ubicaciones", ubicacionPayload);
+
+        // 📍 3️⃣ Crear el lugar (solo requiere name)
+        const lugarPayload = {
+          name: `${formData.direccion}, Cliente ${formData.nombre}`,
+        };
+        await createItem("lugares", lugarPayload);
+
+        toast.success("Cliente, ubicación y lugar creados con éxito");
+      }
+
+      refetch();
+      setModalOpen(false);
+      setEditItem(null);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al guardar Cliente");
+    }
+  };
+
+  const handleAddOrEdit = (item = null) => {
+    setEditItem(item);
+    setModalOpen(true);
+  };
+
+  const formSteps = [
+    {
+      fields: [
+        { name: "nombre", label: "Nombre de la Empresa", required: true },
+        { name: "rif", label: "R.I.F", required: true },
+        { name: "encargado", label: "Encargado", required: true },
+        { name: "telefono", label: "Teléfono", required: true },
+        { name: "direccion", label: "Dirección", required: true },
+        {
+          name: "correo_electronico",
+          label: "Correo Electrónico",
+          required: true,
+        },
+      ],
+    },
+  ];
+
+  if (error)
+    return <div className="p-4 text-red-600">Error al cargar datos</div>;
+
+  return (
+    <div className="p-4">
+      <Tables
+        columns={columns}
+        data={clientes || []}
+        title="Clientes"
+        refetch={refetch}
+        loading={loading}
+        onAdd={handleAddOrEdit}
+        onSearch={setSearch}
+      />
+
+      {/* 🧩 Modal solo para editar cliente */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editItem ? "Editar Cliente" : "Agregar Cliente"}
+        width={`${
+          editItem && editItem.reportes?.length ? "max-w-6xl" : "max-w-3xl"
+        }`}
+      >
+        <div
+          className={`${
+            editItem && editItem.reportes?.length
+              ? "grid grid-cols-1 md:grid-cols-2 gap-6 items-start"
+              : "flex flex-col gap-4"
+          }`}
+        >
+          {/* 🧾 Formulario principal */}
+          <div className="w-full">
+            <StepForm
+              steps={formSteps}
+              onSubmit={handleSubmit}
+              initialValues={editItem || {}}
+            />
+          </div>
+
+          {/* 🧩 Acordeón de Reportes (solo si existen) */}
+          {editItem && editItem.reportes?.length > 0 && (
+            <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-2">
+              <Accordion
+                title={`Reportes (${editItem.reportes.length})`}
+                icon={FaFileAlt}
+                data={editItem.reportes}
+                filterKeys={["nombre", "fecha"]}
+                defaultOpen
+              >
+                {(filtered) => (
+                  <table className="w-full text-sm border-collapse mt-2">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="text-left p-2">Nombre del Reporte</th>
+                        <th className="text-left p-2">Fecha</th>
+                        <th className="text-left p-2">Monto Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((reporte) => (
+                        <tr
+                          key={reporte.id}
+                          className="border-b hover:bg-gray-50 transition"
+                        >
+                          <td className="p-2">{reporte.nombre || "—"}</td>
+                          <td className="p-2">
+                            {new Date(reporte.fecha).toLocaleDateString(
+                              "es-VE"
+                            )}
+                          </td>
+                          <td className="p-2">
+                            {reporte.monto_total
+                              ? `$ ${reporte.monto_total}`
+                              : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </Accordion>
+            </div>
+          )}
+        </div>
+      </Modal>
+    </div>
+  );
+}

@@ -6,6 +6,7 @@ import { FaSearch } from "react-icons/fa";
 import useDepartamentos from "../hooks/useDepartamentos";
 import useUbicaciones from "../hooks/useUbicaciones";
 import useLugaresConsumo from "../hooks/useLugaresConsumo";
+import useProveedores from "../hooks/useProveedores"; // 🧩 agregado
 import Modal from "./Modal";
 import { deleteItem } from "../api/controllers/Inventario";
 
@@ -18,17 +19,18 @@ const Tables = ({
   onSearch,
   tipo,
   refetch,
-  
 }) => {
   const location = useLocation();
   const isSubInventario =
     (location.pathname.startsWith("/inventario/") &&
       location.pathname !== "/inventario") ||
-    location.pathname === "/Proveedores";
+    // location.pathname === "/Proveedores" ||
+    location.pathname === "/clientes";
 
   const { departamentos } = useDepartamentos();
   const { ubicaciones } = useUbicaciones();
   const { lugares } = useLugaresConsumo();
+  const { proveedores } = useProveedores(); // 🧩 agregado
 
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState(null);
@@ -46,15 +48,19 @@ const Tables = ({
     return () => clearTimeout(delay);
   }, [query, onSearch]);
 
+  // 🧩 Resolver nombres por ID, incluyendo proveedor
   const idToName = useMemo(() => {
     return {
       departamento: (id) =>
         departamentos.find((d) => d.id === id)?.name || `ID: ${id}`,
       ubicacion: (id) =>
         ubicaciones.find((u) => u.id === id)?.name || `ID: ${id}`,
-      consumo: (id) => lugares.find((l) => l.id === id)?.name || `ID: ${id}`,
+      consumo: (id) =>
+        lugares.find((l) => l.id === id)?.name || `ID: ${id}`,
+      proveedor: (id) =>
+        proveedores.find((p) => p.id === id)?.name || `ID: ${id}`, // 🧩 nuevo
     };
-  }, [departamentos, ubicaciones, lugares]);
+  }, [departamentos, ubicaciones, lugares, proveedores]);
 
   const handleDeleteClick = (id, name) => {
     setSelectedItemId(id);
@@ -87,7 +93,7 @@ const Tables = ({
         </h2>
 
         <div className="flex items-center gap-3">
-          {/* 🔎 Buscador (opcional) */}
+          {/* 🔎 Buscador */}
           {onSearch && (
             <div className="relative">
               <FaSearch
@@ -163,14 +169,16 @@ const Tables = ({
                         colIndex === 0 ? "font-medium whitespace-nowrap" : ""
                       }`}
                     >
-                      {displayValue}
+                      {displayValue || "—"}
                     </td>
                   );
                 })}
                 {isSubInventario && (
                   <td className="px-6 py-4 text-right">
                     <button
-                      onClick={() => handleDeleteClick(row.id, row.name)}
+                      onClick={() =>
+                        handleDeleteClick(row.id, row.name || row.nombre)
+                      }
                       className="font-medium text-[#e53935] hover:underline"
                     >
                       <FaRegTrashCan color="#e53935" />

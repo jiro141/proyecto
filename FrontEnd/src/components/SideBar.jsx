@@ -10,42 +10,44 @@ import {
   FaTools,
   FaTruckLoading,
   FaUserFriends,
-  FaHammer
+  FaHammer,
+  FaFileInvoiceDollar,
+  FaPlusCircle,
 } from "react-icons/fa";
 import { FaHelmetSafety } from "react-icons/fa6";
-import { LuDrill } from "react-icons/lu";
 import { GrDocumentPdf } from "react-icons/gr";
 
 const SideBar = () => {
   const [showInventory, setShowInventory] = useState(false);
+  const [showReports, setShowReports] = useState(false);
 
   return (
     <aside className="sidebar">
+      {/* Logo */}
       <div style={{ textAlign: "center", padding: "1rem" }}>
         <img className="logoBar" src={logo} alt="Logo tipo" />
       </div>
 
+      {/* Navegación */}
       <nav className="sidebar-nav">
+        {/* --- Dashboard --- */}
         <NavLink to="/dashboard" className="sidebar-link">
           <FaHome />
           <span>Dashboard</span>
         </NavLink>
 
-        <NavLink
-          to="/inventario"
+        {/* --- Inventario --- */}
+        <div
           className="sidebar-link submenu-toggle"
           onClick={() => setShowInventory(!showInventory)}
+          style={{ cursor: "pointer" }}
         >
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
             <FaBoxOpen />
             <span>Inventario</span>
           </div>
-          {showInventory ? (
-            <FaChevronUp size={12} />
-          ) : (
-            <FaChevronDown size={12} />
-          )}
-        </NavLink>
+          {showInventory ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
+        </div>
 
         {showInventory && (
           <div className="submenu">
@@ -64,19 +66,43 @@ const SideBar = () => {
           </div>
         )}
 
-        <NavLink to="/Proveedores" className="sidebar-link">
+        {/* --- Proveedores --- */}
+        <NavLink to="/proveedores" className="sidebar-link">
           <FaTruckLoading />
-          Proveedores
-        </NavLink>
-        <NavLink to="/reportes" className="sidebar-link">
-          <FaUserFriends />
-          Clientes
+          <span>Proveedores</span>
         </NavLink>
 
-        <NavLink to="/reportes" className="sidebar-link">
-          <GrDocumentPdf />
-          Reportes
+        {/* --- Clientes --- */}
+        <NavLink to="/clientes" className="sidebar-link">
+          <FaUserFriends />
+          <span>Clientes</span>
         </NavLink>
+
+        {/* --- Presupuestos (Informes) --- */}
+        <div
+          className="sidebar-link submenu-toggle"
+          onClick={() => setShowReports(!showReports)}
+          style={{ cursor: "pointer" }}
+        >
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <GrDocumentPdf />
+            <span>Presupuestos</span>
+          </div>
+          {showReports ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
+        </div>
+
+        {showReports && (
+          <div className="submenu">
+            <NavLink to="/informes/Lista" className="sidebar-sublink">
+              <FaFileInvoiceDollar />
+              <span>Ver Presupuestos</span>
+            </NavLink>
+            <NavLink to="/informes/Crear" className="sidebar-sublink">
+              <FaPlusCircle />
+              <span>Crear Nuevo</span>
+            </NavLink>
+          </div>
+        )}
       </nav>
     </aside>
   );
