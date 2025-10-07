@@ -8,7 +8,6 @@ import AuthApi from "../AuthApi";
 export const getControlConfig = async () => {
   try {
     const response = await AuthApi.get("reportes/reporte/config/");
-    console.log(response.data,'data');
     
     return response.data;
   } catch (error) {

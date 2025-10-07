@@ -7,6 +7,7 @@ from inventario.serializers import StockSerializer, ConsumibleSerializer, EPPSer
 # SERIALIZADOR DE REPORTE
 # ==========================
 
+
 class ReporteSerializer(serializers.ModelSerializer):
     stock_almacen = StockSerializer(many=True, read_only=True)
     stock_comprar = StockSerializer(many=True, read_only=True)
@@ -18,6 +19,7 @@ class ReporteSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "n_control",
+            "cliente",  # 👈 AGREGA ESTE CAMPO AQUÍ
             "fecha",
             "presupuesto_estimado",
             "porcentaje_productividad",
@@ -30,12 +32,16 @@ class ReporteSerializer(serializers.ModelSerializer):
             "consumibles",
             "epps",
         ]
-        read_only_fields = ("n_control",)  # ✅ aquí es donde corresponde
+        read_only_fields = ("n_control",)
+
+
+# ✅ aquí es donde corresponde
 
 
 # ==========================
 # SERIALIZADOR DE CLIENTE
 # ==========================
+
 
 class ClienteSerializer(serializers.ModelSerializer):
     reportes = ReporteSerializer(many=True, read_only=True)
@@ -57,6 +63,7 @@ class ClienteSerializer(serializers.ModelSerializer):
 # ==========================
 # SERIALIZADOR DE CONFIGURACIÓN
 # ==========================
+
 
 class ReporteConfigSerializer(serializers.ModelSerializer):
     class Meta:

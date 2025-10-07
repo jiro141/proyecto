@@ -1,222 +1,239 @@
 import React, { useEffect, useState } from "react";
-import Tables from "../../components/Tables";
-import Modal from "../../components/Modal";
-import useClientes from "../../hooks/useClientes";
-import useReportes from "../../hooks/useReportes";
-import useInventario from "../../hooks/useInvetario";
-import { createReporte } from "../../api/controllers/Presupuesto";
-import {
-  getControlConfig,
-  createControlConfig,
-} from "../../api/controllers/ControlConfig";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Modal from "../../components/Modal";
+
+import useReportes from "../../hooks/useReportes";
+import { createReporte } from "../../api/controllers/Presupuesto";
+import { getControlConfig } from "../../api/controllers/ControlConfig";
+
+// 🧩 Componentes
+import Etapa1 from "./steps/Etapa1";
+import { Etapa2 } from "./steps/Etapa2";
+import Etapa3 from "./steps/Etapa3";
 
 export default function CrearPresupuestoLayout() {
-  const {
-    clientes,
-    loading: loadingClientes,
-    refetch: refetchClientes,
-  } = useClientes();
   const { refetch: refetchReportes } = useReportes();
-  const { data: stock, loading: loadingStock } = useInventario("stock");
-  const { data: epp, loading: loadingEpp } = useInventario("epp");
 
-  const [search, setSearch] = useState("");
+  // ================================
+  // ESTADOS PRINCIPALES
+  // ================================
+  const [etapa, setEtapa] = useState(1);
+  const [loadingConfig, setLoadingConfig] = useState(true);
+  const [lockModal, setLockModal] = useState(false);
   const [isModalOpen, setModalOpen] = useState(false);
   const [numeroControl, setNumeroControl] = useState("");
-  const [editItem, setEditItem] = useState(null);
-  const [loadingConfig, setLoadingConfig] = useState(true);
-  const [lockModal, setLockModal] = useState(false); // 🚫 Bloquea cierre del modal
 
-// === 1️⃣ Consultar número de control existente ===
-useEffect(() => {
-  const fetchNumeroControl = async () => {
-    try {
-      const data = await getControlConfig();
+  // ================================
+  // FORM DATA (Datos de todas las etapas)
+  // ================================
+  const [formData, setFormData] = useState({
+    cliente: null,
+    descripcion: "",
+    fechaCulminacion: new Date(),
+    stock_almacen: [],
+    consumibles: [],
+    epps: [],
+    presupuesto_base: 0,
+    presupuesto_estimado: 0,
+    porcentaje_productividad: 0.75,
+  });
 
-      if (data?.punto_inicio) {
-        // ✅ Si existe en backend
-        setNumeroControl(data.punto_inicio);
-        setModalOpen(false);
-        setLockModal(false);
-      } else {
-        // ⚠️ Si no hay número definido en la base
+  // ================================
+  // CONSULTAR NÚMERO DE CONTROL
+  // ================================
+  useEffect(() => {
+    const fetchNumeroControl = async () => {
+      toast.dismiss();
+      try {
+        const data = await getControlConfig();
+        if (data?.punto_inicio) {
+          setNumeroControl(data.punto_inicio);
+          setLockModal(false);
+        } else {
+          setModalOpen(true);
+          setLockModal(true);
+          toast.warning("No existe un número de control configurado.");
+        }
+      } catch (error) {
+        console.error("Error al obtener el número de control:", error);
         setModalOpen(true);
         setLockModal(true);
-        toast.warning("No existe un número de control configurado. Ingréselo manualmente.");
+      } finally {
+        setLoadingConfig(false);
       }
-    } catch (error) {
-      console.error("Error al obtener el número de control:", error);
+    };
+    fetchNumeroControl();
+  }, []);
 
-      // ✅ Detecta el 404 específico del backend ("No existe configuración de reportes.")
-      if (error.response && error.response.status === 404) {
-        toast.warning("No existe un número de control configurado. Ingréselo manualmente.");
-        setModalOpen(true);
-        setLockModal(true);
-      } else {
-        // 🚨 Cualquier otro error (red, backend caído, etc.)
-        toast.error("Error al conectar con el servidor. Intente más tarde.");
-        setModalOpen(true);
-        setLockModal(true);
-      }
-    } finally {
-      setLoadingConfig(false);
-    }
+  // ================================
+  // AUTO-CÁLCULO DEL PRESUPUESTO TOTAL
+  // ================================
+  useEffect(() => {
+    const calcularCosto = (lista = []) =>
+      lista.reduce((acc, item) => {
+        const precio = Number(item.precio || item.costo_unitario || 0);
+        const cantidad = Number(item.cantidad || 0);
+        return acc + precio * cantidad;
+      }, 0);
+
+    const totalMateriales =
+      calcularCosto(formData.epps) +
+      calcularCosto(formData.stock_almacen) +
+      calcularCosto(formData.consumibles);
+
+    const totalFinal = totalMateriales + Number(formData.presupuesto_base || 0);
+
+    setFormData((prev) => ({
+      ...prev,
+      presupuesto_estimado: Number(totalFinal.toFixed(2)),
+    }));
+  }, [
+    formData.epps,
+    formData.stock_almacen,
+    formData.consumibles,
+    formData.presupuesto_base,
+  ]);
+
+  // ================================
+  // CALLBACK: STOCK INSUFICIENTE
+  // ================================
+  const handleStockInsuficiente = (tipo, producto) => {
+    toast.warning(
+      `${
+        tipo === "stock"
+          ? "Ferretería"
+          : tipo === "EPP"
+          ? "E.P.P."
+          : "Consumibles"
+      }: stock insuficiente. Se añadió a la lista de proveedores.`,
+      { position: "top-right", autoClose: 2500 }
+    );
   };
 
-  fetchNumeroControl();
-}, []);
-
-
-  const handleAddOrEdit = (item = null) => {
-    setEditItem(item);
-    setModalOpen(true);
-  };
-
-  const handleCreateReporte = async () => {
-    if (!numeroControl) {
-      toast.error("Debe agregar un número de control para continuar.");
-      return;
-    }
-    if (!editItem) {
-      toast.error("Debe seleccionar o crear un cliente.");
-      return;
-    }
+  // ================================
+  // CREAR REPORTE FINAL
+  // ================================
+  const handleCreateReporte = async (presupuestoConProductividad) => {
+    if (!formData.cliente)
+      return toast.error("Debe seleccionar un cliente antes de guardar.");
 
     try {
+      const fechaActual = new Date().toISOString().split("T")[0];
+      const fechaCulminacion = new Date(formData.fechaCulminacion)
+        .toISOString()
+        .split("T")[0];
+
       const payload = {
-        n_control: numeroControl,
-        cliente: editItem.id,
-        lugar: "Sin definir",
-        observaciones: "Nuevo presupuesto",
+        cliente: formData.cliente?.id,
+        fecha: fechaActual,
+        stock_almacen: formData.stock_almacen.map((i) => i.id),
+        consumibles: formData.consumibles.map((i) => i.id),
+        epps: formData.epps.map((i) => i.id),
+        presupuesto_estimado: Number(presupuestoConProductividad.toFixed(2)), // ✅ valor recibido desde Etapa3
+        porcentaje_productividad: formData.porcentaje_productividad,
+        lugar: formData.cliente?.direccion || "Sin dirección registrada",
+        fecha_estimacion_culminacion: fechaCulminacion,
+        observaciones: formData.descripcion || "Nuevo presupuesto",
+        aprobado: false,
       };
+
+      console.log("📦 Payload final enviado:", payload);
+
+      if (!payload.cliente)
+        return toast.error("El cliente seleccionado no tiene ID válido.");
+
       await createReporte(payload);
       refetchReportes();
-      toast.success("Reporte creado correctamente ");
-      setModalOpen(false);
+      toast.success("Presupuesto creado correctamente ");
     } catch (error) {
-      console.error(error);
-      toast.error("Error al crear el reporte ");
+      console.error("Error al crear el presupuesto:", error);
+      toast.error("Error al crear el presupuesto ");
     }
   };
 
-  const handleModalClose = () => {
-    if (lockModal) {
-      toast.warning("No puede cerrar esta ventana sin un número de control.");
-      return;
-    }
-    setModalOpen(false);
-  };
-
-  const handleManualControl = async () => {
-    if (!numeroControl) {
-      toast.error("Debe ingresar un número válido.");
-      return;
-    }
-
-    try {
-      await createControlConfig({ punto_inicio: numeroControl });
-      toast.success("Número de control guardado correctamente ");
-      setLockModal(false);
-      setModalOpen(false);
-    } catch (error) {
-      console.error(error);
-      toast.error("Error al guardar el número de control en el servidor ");
-    }
-  };
-
-  const columns = [
-    { Header: "Nombre", accessor: "nombre" },
-    { Header: "RIF", accessor: "rif" },
-    { Header: "Encargado", accessor: "encargado" },
-    { Header: "Teléfono", accessor: "telefono" },
-    { Header: "Correo", accessor: "correo_electronico" },
-  ];
+  // ================================
+  // NAVEGACIÓN ENTRE ETAPAS
+  // ================================
+  const nextStep = () => etapa < 3 && setEtapa(etapa + 1);
+  const prevStep = () => etapa > 1 && setEtapa(etapa - 1);
 
   if (loadingConfig) return <p className="p-6">Cargando configuración...</p>;
 
+  // ================================
+  // RENDER
+  // ================================
   return (
-    <div className="relative p-6 grid grid-cols-2 gap-6">
-      {/* === TOASTIFY CONTAINER === */}
+    <div className="relative p-6">
       <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
       />
 
-      {/* === NÚMERO DE CONTROL EN HEADER === */}
-      {numeroControl && (
-        <div className="absolute top-4 right-6 bg-blue-100 text-blue-800 px-4 py-1 rounded-lg shadow">
-          Control N° {numeroControl}
-        </div>
+      {/* ENCABEZADO DE ETAPAS */}
+      <div className="flex items-center justify-center gap-12 mb-4 -mt-6">
+        {[
+          { num: 1, label: "Datos Generales" },
+          { num: 2, label: "Materiales" },
+          { num: 3, label: "Confirmación" },
+        ].map(({ num, label }) => (
+          <div key={num} className="flex flex-col items-center">
+            <div
+              className={`flex items-center justify-center w-10 h-10 rounded-full text-white font-bold shadow-md transition-all ${
+                etapa === num
+                  ? "bg-[#0B2C4D] scale-110 shadow-lg"
+                  : "bg-gray-300 scale-100"
+              }`}
+            >
+              {num}
+            </div>
+            <p
+              className={`mt-2 text-sm font-medium ${
+                etapa === num ? "text-[#0B2C4D]" : "text-gray-500"
+              }`}
+            >
+              {label}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* CONTENIDO DE ETAPAS */}
+      {etapa === 1 && <Etapa1 formData={formData} setFormData={setFormData} />}
+      {etapa === 2 && (
+        <Etapa2
+          formData={formData}
+          setFormData={setFormData}
+          onStockInsuficiente={handleStockInsuficiente}
+        />
+      )}
+      {etapa === 3 && (
+        <Etapa3 formData={formData} onCreate={handleCreateReporte} />
       )}
 
-      {/* === MODAL DE NÚMERO DE CONTROL === */}
-      <Modal
-        isOpen={isModalOpen && (!numeroControl || lockModal)}
-        onClose={handleModalClose}
-        title="Asignar Número de Control"
-        width="max-w-3xl"
-      >
-        <div className="p-4">
-          <p className="mb-3 text-gray-600">
-            {lockModal
-              ? "No se pudo crear automáticamente el número de control. Ingréselo manualmente."
-              : "Ingrese el número de control manualmente si no se pudo obtener del servidor."}
-          </p>
+      {/* BOTONES DE NAVEGACIÓN */}
+      <div className="flex justify-between mt-8">
+        {etapa > 1 ? (
+          <button
+            onClick={prevStep}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg"
+          >
+            ← Anterior
+          </button>
+        ) : (
+          <span></span>
+        )}
 
-          <input
-            type="number"
-            className="border p-2 rounded w-full"
-            placeholder="Ej: 101"
-            value={numeroControl}
-            onChange={(e) => setNumeroControl(e.target.value)}
-          />
-
-          <div className="flex justify-end mt-4">
-            <button
-              onClick={handleManualControl}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-            >
-              Confirmar
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* === TABLAS === */}
-      {/* <Tables
-        columns={columns}
-        data={clientes || []}
-        title="Clientes"
-        refetch={refetchClientes}
-        loading={loadingClientes}
-        onAdd={handleAddOrEdit}
-        onSearch={setSearch}
-      />
-
-      <Tables
-        columns={[
-          { Header: "Producto", accessor: "nombre" },
-          { Header: "Cantidad", accessor: "cantidad" },
-          { Header: "Unidad", accessor: "unidad" },
-        ]}
-        data={stock || []}
-        title="Stock Almacén"
-        loading={loadingStock}
-      />
-
-      <Tables
-        columns={[
-          { Header: "Elemento", accessor: "nombre" },
-          { Header: "Categoría", accessor: "categoria" },
-          { Header: "Cantidad", accessor: "cantidad" },
-        ]}
-        data={epp || []}
-        title="Equipos de Protección Personal"
-        loading={loadingEpp}
-      /> */}
+        {etapa < 3 && (
+          <button
+            onClick={nextStep}
+            className="bg-[#0B2C4D] hover:bg-[#123b65] text-white px-4 py-2 rounded-lg"
+          >
+            Siguiente →
+          </button>
+        )}
+      </div>
     </div>
   );
 }
