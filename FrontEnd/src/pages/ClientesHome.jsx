@@ -120,7 +120,7 @@ export default function ClientesHome() {
           </div>
 
           {/* 🧩 Acordeón de Reportes (solo si existen) */}
-          {editItem && editItem.reportes?.length > 0 && (
+          {editItem && editItem.reportes?.length > 0 && ( 
             <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-2">
               <Accordion
                 title={`Reportes (${editItem.reportes.length})`}
@@ -133,7 +133,7 @@ export default function ClientesHome() {
                   <table className="w-full text-sm border-collapse mt-2">
                     <thead>
                       <tr className="bg-gray-100">
-                        <th className="text-left p-2">Nombre del Reporte</th>
+                        <th className="text-left p-2">Número del Reporte</th>
                         <th className="text-left p-2">Fecha</th>
                         <th className="text-left p-2">Monto Total</th>
                       </tr>
@@ -144,15 +144,15 @@ export default function ClientesHome() {
                           key={reporte.id}
                           className="border-b hover:bg-gray-50 transition"
                         >
-                          <td className="p-2">{reporte.nombre || "—"}</td>
+                          <td className="p-2">{reporte.n_control || "—"}</td>
                           <td className="p-2">
                             {new Date(reporte.fecha).toLocaleDateString(
                               "es-VE"
                             )}
                           </td>
                           <td className="p-2">
-                            {reporte.monto_total
-                              ? `$ ${reporte.monto_total}`
+                            {reporte.presupuesto_estimado
+                              ? `$ ${reporte.presupuesto_estimado}`
                               : "—"}
                           </td>
                         </tr>

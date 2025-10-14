@@ -55,8 +55,7 @@ const Tables = ({
         departamentos.find((d) => d.id === id)?.name || `ID: ${id}`,
       ubicacion: (id) =>
         ubicaciones.find((u) => u.id === id)?.name || `ID: ${id}`,
-      consumo: (id) =>
-        lugares.find((l) => l.id === id)?.name || `ID: ${id}`,
+      consumo: (id) => lugares.find((l) => l.id === id)?.name || `ID: ${id}`,
       proveedor: (id) =>
         proveedores.find((p) => p.id === id)?.name || `ID: ${id}`, // 🧩 nuevo
     };
@@ -160,6 +159,7 @@ const Tables = ({
                   const value = row[col.key];
                   const resolver = idToName[col.key];
                   const displayValue = resolver ? resolver(value) : value;
+                  console.log(displayValue, "hola");
 
                   return (
                     <td
@@ -169,7 +169,7 @@ const Tables = ({
                         colIndex === 0 ? "font-medium whitespace-nowrap" : ""
                       }`}
                     >
-                      {displayValue || "—"}
+                      {displayValue === true ? "✅" : displayValue || "—"}
                     </td>
                   );
                 })}

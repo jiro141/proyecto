@@ -75,7 +75,7 @@ export default function ReportesLayout() {
         {
           name: "aprobado",
           label: "Aprobado",
-          type: "checkbox",
+          type: "switch"
         },
         {
           name: "observaciones",
@@ -128,9 +128,9 @@ export default function ReportesLayout() {
         isOpen={isModalOpen}
         onClose={() => setModalOpen(false)}
         title={editItem ? "Editar Reporte" : "Agregar Reporte"}
-        width="max-w-6xl"
+        width="max-w-3xl"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 items-start">
           {/* 🧾 Formulario principal */}
           <div className="w-full">
             <StepForm
@@ -169,11 +169,11 @@ export default function ReportesLayout() {
                                 key={i}
                                 className="border-b hover:bg-gray-50 transition"
                               >
-                                <td className="p-2">{item.nombre || "—"}</td>
-                                <td className="p-2">{item.cantidad || "—"}</td>
+                                <td className="p-2">{item.name || "—"}</td>
+                                <td className="p-2">{item.unidades || "—"}</td>
                                 <td className="p-2">
-                                  {item.precio_unitario
-                                    ? `$ ${item.precio_unitario}`
+                                  {item.monto
+                                    ? `$ ${item.monto}`
                                     : "—"}
                                 </td>
                               </tr>

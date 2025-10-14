@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from "react";
 
 const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
-
-  
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState(initialValues);
 
-  // Sincroniza formData si cambian los valores iniciales (por edición)
   useEffect(() => {
     setFormData(initialValues);
   }, [initialValues]);
@@ -14,10 +11,15 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
   const step = steps[currentStep];
 
   const handleChange = (e) => {
+    const { name, type, checked, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: type === "checkbox" ? checked : value,
     });
+  };
+
+  const handleCustomChange = (name, newValue) => {
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
   };
 
   const isLastStep = currentStep === steps.length - 1;
@@ -42,39 +44,75 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
           step.fields.length > 3 ? "grid-cols-2" : "grid-cols-1"
         }`}
       >
-        {step.fields.map((field) => (
-          <div key={field.name}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {field.label}
-            </label>
+        {step.fields.map((field) => {
+          const value = formData[field.name] ?? "";
 
-            {field.type === "select" ? (
-              <select
-                name={field.name}
-                value={formData[field.name] || ""}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
-                required={field.required}
-              >
-                <option value="">-------</option>
-                {field.options?.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type={field.type || "text"}
-                name={field.name}
-                value={formData[field.name] ?? ""}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
-                required={field.required}
-              />
-            )}
-          </div>
-        ))}
+          return (
+            <div key={field.name}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {field.label}
+              </label>
+
+              {/* SWITCH VISUAL MODERNO */}
+              {field.type === "switch" ? (
+                <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <span
+                    className={`text-sm font-medium select-none ${
+                      value ? "text-green-600" : "text-gray-500"
+                    }`}
+                  >
+                    {value ? "Aprobado " : "Espera "}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={!!value}
+                      onChange={(e) =>
+                        handleCustomChange(field.name, e.target.checked)
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-12 h-7 bg-gray-300 rounded-full peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:bg-green-500 transition-all duration-300"></div>
+                    <div className="absolute left-1 top-1 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 peer-checked:translate-x-5"></div>
+                  </label>
+                </div>
+              ) : field.type === "select" ? (
+                <select
+                  name={field.name}
+                  value={value}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  required={field.required}
+                >
+                  <option value="">-------</option>
+                  {field.options?.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              ) : field.type === "textarea" ? (
+                <textarea
+                  name={field.name}
+                  value={value}
+                  onChange={handleChange}
+                  rows="3"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  required={field.required}
+                />
+              ) : (
+                <input
+                  type={field.type || "text"}
+                  name={field.name}
+                  value={value}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  required={field.required}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* BOTONES DE CONTROL */}

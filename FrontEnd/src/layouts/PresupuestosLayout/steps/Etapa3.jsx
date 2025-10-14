@@ -1,6 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import { FaFileDownload } from "react-icons/fa";
+import Modal from "../../../components/Modal";
 
 export default function Etapa3({ formData, onCreate }) {
+  
+
   const {
     cliente,
     descripcion,
@@ -12,7 +16,7 @@ export default function Etapa3({ formData, onCreate }) {
     porcentaje_productividad,
   } = formData;
 
-  // 🧮 Cálculo local de costos (con ajuste por productividad)
+  // 🧮 Calcular resumen
   const resumen = useMemo(() => {
     const calcularCosto = (lista = []) =>
       lista.reduce((acc, item) => {
@@ -24,11 +28,8 @@ export default function Etapa3({ formData, onCreate }) {
     const costoEPP = calcularCosto(epps);
     const costoStock = calcularCosto(stock_almacen);
     const costoCons = calcularCosto(consumibles);
-
     const totalMateriales = costoEPP + costoStock + costoCons;
     const totalBase = totalMateriales + Number(presupuesto_base || 0);
-
-    // 🧠 Ajuste por productividad: si productividad = 0.75 → se suma 25%
     const factorAjuste = 1 - (Number(porcentaje_productividad) || 0);
     const totalConProductividad = totalBase + totalBase * factorAjuste;
 
@@ -42,16 +43,27 @@ export default function Etapa3({ formData, onCreate }) {
       factorAjuste,
       totalConProductividad,
     };
-  }, [epps, stock_almacen, consumibles, presupuesto_base, porcentaje_productividad]);
+  }, [
+    epps,
+    stock_almacen,
+    consumibles,
+    presupuesto_base,
+    porcentaje_productividad,
+  ]);
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-lg min-h-[400px]">
-      {/* ENCABEZADO */}
+    <div className="p-6 bg-white rounded-lg shadow-lg min-h-[400px] relative">
+      {/* === BOTÓN DE DESCARGA === */}
+
+      {/* === MODAL DESCARGA === */}
+     
+
+      {/* === CONTENIDO PRINCIPAL === */}
       <h2 className="text-2xl font-semibold text-center text-[#0B2C4D] mb-8">
         Confirmación Final del Presupuesto
       </h2>
 
-      {/* INFORMACIÓN DEL CLIENTE */}
+      {/* INFORMACIÓN CLIENTE */}
       <div className="max-w-3xl mx-auto mb-10 bg-gray-50 rounded-lg shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-[#0B2C4D] mb-4 text-center">
           Información del Cliente
@@ -82,7 +94,7 @@ export default function Etapa3({ formData, onCreate }) {
         )}
       </div>
 
-      {/* INFORMACIÓN DEL PRESUPUESTO */}
+      {/* DETALLES DEL PRESUPUESTO */}
       <div className="max-w-3xl mx-auto mb-10 bg-gray-50 rounded-lg border border-gray-200 p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-[#0B2C4D] mb-4 text-center">
           Detalles del Presupuesto
@@ -107,12 +119,11 @@ export default function Etapa3({ formData, onCreate }) {
           </p>
         </div>
 
-        {/* 💰 TOTAL DEL PRESUPUESTO */}
+        {/* 💰 TOTAL */}
         <div className="mt-6 text-center border-t pt-4">
           <p className="text-base font-semibold text-[#0B2C4D] mb-1">
-            Presupuesto estimado total 
+            Presupuesto estimado total
           </p>
-
           <p className="text-3xl font-bold text-green-700 tracking-wide">
             {resumen.totalConProductividad
               ? `$ ${resumen.totalConProductividad.toLocaleString("es-VE", {
@@ -121,8 +132,6 @@ export default function Etapa3({ formData, onCreate }) {
                 })}`
               : "$ 0.00"}
           </p>
-
-          {/* Desglose simple */}
           <div className="mt-3 text-xs text-gray-600 leading-relaxed">
             <p>
               Base: ${resumen.presupuesto_base.toFixed(2)} + Materiales: $
@@ -137,7 +146,7 @@ export default function Etapa3({ formData, onCreate }) {
         </div>
       </div>
 
-      {/* TABLAS DE RECURSOS */}
+      {/* TABLAS */}
       <div className="space-y-10 max-w-4xl mx-auto">
         <TablaBloque
           titulo="Equipos de Protección Personal (EPP)"
@@ -159,7 +168,7 @@ export default function Etapa3({ formData, onCreate }) {
       {/* BOTÓN FINAL */}
       <div className="flex justify-center mt-12">
         <button
-           onClick={() => onCreate(resumen.totalConProductividad)} 
+          onClick={() => onCreate(resumen.totalConProductividad)}
           className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg shadow-md transition-all"
         >
           Confirmar y Crear Presupuesto
@@ -169,9 +178,7 @@ export default function Etapa3({ formData, onCreate }) {
   );
 }
 
-/**
- * 🧩 Tabla bloque con título + tabla de materiales
- */
+/* === COMPONENTES SECUNDARIOS === */
 function TablaBloque({ titulo, data, tipo }) {
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 shadow-sm">
@@ -183,9 +190,6 @@ function TablaBloque({ titulo, data, tipo }) {
   );
 }
 
-/**
- * 🧩 TablaMateriales – Renderiza listas de materiales de EPP, Ferretería o Consumibles
- */
 function TablaMateriales({ data = [], tipo }) {
   const mostrarModelo = tipo?.toLowerCase() !== "epp";
 
@@ -199,7 +203,9 @@ function TablaMateriales({ data = [], tipo }) {
               <th className="py-2 px-4 text-center font-medium">Modelo</th>
             )}
             <th className="py-2 px-4 text-center font-medium">Cantidad</th>
-            <th className="py-2 px-4 text-center font-medium">Precio Unitario</th>
+            <th className="py-2 px-4 text-center font-medium">
+              Precio Unitario
+            </th>
             <th className="py-2 px-4 text-center font-medium">Subtotal</th>
           </tr>
         </thead>
