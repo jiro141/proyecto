@@ -7,12 +7,14 @@ from .models import (
     Stock,
     Consumible,
     Proveedor,
+    MovimientoInventario,
+    Taza_pesos_dolares,
 )
-
 
 # ==========================
 # CLASES BÁSICAS
 # ==========================
+
 
 @admin.register(LugarConsumo)
 class LugarConsumoAdmin(admin.ModelAdmin):
@@ -36,6 +38,7 @@ class DepartamentoAdmin(admin.ModelAdmin):
 # INLINES (para mostrar productos en proveedor)
 # ==========================
 
+
 class EPPInline(admin.TabularInline):
     model = EPP
     extra = 0
@@ -47,15 +50,23 @@ class EPPInline(admin.TabularInline):
 class StockInline(admin.TabularInline):
     model = Stock
     extra = 0
-    fields = ("name", "modelo", "departamento", "unidades", "monto")
-    readonly_fields = ()
+    fields = ("codigo", "descripcion", "pza", "costo", "utilidad_15", "departamento")
+    readonly_fields = ("costo",)  # 👈 Hacemos el costo de solo lectura
     show_change_link = True
 
 
 class ConsumibleInline(admin.TabularInline):
     model = Consumible
     extra = 0
-    fields = ("name", "modelo", "departamento", "unidades", "monto", "consumo", "ubicacion")
+    fields = (
+        "name",
+        "modelo",
+        "departamento",
+        "unidades",
+        "monto",
+        "consumo",
+        "ubicacion",
+    )
     readonly_fields = ()
     show_change_link = True
 
@@ -64,45 +75,84 @@ class ConsumibleInline(admin.TabularInline):
 # PROVEEDOR
 # ==========================
 
+
 @admin.register(Proveedor)
 class ProveedorAdmin(admin.ModelAdmin):
     list_display = ("name", "direccion", "telefono", "encargado")
     search_fields = ("name", "direccion", "encargado")
-
-    # Mostrar productos relacionados directamente en la vista del proveedor
     inlines = [EPPInline, StockInline, ConsumibleInline]
 
 
 # ==========================
-# PRODUCTOS (individuales)
+# PRODUCTOS INDIVIDUALES
 # ==========================
-
-@admin.register(EPP)
-class EPPAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "unidades", "monto", "proveedor")
-    search_fields = ("name", "proveedor__name")
-    list_filter = ("proveedor",)
 
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "modelo", "departamento", "unidades", "monto", "proveedor")
-    search_fields = ("name", "modelo", "proveedor__name")
-    list_filter = ("departamento", "proveedor")
+    list_display = (
+        "codigo",
+        "descripcion",
+        "pza",
+        "costo",
+        "utilidad_15",
+        "mts_ml_m2",
+        "item_fijo",
+    )
+    list_filter = ("departamento", "item_fijo")
+    search_fields = ("codigo", "descripcion")
+    list_editable = ("item_fijo",)  # ✅ Permite editar directamente desde la lista
+    ordering = ("-item_fijo", "descripcion")
+
+
+@admin.register(EPP)
+class EPPAdmin(admin.ModelAdmin):
+    list_display = ("name", "unidades", "monto", "proveedor", "item_fijo")
+    list_filter = ("proveedor", "item_fijo")
+    search_fields = ("name",)
+    list_editable = ("item_fijo",)
+    ordering = ("-item_fijo", "name")
 
 
 @admin.register(Consumible)
 class ConsumibleAdmin(admin.ModelAdmin):
+    list_display = ("codigo", "descripcion", "costo", "departamento", "item_fijo")
+    list_filter = ("departamento", "item_fijo")
+    search_fields = ("descripcion", "codigo")
+    list_editable = ("item_fijo",)
+    ordering = ("-item_fijo", "descripcion")
+
+
+# ==========================
+# MOVIMIENTOS DE INVENTARIO
+# ==========================
+
+
+@admin.register(MovimientoInventario)
+class MovimientoInventarioAdmin(admin.ModelAdmin):
     list_display = (
         "id",
-        "name",
-        "modelo",
-        "departamento",
-        "unidades",
-        "monto",
-        "consumo",
-        "ubicacion",
-        "proveedor",
+        "tipo",
+        "cantidad",
+        "fecha",
+        "stock",
+        "epp",
+        "consumible",
+        "observacion",
     )
-    search_fields = ("name", "modelo", "proveedor__name")
-    list_filter = ("departamento", "proveedor")
+    list_filter = ("tipo", "fecha")
+    search_fields = ("stock__descripcion", "epp__name", "consumible__name")
+    readonly_fields = ("fecha",)
+
+
+# ==========================
+# TASA PESOS/DÓLARES
+# ==========================
+
+
+@admin.register(Taza_pesos_dolares)
+class TazaAdmin(admin.ModelAdmin):
+    list_display = ("id", "valor")
+    search_fields = ("valor",)
+    list_display_links = ("id", "valor")
+    ordering = ("-id",)

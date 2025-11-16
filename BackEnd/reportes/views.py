@@ -1,89 +1,277 @@
 from rest_framework import generics, filters, status
 from rest_framework.response import Response
-from django.http import Http404
-from .models import Cliente, Reporte, ReporteConfig
-from .serializers import ClienteSerializer, ReporteSerializer, ReporteConfigSerializer
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+
+from .models import (
+    Cliente,
+    Reporte,
+    ReporteConfig,
+    APU,
+    APUMaterial,
+    APUHerramienta,
+    APUManoObra,
+    APULogistica,
+)
+from .serializers import (
+    ClienteSerializer,
+    ReporteSerializer,
+    ReporteConfigSerializer,
+    APUSerializer,
+    APUMaterialSerializer,
+    APUHerramientaSerializer,
+    APUManoObraSerializer,
+    APULogisticaSerializer,
+)
 
 
-# ========================
-#  CLIENTE
-# ========================
+# ============================================================
+# 🧾 CLIENTE
+# ============================================================
+
+
 class ClienteListCreateView(generics.ListCreateAPIView):
-    """Lista y crea clientes. Permite búsqueda por nombre, encargado o RIF."""
-    queryset = Cliente.objects.all()
+    queryset = Cliente.objects.all().order_by("nombre")
     serializer_class = ClienteSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ["nombre", "encargado", "rif"]
 
 
 class ClienteDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """Obtiene, actualiza o elimina un cliente específico."""
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
 
 
-# ========================
-#  REPORTE
-# ========================
+# ============================================================
+# 📊 REPORTE
+# ============================================================
+
+
 class ReporteListCreateView(generics.ListCreateAPIView):
-    """Lista y crea reportes."""
-    queryset = Reporte.objects.all().select_related("cliente")
+    """
+    Lista y crea reportes.
+    n_presupuesto y fecha_creacion se manejan automáticamente en el modelo.
+    """
+
+    queryset = Reporte.objects.select_related("cliente").all()
     serializer_class = ReporteSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = [
-        "n_control",
+        "n_presupuesto",
         "cliente__nombre",
         "cliente__rif",
-        "cliente__encargado",
     ]
+
+    # ya no necesitamos calcular_totales aquí
+    # def perform_create(self, serializer):
+    #     serializer.save()
+    # (el modelo se encarga de asignar n_presupuesto)
 
 
 class ReporteDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """Obtiene, actualiza o elimina un reporte."""
-    queryset = Reporte.objects.all()
+    queryset = Reporte.objects.select_related("cliente").prefetch_related("apus")
     serializer_class = ReporteSerializer
 
 
-# ========================
-#  CONFIGURACIÓN DE REPORTES
-# ========================
-class ReporteConfigView(generics.GenericAPIView):
-    """
-    Permite ver (GET) y crear/actualizar (POST) la configuración de reportes.
-    Siempre trabaja sobre el primer registro existente.
-    """
-    queryset = ReporteConfig.objects.all()
-    serializer_class = ReporteConfigSerializer
+# ============================================================
+# ⚙️ CONFIGURACIÓN DE REPORTES
+# ============================================================
 
-    def get_object(self):
-        """Obtiene la primera configuración disponible."""
-        config = ReporteConfig.objects.first()
-        if not config:
-            return None
-        return config
+
+class ReporteConfigView(APIView):
+    """
+    GET: obtiene la configuración
+    POST: crea/actualiza el primer registro
+    """
 
     def get(self, request, *args, **kwargs):
-        """Devuelve la configuración si existe, o 404 si no."""
-        config = self.get_object()
+        config = ReporteConfig.objects.first()
         if not config:
             return Response(
                 {"detail": "No existe configuración de reportes."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        serializer = self.get_serializer(config)
+        serializer = ReporteConfigSerializer(config)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
-        """
-        Crea o actualiza la configuración de reportes.
-        Si existe, actualiza parcialmente; si no, crea una nueva.
-        """
-        config = self.get_object()
+        config = ReporteConfig.objects.first()
         if config:
-            serializer = self.get_serializer(config, data=request.data, partial=True)
+            serializer = ReporteConfigSerializer(
+                config, data=request.data, partial=True
+            )
         else:
-            serializer = self.get_serializer(data=request.data)
+            serializer = ReporteConfigSerializer(data=request.data)
 
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ============================================================
+# 🧮 APU
+# ============================================================
+
+
+class APUListCreateView(generics.ListCreateAPIView):
+    """
+    Lista y crea APUs asociados a un reporte.
+    """
+
+    serializer_class = APUSerializer
+
+    def get_queryset(self):
+        reporte_id = self.kwargs.get("reporte_id")
+        return APU.objects.filter(reporte_id=reporte_id).prefetch_related(
+            "materiales", "herramientas", "manos_obra", "logisticas"
+        )
+
+    def perform_create(self, serializer):
+        reporte_id = self.kwargs.get("reporte_id")
+        reporte = get_object_or_404(Reporte, id=reporte_id)
+        apu = serializer.save(reporte=reporte)
+        # Si ya quieres dejarlo “limpio”:
+        apu.recalcular_totales()
+
+
+class APUDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = APU.objects.prefetch_related(
+        "materiales", "herramientas", "manos_obra", "logisticas"
+    )
+    serializer_class = APUSerializer
+
+    def perform_update(self, serializer):
+        apu = serializer.save()
+        apu.recalcular_totales()
+
+
+# ============================================================
+# 🧱 MATERIALES
+# ============================================================
+
+
+class APUMaterialListCreateView(generics.ListCreateAPIView):
+    serializer_class = APUMaterialSerializer
+
+    def get_queryset(self):
+        apu_id = self.kwargs.get("apu_id")
+        return APUMaterial.objects.filter(apu_id=apu_id)
+
+    def perform_create(self, serializer):
+        apu_id = self.kwargs.get("apu_id")
+        apu = get_object_or_404(APU, id=apu_id)
+        material = serializer.save(apu=apu)
+        material.apu.recalcular_totales()
+
+
+class APUMaterialDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = APUMaterial.objects.all()
+    serializer_class = APUMaterialSerializer
+
+    def perform_update(self, serializer):
+        material = serializer.save()
+        material.apu.recalcular_totales()
+
+    def perform_destroy(self, instance):
+        apu = instance.apu
+        super().perform_destroy(instance)
+        apu.recalcular_totales()
+
+
+# ============================================================
+# 🛠️ HERRAMIENTAS
+# ============================================================
+
+
+class APUHerramientaListCreateView(generics.ListCreateAPIView):
+    serializer_class = APUHerramientaSerializer
+
+    def get_queryset(self):
+        apu_id = self.kwargs.get("apu_id")
+        return APUHerramienta.objects.filter(apu_id=apu_id)
+
+    def perform_create(self, serializer):
+        apu_id = self.kwargs.get("apu_id")
+        apu = get_object_or_404(APU, id=apu_id)
+        herramienta = serializer.save(apu=apu)
+        herramienta.apu.recalcular_totales()
+
+
+class APUHerramientaDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = APUHerramienta.objects.all()
+    serializer_class = APUHerramientaSerializer
+
+    def perform_update(self, serializer):
+        h = serializer.save()
+        h.apu.recalcular_totales()
+
+    def perform_destroy(self, instance):
+        apu = instance.apu
+        super().perform_destroy(instance)
+        apu.recalcular_totales()
+
+
+# ============================================================
+# 👷 MANO DE OBRA
+# ============================================================
+
+
+class APUManoObraListCreateView(generics.ListCreateAPIView):
+    serializer_class = APUManoObraSerializer
+
+    def get_queryset(self):
+        apu_id = self.kwargs.get("apu_id")
+        return APUManoObra.objects.filter(apu_id=apu_id)
+
+    def perform_create(self, serializer):
+        apu_id = self.kwargs.get("apu_id")
+        apu = get_object_or_404(APU, id=apu_id)
+        mo = serializer.save(apu=apu)
+        mo.apu.recalcular_totales()
+
+
+class APUManoObraDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = APUManoObra.objects.all()
+    serializer_class = APUManoObraSerializer
+
+    def perform_update(self, serializer):
+        mo = serializer.save()
+        mo.apu.recalcular_totales()
+
+    def perform_destroy(self, instance):
+        apu = instance.apu
+        super().perform_destroy(instance)
+        apu.recalcular_totales()
+
+
+# ============================================================
+# 🚚 LOGÍSTICA
+# ============================================================
+
+
+class APULogisticaListCreateView(generics.ListCreateAPIView):
+    serializer_class = APULogisticaSerializer
+
+    def get_queryset(self):
+        apu_id = self.kwargs.get("apu_id")
+        return APULogistica.objects.filter(apu_id=apu_id)
+
+    def perform_create(self, serializer):
+        apu_id = self.kwargs.get("apu_id")
+        apu = get_object_or_404(APU, id=apu_id)
+        l = serializer.save(apu=apu)
+        l.apu.recalcular_totales()
+
+
+class APULogisticaDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = APULogistica.objects.all()
+    serializer_class = APULogisticaSerializer
+
+    def perform_update(self, serializer):
+        l = serializer.save()
+        l.apu.recalcular_totales()
+
+    def perform_destroy(self, instance):
+        apu = instance.apu
+        super().perform_destroy(instance)
+        apu.recalcular_totales()

@@ -11,6 +11,7 @@ router.register(r'stock', StockViewSet)
 router.register(r'consumibles', ConsumibleViewSet)
 router.register(r'proveedores', ProveedorViewSet)
 router.register(r'movimientos', MovimientoInventarioViewSet)
+router.register(r"taza", TazaViewSet, basename="taza")
 
 urlpatterns = [
     path('', include(router.urls)),

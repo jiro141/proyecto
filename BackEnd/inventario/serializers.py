@@ -97,3 +97,10 @@ class MovimientoInventarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovimientoInventario
         fields = "__all__"
+
+
+
+class TazaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Taza_pesos_dolares
+        fields = "__all__"

@@ -1,15 +1,103 @@
-# reportes/urls.py
 from django.urls import path
 from .views import (
-    ClienteListCreateView, ClienteDetailView,
-    ReporteListCreateView, ReporteDetailView,
-    ReporteConfigView
+    # Clientes
+    ClienteListCreateView,
+    ClienteDetailView,
+    # Reportes
+    ReporteListCreateView,
+    ReporteDetailView,
+    ReporteConfigView,
+    # APUs
+    APUListCreateView,
+    APUDetailView,
+    # Materiales
+    APUMaterialListCreateView,
+    APUMaterialDetailView,
+    # Herramientas
+    APUHerramientaListCreateView,
+    APUHerramientaDetailView,
+    # Mano de obra
+    APUManoObraListCreateView,
+    APUManoObraDetailView,
+    # Logística
+    APULogisticaListCreateView,
+    APULogisticaDetailView,
 )
 
 urlpatterns = [
+    # ===============================
+    # 🧍 CLIENTES
+    # ===============================
     path("clientes/", ClienteListCreateView.as_view(), name="cliente-list"),
     path("clientes/<int:pk>/", ClienteDetailView.as_view(), name="cliente-detail"),
-    path("reporte/", ReporteListCreateView.as_view(), name="reporte-list"),
-    path("reporte/<int:pk>/", ReporteDetailView.as_view(), name="reporte-detail"),
-    path("reporte/config/", ReporteConfigView.as_view(), name="reporte-config"),
+    # ===============================
+    # 📊 REPORTES (Presupuestos Globales)
+    # ===============================
+    path("reportes/", ReporteListCreateView.as_view(), name="reporte-list"),
+    path("reportes/<int:pk>/", ReporteDetailView.as_view(), name="reporte-detail"),
+    # ===============================
+    # ⚙️ CONFIGURACIÓN GLOBAL
+    # ===============================
+    path("reportes/config/", ReporteConfigView.as_view(), name="reporte-config"),
+    # ===============================
+    # 🧮 APUs (Análisis de Precios Unitarios)
+    # ===============================
+    path(
+        "reportes/<int:reporte_id>/apus/",
+        APUListCreateView.as_view(),
+        name="apu-list",
+    ),
+    path("apus/<int:pk>/", APUDetailView.as_view(), name="apu-detail"),
+    # ===============================
+    # 🧱 MATERIALES
+    # ===============================
+    path(
+        "apus/<int:apu_id>/materiales/",
+        APUMaterialListCreateView.as_view(),
+        name="apu-material-list",
+    ),
+    path(
+        "materiales/<int:pk>/",
+        APUMaterialDetailView.as_view(),
+        name="apu-material-detail",
+    ),
+    # ===============================
+    # 🛠️ HERRAMIENTAS
+    # ===============================
+    path(
+        "apus/<int:apu_id>/herramientas/",
+        APUHerramientaListCreateView.as_view(),
+        name="apu-herramienta-list",
+    ),
+    path(
+        "herramientas/<int:pk>/",
+        APUHerramientaDetailView.as_view(),
+        name="apu-herramienta-detail",
+    ),
+    # ===============================
+    # 👷 MANO DE OBRA
+    # ===============================
+    path(
+        "apus/<int:apu_id>/mano-obra/",
+        APUManoObraListCreateView.as_view(),
+        name="apu-mano-obra-list",
+    ),
+    path(
+        "mano-obra/<int:pk>/",
+        APUManoObraDetailView.as_view(),
+        name="apu-mano-obra-detail",
+    ),
+    # ===============================
+    # 🚚 LOGÍSTICA
+    # ===============================
+    path(
+        "apus/<int:apu_id>/logistica/",
+        APULogisticaListCreateView.as_view(),
+        name="apu-logistica-list",
+    ),
+    path(
+        "logistica/<int:pk>/",
+        APULogisticaDetailView.as_view(),
+        name="apu-logistica-detail",
+    ),
 ]
