@@ -141,26 +141,25 @@ export default function useExcelGenerator() {
             XLSX.utils.sheet_add_aoa(
                 ws,
                 [
-                    ["TOTAL MATERIALES", { f: `G${totalMatRow-1}` }],
-                    ["TOTAL HERRAMIENTAS", { f: `G${totalHerrRow-1}/B9` }],
-                    ["TOTAL MANO DE OBRA BASE", { f: `(G${totalMoRow-1}+G${totalLogRow-1})` }],
-                    ["BONO ALIMENTICIO ($15 × Días)", { f: `SUM(D${(totalMoRow-1) - mano_obra.length}:D${totalMoRow - 1})*15` }],
-                    ["PRESTACIONES SOCIALES (200%)", { f: `F${row + 2}*2` }],
-                    ["TOTAL MANO DE OBRA", { f: `F${row + 2}+F${row + 3}+F${row + 4}` }],
-                    ["COSTO POR UNIDAD", { f: `F${row + 5}/B9` }],
+                    ["TOTAL MATERIALES", { f: `IFERROR(G${totalMatRow - 1},0)` }],
+                    ["TOTAL HERRAMIENTAS", { f: `IFERROR(G${totalHerrRow - 1}/B9,0)` }],
+                    ["TOTAL MANO DE OBRA BASE", { f: `IFERROR(G${totalMoRow - 1}+G${totalLogRow - 1},0)` }],
+                    ["BONO ALIMENTICIO ($15 × Días)", { f: `IFERROR(SUM(D${(totalMoRow - 1) - mano_obra.length}:D${totalMoRow - 1})*15,0)` }],
+                    ["PRESTACIONES SOCIALES (200%)", { f: `IFERROR(F${row + 2}*2,0)` }],
+                    ["TOTAL MANO DE OBRA", { f: `IFERROR(F${row + 2}+F${row + 3}+F${row + 4},0)` }],
+                    ["COSTO POR UNIDAD", { f: `IFERROR(F${row + 5}/B9,0)` }],
                     [
                         "COSTO DIRECTO POR UNIDAD",
-                        {
-                            f: `F${row}+F${row + 1}+F${row + 6}`,
-                        },
+                        { f: `IFERROR(F${row}+F${row + 1}+F${row + 6},0)` },
                     ],
-                    ["15% ADMINISTRACIÓN Y GASTOS", { f: `F${row + 7}*0.15` }],
-                    ["SUBTOTAL", { f: `F${row + 7}+F${row + 8}` }],
-                    ["15% UTILIDAD", { f: `F${row + 9}*0.15` }],
-                    ["TOTAL UNITARIO", { f: `F${row + 9}+F${row + 10}` }],
+                    ["15% ADMINISTRACIÓN Y GASTOS", { f: `IFERROR(F${row + 7}*0.15,0)` }],
+                    ["SUBTOTAL", { f: `IFERROR(F${row + 7}+F${row + 8},0)` }],
+                    ["15% UTILIDAD", { f: `IFERROR(F${row + 9}*0.15,0)` }],
+                    ["TOTAL UNITARIO", { f: `IFERROR(F${row + 9}+F${row + 10},0)` }],
                 ],
                 { origin: `E${resumenStart}` }
             );
+
 
             // === APLICAR ESTILOS ===
             for (let i = 0; i < 14; i++) {
