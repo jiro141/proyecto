@@ -2,7 +2,7 @@
 import axios from "axios";
 
 // Base URL de tu backend Django
-const BASE_URL = "http://localhost:8000/api";
+const BASE_URL = "https://hermabe.pythonanywhere.com/api";
 
 // Crear instancia de Axios
 const AuthApi = axios.create({
