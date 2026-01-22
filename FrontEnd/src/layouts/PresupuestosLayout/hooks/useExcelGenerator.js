@@ -53,9 +53,12 @@ export default function useExcelGenerator() {
 
             // === FUNCIÓN DE TABLAS ===
             const agregarTabla = (titulo, headers, data) => {
+                // título
                 XLSX.utils.sheet_add_aoa(ws, [[titulo]], { origin: `A${currentRow}` });
                 ws[`A${currentRow}`].s = excelStyles.seccionTitulo;
                 currentRow++;
+
+                // encabezados
                 XLSX.utils.sheet_add_aoa(ws, [headers], { origin: `A${currentRow}` });
                 ["A", "B", "C", "D", "E", "F", "G"].forEach(
                     (col) => (ws[`${col}${currentRow}`].s = excelStyles.tablaHeader)
@@ -63,44 +66,63 @@ export default function useExcelGenerator() {
                 currentRow++;
 
                 const startRow = currentRow;
-                data.forEach((item) => {
+
+                // si no hay datos, crear una fila vacía con ceros
+                if (!data || data.length === 0) {
                     XLSX.utils.sheet_add_aoa(
                         ws,
-                        [
-                            [
+                        [["", "", "", 0, 0, 0, 0]],
+                        { origin: `A${currentRow}` }
+                    );
+                    ["A", "B", "C", "D", "E", "F", "G"].forEach(
+                        (col) => (ws[`${col}${currentRow}`].s = excelStyles.tablaCelda)
+                    );
+                    currentRow++;
+                } else {
+                    // agregar cada fila con sus fórmulas
+                    data.forEach((item) => {
+                        XLSX.utils.sheet_add_aoa(
+                            ws,
+                            [[
                                 item.codigo || "",
                                 item.descripcion || "",
                                 item.unidad || "",
                                 item.cantidad || 0,
                                 item.desp || 0,
                                 item.costo || item.precio_unitario || 0,
-                                null, // columna de TOTAL
-                            ],
-                        ],
-                        { origin: `A${currentRow}` }
-                    );
+                                null, // columna TOTAL
+                            ]],
+                            { origin: `A${currentRow}` }
+                        );
 
-                    // fórmula correcta: cantidad * (1 + desp/100) * costo
-                    ws[`G${currentRow}`] = { f: `=D${currentRow}*(1+E${currentRow}/100)*F${currentRow}` };
+                        // fórmula del total de fila
+                        ws[`G${currentRow}`] = { f: `=D${currentRow}*(1+E${currentRow}/100)*F${currentRow}` };
 
-                    ["A", "B", "C", "D", "E", "F", "G"].forEach(
-                        (col) => (ws[`${col}${currentRow}`].s = excelStyles.tablaCelda)
-                    );
-                    currentRow++;
-                });
+                        ["A", "B", "C", "D", "E", "F", "G"].forEach(
+                            (col) => (ws[`${col}${currentRow}`].s = excelStyles.tablaCelda)
+                        );
+                        currentRow++;
+                    });
+                }
 
+                // === Fila TOTAL siempre presente ===
                 XLSX.utils.sheet_add_aoa(ws, [["", "", "", "", "", "TOTAL", null]], {
                     origin: `A${currentRow}`,
                 });
+
+                const totalFormula = `IFERROR(SUM(G${startRow}:G${currentRow - 1}),0)`;
+
                 ws[`G${currentRow}`] = titulo.toUpperCase().includes("COSTO DE HERRAMIENTAS")
-                    ? { f: `=IF(B9<>0, SUM(G${startRow}:G${currentRow - 1}), SUM(G${startRow}:G${currentRow - 1}))` }
-                    : { f: `=SUM(G${startRow}:G${currentRow - 1})` };
+                    ? { f: `=IF(B9<>0, ${totalFormula}, 0)` }
+                    : { f: `=${totalFormula}` };
 
                 ws[`E${currentRow}`].s = excelStyles.resumenLabel;
                 ws[`F${currentRow}`].s = excelStyles.resumenValue;
+
                 currentRow += 2;
 
-                return currentRow - 1; // fila del total
+                // devuelve la fila del TOTAL (siempre válida)
+                return currentRow - 1;
             };
 
             // === SECCIONES ===
