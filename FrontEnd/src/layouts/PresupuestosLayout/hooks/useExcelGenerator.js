@@ -137,28 +137,26 @@ export default function useExcelGenerator() {
             // === RESUMEN FINAL ===
             const resumenStart = currentRow;
             const row = resumenStart;
-
+            const safe = v => (v ? v : 0);
             XLSX.utils.sheet_add_aoa(
                 ws,
                 [
-                    ["TOTAL MATERIALES", { f: `IFERROR(G${totalMatRow - 1},0)` }],
-                    ["TOTAL HERRAMIENTAS", { f: `IFERROR(G${totalHerrRow - 1}/B9,0)` }],
-                    ["TOTAL MANO DE OBRA BASE", { f: `IFERROR(G${totalMoRow - 1}+G${totalLogRow - 1},0)` }],
-                    ["BONO ALIMENTICIO ($15 × Días)", { f: `IFERROR(SUM(D${(totalMoRow - 1) - mano_obra.length}:D${totalMoRow - 1})*15,0)` }],
-                    ["PRESTACIONES SOCIALES (200%)", { f: `IFERROR(F${row + 2}*2,0)` }],
-                    ["TOTAL MANO DE OBRA", { f: `IFERROR(F${row + 2}+F${row + 3}+F${row + 4},0)` }],
-                    ["COSTO POR UNIDAD", { f: `IFERROR(F${row + 5}/B9,0)` }],
-                    [
-                        "COSTO DIRECTO POR UNIDAD",
-                        { f: `IFERROR(F${row}+F${row + 1}+F${row + 6},0)` },
-                    ],
-                    ["15% ADMINISTRACIÓN Y GASTOS", { f: `IFERROR(F${row + 7}*0.15,0)` }],
-                    ["SUBTOTAL", { f: `IFERROR(F${row + 7}+F${row + 8},0)` }],
-                    ["15% UTILIDAD", { f: `IFERROR(F${row + 9}*0.15,0)` }],
-                    ["TOTAL UNITARIO", { f: `IFERROR(F${row + 9}+F${row + 10},0)` }],
+                    ["TOTAL MATERIALES", { f: `IFERROR(G${safe(totalMatRow) - 1},0)` }],
+                    ["TOTAL HERRAMIENTAS", { f: `IFERROR(G${safe(totalHerrRow) - 1}/B9,0)` }],
+                    ["TOTAL MANO DE OBRA BASE", { f: `IFERROR(G${safe(totalMoRow) - 1}+G${safe(totalLogRow) - 1},0)` }],
+                    ["BONO ALIMENTICIO ($15 × Días)", { f: `IFERROR(SUM(D${safe((totalMoRow - 1) - mano_obra.length)}:D${safe(totalMoRow - 1)})*15,0)` }],
+                    ["PRESTACIONES SOCIALES (200%)", { f: `IFERROR(F${safe(row) + 2}*2,0)` }],
+                    ["TOTAL MANO DE OBRA", { f: `IFERROR(F${safe(row) + 2}+F${safe(row) + 3}+F${safe(row) + 4},0)` }],
+                    ["COSTO POR UNIDAD", { f: `IFERROR(F${safe(row) + 5}/B9,0)` }],
+                    ["COSTO DIRECTO POR UNIDAD", { f: `IFERROR(F${safe(row)}+F${safe(row) + 1}+F${safe(row) + 6},0)` }],
+                    ["15% ADMINISTRACIÓN Y GASTOS", { f: `IFERROR(F${safe(row) + 7}*0.15,0)` }],
+                    ["SUBTOTAL", { f: `IFERROR(F${safe(row) + 7}+F${safe(row) + 8},0)` }],
+                    ["15% UTILIDAD", { f: `IFERROR(F${safe(row) + 9}*0.15,0)` }],
+                    ["TOTAL UNITARIO", { f: `IFERROR(F${safe(row) + 9}+F${safe(row) + 10},0)` }],
                 ],
                 { origin: `E${resumenStart}` }
             );
+
 
 
             // === APLICAR ESTILOS ===
