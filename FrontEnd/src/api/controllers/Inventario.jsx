@@ -17,6 +17,11 @@ export const getStock = async (search = "") => {
   const response = await AuthApi.get(`/inventario/stock/?search=${search}`);
   return response.data;
 };
+export const getTaza = async () => {
+  const response = await AuthApi.get(`/inventario/taza/`);
+
+  return response.data;
+};
 
 /**
  * Obtener todos los elementos de Consumibles

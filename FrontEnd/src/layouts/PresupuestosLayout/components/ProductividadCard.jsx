@@ -2,16 +2,18 @@ import { useState } from "react";
 import { FaBolt } from "react-icons/fa";
 
 export default function ProductividadCard({
-  defaultValue = 50,
+  defaultValue = 75,
   onChange,
-  label = "Porcentaje de Productividad",
+  label = "Rendimiento",
 }) {
   const [valor, setValor] = useState(defaultValue);
 
   const handleChange = (e) => {
-    const nuevoValor = Number(e.target.value);
-    setValor(nuevoValor);
-    if (onChange) onChange(nuevoValor);
+    const nuevoValor = parseFloat(e.target.value);
+    if (!isNaN(nuevoValor)) {
+      setValor(nuevoValor);
+      if (onChange) onChange(nuevoValor);
+    }
   };
 
   return (
@@ -38,47 +40,20 @@ export default function ProductividadCard({
         <div>
           <p className="text-sm text-gray-500 mb-2">{label}</p>
 
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-lg font-semibold text-gray-800">
-              {valor}%
-            </span>
-            <span
-              className={`text-sm font-medium ${
-                valor >= 80
-                  ? "text-green-600"
-                  : valor >= 50
-                  ? "text-yellow-600"
-                  : "text-red-600"
-              }`}
-            >
-              {valor >= 80 ? "Excelente" : valor >= 50 ? "Aceptable" : "Bajo"}
-            </span>
+          {/* Input ancho completo */}
+          <div className="relative flex items-center w-full">
+            <input
+              type="number"
+              step="any"
+              min="0"
+              value={valor}
+              onChange={handleChange}
+              className="w-full pr-6 py-2 border border-gray-300 rounded-lg text-center text-lg font-semibold text-gray-800 shadow-sm focus:ring-2 focus:ring-[#0B2C4D] focus:border-[#0B2C4D] focus:outline-none transition-all duration-150"
+            />
+            {/* <span className="absolute right-3 text-gray-500 text-sm font-medium">%</span> */}
           </div>
-
-          {/* Slider */}
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={valor}
-            onChange={handleChange}
-            className="w-full accent-[#0B2C4D] cursor-pointer"
-          />
         </div>
 
-        {/* Indicador visual de productividad */}
-        <div className="w-full h-3 bg-gray-200 rounded-full mt-3 overflow-hidden">
-          <div
-            className={`h-full transition-all duration-300 ${
-              valor >= 80
-                ? "bg-green-500"
-                : valor >= 50
-                ? "bg-yellow-400"
-                : "bg-red-500"
-            }`}
-            style={{ width: `${valor}%` }}
-          />
-        </div>
       </div>
     </div>
   );

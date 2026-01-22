@@ -21,6 +21,9 @@ class DepartamentoViewSet(viewsets.ModelViewSet):
     queryset = Departamento.objects.all().order_by("id")
     serializer_class = DepartamentoSerializer
     permission_classes = [IsAuthenticated]
+    # 🔍 Habilitar búsqueda dinámica en el endpoint
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["name"]
 
 
 class EPPViewSet(viewsets.ModelViewSet):

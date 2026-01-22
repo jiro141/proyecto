@@ -13,7 +13,7 @@ export default function useProveedores(search = "") {
     try {
       setLoading(true);
       const result = await getProveedoresSearch(search);
-      setProveedores(result);
+      setProveedores(result.results);
     } catch (err) {
       setError(err);
     } finally {

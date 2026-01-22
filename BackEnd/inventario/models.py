@@ -122,7 +122,7 @@ class Stock(models.Model):
         envio = self.envio or Decimal("0.00")
 
         if self.costo_dolares:
-            self.costo = self.costo_dolares
+            self.costo = self.costo_dolares + envio
         else:
             self.costo = (costo_pesos + envio) / tasa_valor
 

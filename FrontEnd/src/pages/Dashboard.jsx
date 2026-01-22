@@ -20,7 +20,7 @@ import img4 from "../assets/img/IMAGENES/4.jpg";
 import img5 from "../assets/img/IMAGENES/5.jpg";
 import img6 from "../assets/img/IMAGENES/6.jpg";
 import img7 from "../assets/img/IMAGENES/7.jpg";
-import img8 from "../assets/img/IMAGENES/8.jpg"
+import img8 from "../assets/img/IMAGENES/8.jpg";
 
 const Dashboard = () => {
   const [dolares, setDolares] = useState([]);
@@ -65,14 +65,13 @@ const Dashboard = () => {
           getStock(),
           getConsumibles(),
         ]);
-
-        const eppMap = Object.fromEntries(epps.map((e) => [e.id, e.name]));
-        const stockMap = Object.fromEntries(stocks.map((s) => [s.id, s.name]));
+        const eppMap = Object.fromEntries(epps.results.map((e) => [e?.id, e.name]));
+        const stockMap = Object.fromEntries(stocks.results.map((s) => [s?.id, s.name]));
         const consMap = Object.fromEntries(
-          consumibles.map((c) => [c.id, c.name])
+          consumibles.results.map((c) => [c.id, c.name])
         );
 
-        const enriched = movs.map((mov) => {
+        const enriched = movs.results.map((mov) => {
           let nombre = "Desconocido";
           if (mov.epp) nombre = eppMap[mov.epp] || "EPP sin nombre";
           if (mov.stock) nombre = stockMap[mov.stock] || "Stock sin nombre";
@@ -98,7 +97,10 @@ const Dashboard = () => {
     const fetchProveedores = async () => {
       try {
         const data = await getProveedores();
-        setProveedores(data);
+        setProveedores(data.results);
+   
+        
+        
       } catch (error) {
         console.error("Error cargando proveedores:", error);
       }
@@ -112,7 +114,7 @@ const Dashboard = () => {
       {/* Columna izquierda: galería */}
       <div className="flex-shrink-0">
         <GallerySlider
-          images={[img1, img2, img3, img4, img5, img6, img7,img8]}
+          images={[img1, img2, img3, img4, img5, img6, img7, img8]}
           interval={4000}
         />
       </div>

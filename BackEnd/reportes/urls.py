@@ -22,6 +22,9 @@ from .views import (
     # Logística
     APULogisticaListCreateView,
     APULogisticaDetailView,
+    # Notas de reporte 
+    NotaReporteListCreateView,
+    NotaReporteDetailView,
 )
 
 urlpatterns = [
@@ -99,5 +102,18 @@ urlpatterns = [
         "logistica/<int:pk>/",
         APULogisticaDetailView.as_view(),
         name="apu-logistica-detail",
+    ),
+    # ===============================
+    # 📝 NOTAS DE REPORTE
+    # ===============================
+    path(
+        "reportes/<int:reporte_id>/notas/",
+        NotaReporteListCreateView.as_view(),
+        name="nota-reporte-list",
+    ),
+    path(
+        "notas/<int:pk>/",
+        NotaReporteDetailView.as_view(),
+        name="nota-reporte-detail",
     ),
 ]

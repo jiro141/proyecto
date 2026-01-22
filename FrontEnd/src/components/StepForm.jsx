@@ -37,23 +37,32 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
     onSubmit(formData);
   };
 
+  // 🔹 Reordenar: primero "descripcion"
+  const sortedFields = [
+    ...step.fields.filter((f) => f.name === "descripcion"),
+    ...step.fields.filter((f) => f.name !== "descripcion"),
+  ];
+
+  // 🔹 Determinar columnas dinámicamente
+  const columnCount = step.columns ?? (step.fields.length > 3 ? 2 : 1);
+
   return (
     <form onSubmit={handleFinalSubmit} className="space-y-6">
-      <div
-        className={`grid gap-4 ${
-          step.fields.length > 3 ? "grid-cols-2" : "grid-cols-1"
-        }`}
-      >
-        {step.fields.map((field) => {
+      <div className={`grid gap-4 grid-cols-${columnCount}`}>
+        {sortedFields.map((field) => {
           const value = formData[field.name] ?? "";
+          // 🔸 Si es "descripcion" → ocupar todas las columnas
+          const colSpanClass =
+            field.name === "descripcion"
+              ? `col-span-1`
+              : "col-span-1";
 
           return (
-            <div key={field.name}>
+            <div key={field.name} className={colSpanClass}>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {field.label}
               </label>
 
-              {/* SWITCH VISUAL MODERNO */}
               {field.type === "switch" ? (
                 <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow duration-200">
                   <span
@@ -61,7 +70,7 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
                       value ? "text-green-600" : "text-gray-500"
                     }`}
                   >
-                    {value ? "Aprobado " : "Espera "}
+                    {value ? "Aprobado" : "En espera"}
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer select-none">
                     <input
@@ -108,6 +117,7 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                   required={field.required}
+                  disabled={field.disabled}
                 />
               )}
             </div>

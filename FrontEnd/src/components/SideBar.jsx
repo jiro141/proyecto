@@ -13,13 +13,16 @@ import {
   FaHammer,
   FaFileInvoiceDollar,
   FaPlusCircle,
+  FaUsers 
 } from "react-icons/fa";
+import { FaMoneyBillWave } from "react-icons/fa6";
 import { FaHelmetSafety } from "react-icons/fa6";
 import { GrDocumentPdf } from "react-icons/gr";
 
 const SideBar = () => {
   const [showInventory, setShowInventory] = useState(false);
   const [showReports, setShowReports] = useState(false);
+  const [showClients, setShowClients] = useState(false);
 
   return (
     <aside className="sidebar">
@@ -72,11 +75,31 @@ const SideBar = () => {
           <span>Proveedores</span>
         </NavLink>
 
-        {/* --- Clientes --- */}
-        <NavLink to="/clientes" className="sidebar-link">
-          <FaUserFriends />
-          <span>Clientes</span>
-        </NavLink>
+                {/* --- Clientes --- */}
+        <div
+          className="sidebar-link submenu-toggle"
+          onClick={() => setShowClients(!showClients)}
+          style={{ cursor: "pointer" }}
+        >
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <FaUsers />
+            <span>Clientes</span>
+          </div>
+          {showClients ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
+        </div>
+
+        {showClients && (
+          <div className="submenu">
+            <NavLink to="/clientes/Lista" className="sidebar-sublink">
+              <FaUserFriends />
+              <span>Ver Clientes</span>
+            </NavLink>
+            <NavLink to="/clientes/Cuentas" className="sidebar-sublink">
+              <FaMoneyBillWave />
+              <span>Cuentas por cobrar</span>
+            </NavLink>
+          </div>
+        )}
 
         {/* --- Presupuestos (Informes) --- */}
         <div

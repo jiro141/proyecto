@@ -8,6 +8,7 @@ from .models import (
     APUHerramienta,
     APUManoObra,
     APULogistica,
+    NotaReporte
 )
 from inventario.models import Stock, Consumible
 from inventario.serializers import StockSerializer, ConsumibleSerializer
@@ -165,6 +166,8 @@ class APUSerializer(serializers.ModelSerializer):
             "utilidad_15",
             "total_apu",
             "fecha_creacion",
+            'presupuesto_base',
+            'presupuesto_con_desp',
             # Detalle
             "materiales",
             "herramientas",
@@ -248,3 +251,17 @@ class ReporteConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReporteConfig
         fields = "__all__"
+
+
+class NotaReporteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotaReporte
+        fields = [
+            "id",
+            "reporte",       # id del reporte
+            "titulo",
+            "descripcion",
+            "creado_en",
+            "actualizado_en",
+        ]
+        read_only_fields = ["creado_en", "actualizado_en"]

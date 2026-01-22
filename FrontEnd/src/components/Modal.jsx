@@ -25,7 +25,7 @@ const Modal = ({ isOpen, onClose, title, children, width, height }) => {
         </div>
 
         {/* Contenido */}
-        <div className="p-6 overflow-y-auto max-h-[80vh]">{children}</div>
+        <div className="p-6 overflow-y-auto max-h-[90vh]">{children}</div>
       </div>
     </div>
   );

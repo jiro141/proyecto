@@ -13,40 +13,45 @@ import PresupuestosLayout from "../layouts/PresupuestosLayout/PresupuestosLayout
 import ConsumiblesLayout from "../layouts/InventoryLayout/ConsumiblesLayout";
 import CrearPresupuestoLayout from "../layouts/PresupuestosLayout/CrearPresupuestoLayout";
 import ProveedoresHome from "../pages/ProveedoresHome";
-import ClientesHome from "../pages/ClientesHome";
+import ClientesHome from "../layouts/ClientsLayout/ClientesHome";
+import ClientesCuentas from "../layouts/ClientsLayout/ClientesCuentas";
 
 const AppRouter = () => {
   return (
-    <Router>
-      <Routes>
-        {/* Ruta pública */}
-        <Route path="/login" element={<SignIn />} />
 
-        {/* Rutas protegidas */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<DashboardLayout />}>
-            <Route path="dashboard" element={<Dashboard />} />
+    <Routes>
+      {/* Ruta pública */}
+      <Route path="/login" element={<SignIn />} />
 
-            <Route path="inventario">
-              <Route index />
-              <Route path="epp" element={<EppLayout />} />
-              <Route path="stock" element={<StockLayout />} />
-              <Route path="consumibles" element={<ConsumiblesLayout />} />
-            </Route>
-            <Route path="Proveedores" element={<ProveedoresHome />} />
-            <Route path="Clientes" element={<ClientesHome />} />
-            <Route path="Informes">
-              <Route index />
-              <Route path="Lista" element={<PresupuestosLayout />} />
-              <Route path="Crear" element={<CrearPresupuestoLayout />} />
-            </Route>
+      {/* Rutas protegidas */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/" element={<DashboardLayout />}>
+          <Route path="dashboard" element={<Dashboard />} />
+
+          <Route path="inventario">
+            <Route index />
+            <Route path="epp" element={<EppLayout />} />
+            <Route path="stock" element={<StockLayout />} />
+            <Route path="consumibles" element={<ConsumiblesLayout />} />
+          </Route>
+          <Route path="Proveedores" element={<ProveedoresHome />} />
+          <Route path="Clientes">
+            <Route index />
+            <Route path="Lista" element={<ClientesHome />} />
+            <Route path="Cuentas" element={<ClientesCuentas />} />
+          </Route>
+          <Route path="Informes">
+            <Route index />
+            <Route path="Lista" element={<PresupuestosLayout />} />
+            <Route path="Crear" element={<CrearPresupuestoLayout />} />
           </Route>
         </Route>
+      </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<SignIn />} />
-      </Routes>
-    </Router>
+      {/* Fallback */}
+      <Route path="*" element={<SignIn />} />
+    </Routes>
+
   );
 };
 

@@ -9,17 +9,25 @@ import { createItem } from "../../api/controllers/Inventario";
 import { updateItem } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
 const columns = [
-  { key: "name", label: "Nombre" },
-  { key: "modelo", label: "Modelo" },
+  { key: "codigo", label: "Codigo" },
+  { key: "descripcion", label: "Descripcion" },
+  { key: "pza", label: "Pieza" },
+  { key: "costo", label: "Costo" },
+  { key: "utilidad_15", label: "%15 de Utilidad" },
+  { key: "mts_ml_m2", label: "MTS ML M2" },
   { key: "departamento", label: "Departamento" },
-  { key: "proveedor", label: "Proveedor" },
-  { key: "unidades", label: "Unidades" },
-  { key: "monto", label: "Monto" },
 ];
 
 export default function StockLayout() {
   const [search, setSearch] = useState("");
   const { data, loading, error, refetch } = useInventario("stock", search);
+  const {
+    data: taza,
+    loading: tazaLoading,
+    error: tazaError,
+    refetch: tazaRefetch,
+  } = useInventario("taza");
+
   const { departamentos, refetch: refetchDepartamentos } = useDepartamentos();
   const { proveedores, refetch: refetchProveedores } = useProveedores();
   const [editItem, setEditItem] = useState(null);
@@ -69,9 +77,10 @@ export default function StockLayout() {
   };
   const stockFormStep = [
     {
+      columns: 3,
       fields: [
-        { name: "name", label: "Nombre", required: true },
-        { name: "modelo", label: "Modelo", required: true },
+        { name: "codigo", label: "Codigo", required: true },
+        { name: "descripcion", label: "Descripcion", required: true },
         {
           name: "proveedor",
           label: "Proveedor",
@@ -86,8 +95,27 @@ export default function StockLayout() {
           required: true,
           options: departamentos.map((d) => ({ label: d.name, value: d.id })),
         },
-        { name: "unidades", label: "Unidades", type: "number", required: true },
-        { name: "monto", label: "Monto", type: "number", required: true },
+        { name: "pza", label: "Pieza", required: true },
+        { name: "costo_dolares", label: "Costo en dolares" },
+        { name: "costo_pesos", label: "Costo en pesos" },
+        { name: "envio", label: "Envio o Flete" },
+        {
+          name: "factor_conversion",
+          label: "Relación MTS ML M2",
+        },
+        {
+          name: "costo",
+          label: "Costo",
+          type: "number",
+          disabled: true,
+        },
+        {
+          name: "utilidad_15",
+          label: "%15 de Utilidad",
+          type: "number",
+          disabled: true,
+        },
+        { name: "mts_ml_m2", label: "MTS ML M2", disabled: true },
       ],
       actions: [
         {
@@ -129,6 +157,10 @@ export default function StockLayout() {
         loading={loading}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
+        taza={taza}
+        tazaLoading={tazaLoading}
+        tazaError={tazaError}
+        tazaRefetch={tazaRefetch}
       />
 
       {/* Modal para agregar stock */}
@@ -140,7 +172,7 @@ export default function StockLayout() {
             ? "Editar Ferretería industrial"
             : "Agregar Ferretería industrial"
         }
-        width="max-w-2xl"
+        width="max-w-5xl"
       >
         <StepForm
           steps={stockFormStep}

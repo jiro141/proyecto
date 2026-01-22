@@ -3,6 +3,7 @@ import {
   getEpp,
   getStock,
   getConsumibles,
+  getTaza,
 } from "../api/controllers/Inventario";
 
 // Mapa de controladores según el tipo
@@ -10,6 +11,7 @@ const controllerMap = {
   epp: getEpp,
   stock: getStock,
   consumibles: getConsumibles,
+  taza: getTaza,
 };
 
 export default function useInventario(tipo, search = "") {
@@ -31,7 +33,10 @@ export default function useInventario(tipo, search = "") {
 
       // 🚀 Soporte para búsqueda (si el controlador lo acepta)
       const result = await controller(search);
-      setData(result);
+
+
+
+      setData(result.results ? result.results : result);
     } catch (err) {
       setError(err.message || "Error al obtener datos");
     } finally {
@@ -39,12 +44,12 @@ export default function useInventario(tipo, search = "") {
     }
   }, [tipo, search]);
 
+
   /** ======================
    * Ejecutar al montar o cuando cambia tipo o search
    * ====================== */
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
   return { data, loading, error, refetch: fetchData };
 }

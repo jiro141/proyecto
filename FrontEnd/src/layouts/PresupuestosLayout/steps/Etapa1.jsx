@@ -1,44 +1,34 @@
-import React, { useEffect } from "react";
+import { usePresupuesto } from "../../../context/PresupuestoContext";
+import { toast } from "react-toastify";
 import ClienteCard from "../components/ClienteCard";
 import DescripcionCard from "../components/DescripcionCard";
 import CalendarioCard from "../components/CalendarioCard";
 import ControlCard from "../components/ControlCard";
-import ProductividadCard from "../components/ProductividadCard";
-import PresupuestoCard from "../components/PresupuestoCard";
+import NotaCard from "../components/NotaCard";
 
-/**
- * 🧩 Etapa1 – Datos Generales del Presupuesto
- * Conectada con el formData global del layout principal.
- */
-export default function Etapa1({ formData, setFormData }) {
-  // ================================
-  // HANDLERS DE CAMPOS PRINCIPALES
-  // ================================
+export default function Etapa1() {
+  const { formData, setFormData } = usePresupuesto();
+
   const handleClienteSelect = (cliente) => {
-    setFormData((prev) => ({
-      ...prev,
-      cliente,
-    }));
+    setFormData((prev) => ({ ...prev, cliente }));
+    toast.info(`🧾 Cliente seleccionado: ${cliente?.nombre}`, {
+      position: "top-right",
+      autoClose: 2000,
+    });
   };
 
   const handleDescripcionChange = (descripcion) => {
-    setFormData((prev) => ({
-      ...prev,
-      descripcion,
-    }));
+    setFormData((prev) => ({ ...prev, descripcion }));
   };
 
   const handleFechaChange = (fecha) => {
-    setFormData((prev) => ({
-      ...prev,
-      fechaCulminacion: fecha,
-    }));
+    setFormData((prev) => ({ ...prev, fechaCulminacion: fecha }));
   };
 
   const handleProductividadChange = (valor) => {
     setFormData((prev) => ({
       ...prev,
-      porcentaje_productividad: valor / 100, // el card devuelve 0–100, guardamos 0–1
+      porcentaje_productividad: valor / 100,
     }));
   };
 
@@ -49,78 +39,33 @@ export default function Etapa1({ formData, setFormData }) {
     }));
   };
 
-  // ================================
-  // AUTO-CÁLCULO DEL PRESUPUESTO TOTAL
-  // ================================
-  useEffect(() => {
-    const calcularCostoMateriales = (lista = []) =>
-      lista.reduce((acc, item) => {
-        const precio = Number(item.precio || item.costo_unitario || 0);
-        const cantidad = Number(item.cantidad || 0);
-        return acc + precio * cantidad;
-      }, 0);
-
-    const totalMateriales =
-      calcularCostoMateriales(formData.epps) +
-      calcularCostoMateriales(formData.stock_almacen) +
-      calcularCostoMateriales(formData.consumibles);
-
-    const total = totalMateriales + Number(formData.presupuesto_base || 0);
-
-    setFormData((prev) => ({
-      ...prev,
-      presupuesto_estimado: Number(total.toFixed(2)),
-    }));
-  }, [
-    formData.epps,
-    formData.stock_almacen,
-    formData.consumibles,
-    formData.presupuesto_base,
-    setFormData,
-  ]);
-
-  // ================================
-  // RENDER UI
-  // ================================
   return (
     <div className="grid grid-cols-3 grid-rows-2 gap-8">
-      {/* === CLIENTE + PRODUCTIVIDAD === */}
       <div className="col-span-2 grid grid-cols-2 gap-6">
         <ClienteCard
           onClienteSelect={handleClienteSelect}
           defaultCliente={formData.cliente}
         />
-        <ProductividadCard
-          defaultValue={(formData.porcentaje_productividad || 0.75) * 100}
-          onChange={handleProductividadChange}
-        />
-      </div>
-
-      {/* === DESCRIPCIÓN + PRESUPUESTO === */}
-      <div className="col-span-2 grid grid-cols-2 gap-6">
         <DescripcionCard
           descripcion={formData.descripcion}
           onDescripcionChange={handleDescripcionChange}
         />
-        <PresupuestoCard
-          defaultValue={formData.presupuesto_base || 0}
-          calculado={formData.presupuesto_estimado || 0}
-          onChange={handlePresupuestoChange}
-        />
       </div>
 
-      {/* === CONTROL CARD (N° Control / Config) === */}
-      <div className="col-start-3 row-start-1">
-        <ControlCard />
-      </div>
-
-      {/* === FECHA ESTIMADA === */}
-      <div className="col-start-3 row-start-2">
+      <div className="col-span-2 grid grid-cols-2 gap-6">
         <CalendarioCard
           fecha={formData.fechaCulminacion}
           onFechaChange={handleFechaChange}
         />
+        {/* <NotaCard /> */}
+
       </div>
+
+      <div className="col-start-3 row-start-1">
+        <ControlCard />
+      </div>
+
+      <div className="col-start-3 row-start-2" />
     </div>
   );
 }

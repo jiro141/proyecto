@@ -26,17 +26,40 @@ export default function CrearPresupuestoLayout() {
   const [numeroControl, setNumeroControl] = useState("");
   const [modalDescarga, setModalDescarga] = useState(false);
   const [resumen, setResumen] = useState(null);
+  const [guardarBorradorEtapa1, setGuardarBorradorEtapa1] = useState(null);
 
   const [formData, setFormData] = useState({
+    // 🧾 Datos generales del reporte
     cliente: null,
     descripcion: "",
     fechaCulminacion: new Date(),
-    stock_almacen: [],
-    consumibles: [],
-    epps: [],
+    n_presupuesto: null,
+
+    // 📊 Configuración base
     presupuesto_base: 0,
     presupuesto_estimado: 0,
-    porcentaje_productividad: 0.75,
+    porcentaje_productividad: 0.75, // 0–1
+
+    // 🧱 Lista de APUs (cada uno tiene sus propios datos)
+    apus: [
+      {
+        body: {
+          descripcion: "",
+          rendimiento: 0.75,
+          unidad: "PZA",
+          cantidad: 1,
+          depreciacion: 0,
+        },
+        materiales: {
+          stock_almacen: [], // [{ stock_id, cantidad, desperdicio }]
+          consumibles: [],   // [{ consumible_id, cantidad, desperdicio }]
+          epps: [],           // [{ stock_id, cantidad, desperdicio }]
+        },
+        mano_obra: [],        // [{ descripcion, unidad, cantidad, precio_unitario }]
+        herramientas: [],     // [{ descripcion, unidad, cantidad, precio_unitario }]
+        logistica: [],        // [{ descripcion, unidad, cantidad, precio_unitario }]
+      },
+    ],
   });
 
   // ================================
@@ -152,10 +175,9 @@ export default function CrearPresupuestoLayout() {
   if (loadingConfig) return <p className="p-6">Cargando configuración...</p>;
   const handleStockInsuficiente = (tipo, producto) => {
     toast.warning(
-      `${
-        tipo === "stock"
-          ? "Ferretería"
-          : tipo === "EPP"
+      `${tipo === "stock"
+        ? "Ferretería"
+        : tipo === "EPP"
           ? "E.P.P."
           : "Consumibles"
       }: stock insuficiente. Se añadió a la lista de proveedores.`,
@@ -168,7 +190,11 @@ export default function CrearPresupuestoLayout() {
   // ================================
   return (
     <div className="relative p-6">
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+      />
 
       {/* ✅ MODAL DESCARGA PDF */}
       <Modal
@@ -193,7 +219,8 @@ export default function CrearPresupuestoLayout() {
                     logoSrc={logo}
                   />
                 }
-                fileName={`Presupuesto_${formData?.cliente?.nombre || "cliente"}.pdf`}
+                fileName={`Presupuesto_${formData?.cliente?.nombre || "cliente"
+                  }.pdf`}
               >
                 {({ loading }) =>
                   loading ? (
@@ -216,23 +243,21 @@ export default function CrearPresupuestoLayout() {
       <div className="flex items-center justify-center gap-12 mb-4 -mt-6">
         {[
           { num: 1, label: "Datos Generales" },
-          { num: 2, label: "Materiales" },
+          { num: 2, label: "APU" },
           { num: 3, label: "Confirmación" },
         ].map(({ num, label }) => (
           <div key={num} className="flex flex-col items-center">
             <div
-              className={`flex items-center justify-center w-10 h-10 rounded-full text-white font-bold shadow-md transition-all ${
-                etapa === num
-                  ? "bg-[#0B2C4D] scale-110 shadow-lg"
-                  : "bg-gray-300 scale-100"
-              }`}
+              className={`flex items-center justify-center w-10 h-10 rounded-full text-white font-bold shadow-md transition-all ${etapa === num
+                ? "bg-[#0B2C4D] scale-110 shadow-lg"
+                : "bg-gray-300 scale-100"
+                }`}
             >
               {num}
             </div>
             <p
-              className={`mt-2 text-sm font-medium ${
-                etapa === num ? "text-[#0B2C4D]" : "text-gray-500"
-              }`}
+              className={`mt-2 text-sm font-medium ${etapa === num ? "text-[#0B2C4D]" : "text-gray-500"
+                }`}
             >
               {label}
             </p>
@@ -247,6 +272,7 @@ export default function CrearPresupuestoLayout() {
           formData={formData}
           setFormData={setFormData}
           onStockInsuficiente={handleStockInsuficiente}
+          etapa={etapa}
         />
       )}
       {etapa === 3 && (

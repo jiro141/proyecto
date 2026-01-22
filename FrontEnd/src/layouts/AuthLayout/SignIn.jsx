@@ -48,7 +48,6 @@ const SignIn = () => {
         navigate("/dashboard"); // ✅ REDIRECCIÓN
       } else {
         await registerUser(registerForm);
-        alert("Registro exitoso!");
         setMode("login");
       }
     } catch (err) {

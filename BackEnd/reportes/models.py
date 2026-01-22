@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
-
+from .services.apu_calculator import recalculate_apu_totals
 from inventario.models import Stock, Consumible, EPP
 
 
@@ -42,6 +42,35 @@ class ReporteConfig(models.Model):
     class Meta:
         verbose_name = "Configuración de Reportes"
         verbose_name_plural = "Configuración de Reportes"
+
+
+class NotaReporte(models.Model):
+    reporte = models.ForeignKey(
+        "Reporte",
+        on_delete=models.CASCADE,
+        related_name="notas",  # acceso: reporte.notas.all()
+    )
+
+    titulo = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        help_text="Título corto de la nota (ej: 'Ajuste de precios', 'Pendiente de aprobación')",
+    )
+
+    descripcion = models.TextField(
+        help_text="Detalle de la nota asociada al reporte",
+    )
+
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-creado_en"]
+
+    def __str__(self):
+        base = f"Nota para reporte {self.reporte.n_presupuesto}"
+        return f"{self.titulo} - {base}" if self.titulo else base
 
 
 # ==========================
@@ -109,7 +138,7 @@ class Reporte(models.Model):
         """
         Suma el total_apu de todos los APUs relacionados y guarda el resultado.
         """
-        total = self.apus.aggregate(total=models.Sum("total_apu"))["total"] or Decimal(
+        total = self.apus.aggregate(total=models.Sum("presupuesto_base"))["total"] or Decimal(
             "0.00"
         )
         self.total_reporte = total.quantize(Decimal("0.01"))
@@ -130,18 +159,23 @@ class APU(models.Model):
     APU asociado a un Reporte.
     """
 
-    reporte = models.ForeignKey(Reporte, on_delete=models.CASCADE, related_name="apus")
+    reporte = models.ForeignKey(
+        "Reporte", on_delete=models.CASCADE, related_name="apus"
+    )
 
-    # Número APU dentro del reporte (1,2,3...) – se reinicia por reporte
-    # 👉 puede ser null al principio; se calcula en save()
     numero = models.PositiveIntegerField(null=True, blank=True)
+    presupuesto_base = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Presupuesto base calculado o asignado manualmente",
+    )
 
     rendimiento = models.DecimalField(
-        max_digits=5,
+        max_digits=12,
         decimal_places=3,
         default=Decimal("1.000"),
-        validators=[MinValueValidator(0), MaxValueValidator(1)],
-        help_text="Valor entre 0 y 1",
+        help_text="Valor de rendimiento (sin límite de rango)",
     )
 
     descripcion = models.CharField(
@@ -163,12 +197,18 @@ class APU(models.Model):
         default=Decimal("0.00"),
         help_text="Depreciación general del APU (si aplica)",
     )
+    presupuesto_con_desp = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Presupuesto base considerando la depreciación (%) del APU",
+    )
 
     # === Campos calculados / totales ===
     precio_unitario = models.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal("0.00")
     )
-    total_base = models.DecimalField(  # costo directo por unidad
+    total_base = models.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal("0.00")
     )
 
@@ -248,7 +288,7 @@ class APU(models.Model):
 
     def save(self, *args, **kwargs):
         # Asignar número correlativo si no está definido
-        if self.numero is None:
+        if self.numero is None and self.reporte_id:
             ultimo = (
                 APU.objects.filter(reporte=self.reporte).order_by("-numero").first()
             )
@@ -256,102 +296,11 @@ class APU(models.Model):
 
         super().save(*args, **kwargs)
 
-    # ---------- Cálculos ----------
-
     def recalcular_totales(self):
         """
-        Recalcula todos los totales del APU y actualiza el total del reporte.
+        Delegar el cálculo al servicio de dominio.
         """
-        # Totales de materiales
-        self.total_materiales = sum(
-            m.total_material for m in self.materiales.all()
-        ) or Decimal("0.00")
-
-        # Totales de herramientas
-        self.total_herramientas = sum(
-            h.total_herramienta for h in self.herramientas.all()
-        ) or Decimal("0.00")
-
-        # Totales de mano de obra
-        self.total_mano_obra = sum(
-            mo.total_mano_obra for mo in self.manos_obra.all()
-        ) or Decimal("0.00")
-
-        # Totales de logística
-        self.total_logistica = sum(
-            l.total_logistica for l in self.logisticas.all()
-        ) or Decimal("0.00")
-
-        # Bono alimenticio: 15$ por día por trabajador
-        total_trabajadores = sum(
-            mo.cantidad for mo in self.manos_obra.all()
-        ) or Decimal("0.00")
-        self.bono_alimenticio = (Decimal("15.00") * total_trabajadores).quantize(
-            Decimal("0.01")
-        )
-
-        # Prestaciones sociales = total mano de obra * 200
-        self.prestaciones_sociales = (
-            self.total_mano_obra * Decimal("200.00")
-        ).quantize(Decimal("0.01"))
-
-        # Costo por unidad = prestaciones sociales / rendimiento
-        if self.rendimiento and self.rendimiento > 0:
-            self.costo_por_unidad = (
-                self.prestaciones_sociales / self.rendimiento
-            ).quantize(Decimal("0.01"))
-        else:
-            self.costo_por_unidad = Decimal("0.00")
-
-        # Costo directo por unidad
-        self.costo_directo_por_unidad = (
-            self.costo_por_unidad + self.total_herramientas + self.total_materiales
-        ).quantize(Decimal("0.01"))
-
-        # 15% de gastos administrativos
-        self.gastos_administrativos_15 = (
-            self.costo_directo_por_unidad * Decimal("0.15")
-        ).quantize(Decimal("0.01"))
-
-        # Subtotal = costo directo + gastos administrativos
-        self.subtotal = (
-            self.costo_directo_por_unidad + self.gastos_administrativos_15
-        ).quantize(Decimal("0.01"))
-
-        # 15% de utilidad
-        self.utilidad_15 = (self.subtotal * Decimal("0.15")).quantize(Decimal("0.01"))
-
-        # Total APU
-        self.total_apu = (self.subtotal + self.utilidad_15).quantize(Decimal("0.01"))
-
-        # total_base: costo directo por unidad
-        self.total_base = self.costo_directo_por_unidad
-
-        # precio unitario = total APU
-        self.precio_unitario = self.total_apu
-
-        self.save(
-            update_fields=[
-                "total_materiales",
-                "total_herramientas",
-                "total_mano_obra",
-                "total_logistica",
-                "bono_alimenticio",
-                "prestaciones_sociales",
-                "costo_por_unidad",
-                "costo_directo_por_unidad",
-                "gastos_administrativos_15",
-                "subtotal",
-                "utilidad_15",
-                "total_apu",
-                "total_base",
-                "precio_unitario",
-            ]
-        )
-
-        # Actualizar total del reporte
-        if self.reporte_id:
-            self.reporte.recalcular_total()
+        recalculate_apu_totals(self)
 
     def __str__(self):
         return f"APU {self.numero} - {self.descripcion} (Presupuesto {self.reporte.n_presupuesto})"
@@ -383,7 +332,7 @@ class APUMaterial(models.Model):
         max_digits=6,
         decimal_places=2,
         default=Decimal("0.00"),
-        help_text="Desperdicio en % o unidad que definas",
+        help_text="Porcentaje de desperdicio individual del material",
     )
     precio_unitario = models.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal("0.00")
@@ -393,7 +342,7 @@ class APUMaterial(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        # Traer datos desde inventario si aplica
+        # --- Obtener info desde inventario ---
         if self.stock:
             self.descripcion = self.stock.descripcion
             self.unidad = getattr(self.stock, "pza", "UND")
@@ -413,17 +362,23 @@ class APUMaterial(models.Model):
             self.unidad = "UND"
             self.precio_unitario = Decimal(self.consumible.costo or 0)
 
-        self.total_material = (self.precio_unitario * self.cantidad).quantize(
+        # --- Cálculo correcto ---
+        # total_material = cantidad × (1 + desperdicio/100) × precio_unitario
+        cantidad_total = self.cantidad * (
+            Decimal("1.00") + (self.desperdicio / Decimal("100.00"))
+        )
+        self.total_material = (self.precio_unitario * cantidad_total).quantize(
             Decimal("0.01")
         )
 
         super().save(*args, **kwargs)
 
+        # Recalcular totales del APU al que pertenece
         if self.apu_id:
             self.apu.recalcular_totales()
 
     def __str__(self):
-        return f"Material {self.descripcion} (APU {self.apu.numero})"
+        return f"Material {self.descripcion or ''} (APU {self.apu.numero})"
 
 
 # ==========================

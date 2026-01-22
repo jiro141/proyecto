@@ -1,0 +1,186 @@
+// src/hooks/useExcelGenerator.js
+import * as XLSX from "xlsx-js-style";
+import { excelStyles, columnWidths } from "./useExcelStyles";
+import { usePresupuesto } from "../../../context/PresupuestoContext";
+export default function useExcelGenerator() {
+    const { formData } = usePresupuesto();
+
+    const generarExcelAPUs = () => {
+        if (!formData?.apus?.length) return;
+
+        const wb = XLSX.utils.book_new();
+
+        formData.apus.forEach((apu, index) => {
+            const ws = XLSX.utils.aoa_to_sheet([]);
+            const hojaNombre = apu.body?.descripcion?.substring(0, 28) || `APU_${index + 1}`;
+
+            // === ENCABEZADO EMPRESA ===
+            XLSX.utils.sheet_add_aoa(
+                ws,
+                [
+                    ["S.T.I. HERMABE"],
+                    ["RIF V-14368387-3"],
+                    ["Carrera 7 N° 12-81, San Vicente, telfs. 0277-2912496; 0424-7188106"],
+                    ["San Juan de Colón, Estado Táchira"],
+                    [],
+                    ["ANÁLISIS DE PRECIOS UNITARIOS"],
+                    [apu.body?.descripcion?.toUpperCase() || "SIN DESCRIPCIÓN"],
+                ],
+                { origin: "A1" }
+            );
+
+            ws["A1"].s = excelStyles.empresaTitulo;
+            ws["A2"].s = excelStyles.empresaSubtitulo;
+            ws["A3"].s = excelStyles.empresaDireccion;
+            ws["A6"].s = excelStyles.tituloPrincipal;
+            ws["A7"].s = excelStyles.subtitulo;
+
+            let currentRow = 9;
+
+            // === INFO GENERAL ===
+            const rendimiento = apu.body?.rendimiento || 1;
+            const unidad = apu.body?.unidad || "UND";
+            const cantidad = apu.body?.cantidad || 1;
+            const porcentaje_desp = apu.body?.depreciacion || apu.body?.porcentaje_desp || 0;
+            const presupuesto_base = apu.body?.presupuesto_base || 0;
+
+            XLSX.utils.sheet_add_aoa(
+                ws,
+                [["RENDIMIENTO", rendimiento, "UNIDAD", unidad, "CANTIDAD", cantidad]],
+                { origin: `A${currentRow}` }
+            );
+            currentRow += 2;
+
+            // === FUNCIÓN DE TABLAS ===
+            const agregarTabla = (titulo, headers, data) => {
+                XLSX.utils.sheet_add_aoa(ws, [[titulo]], { origin: `A${currentRow}` });
+                ws[`A${currentRow}`].s = excelStyles.seccionTitulo;
+                currentRow++;
+                XLSX.utils.sheet_add_aoa(ws, [headers], { origin: `A${currentRow}` });
+                ["A", "B", "C", "D", "E", "F", "G"].forEach(
+                    (col) => (ws[`${col}${currentRow}`].s = excelStyles.tablaHeader)
+                );
+                currentRow++;
+
+                const startRow = currentRow;
+                data.forEach((item) => {
+                    XLSX.utils.sheet_add_aoa(
+                        ws,
+                        [
+                            [
+                                item.codigo || "",
+                                item.descripcion || "",
+                                item.unidad || "",
+                                item.cantidad || 0,
+                                item.desp || 0,
+                                item.costo || item.precio_unitario || 0,
+                                null, // columna de TOTAL
+                            ],
+                        ],
+                        { origin: `A${currentRow}` }
+                    );
+
+                    // fórmula correcta: cantidad * (1 + desp/100) * costo
+                    ws[`G${currentRow}`] = { f: `=D${currentRow}*(1+E${currentRow}/100)*F${currentRow}` };
+
+                    ["A", "B", "C", "D", "E", "F", "G"].forEach(
+                        (col) => (ws[`${col}${currentRow}`].s = excelStyles.tablaCelda)
+                    );
+                    currentRow++;
+                });
+
+                XLSX.utils.sheet_add_aoa(ws, [["", "", "", "", "", "TOTAL", null]], {
+                    origin: `A${currentRow}`,
+                });
+                ws[`G${currentRow}`] = titulo.toUpperCase().includes("COSTO DE HERRAMIENTAS")
+                    ? { f: `=IF(B9<>0, SUM(G${startRow}:G${currentRow - 1}), SUM(G${startRow}:G${currentRow - 1}))` }
+                    : { f: `=SUM(G${startRow}:G${currentRow - 1})` };
+
+                ws[`E${currentRow}`].s = excelStyles.resumenLabel;
+                ws[`F${currentRow}`].s = excelStyles.resumenValue;
+                currentRow += 2;
+
+                return currentRow - 1; // fila del total
+            };
+
+            // === SECCIONES ===
+            const materiales = [
+                ...(apu.materiales?.stock_almacen || []),
+                ...(apu.materiales?.consumibles || []),
+                ...(apu.materiales?.epps || []),
+            ];
+            const herramientas = apu.herramientas || [];
+            const mano_obra = apu.mano_obra || [];
+            const logistica = apu.logistica || [];
+
+            const totalMatRow = agregarTabla(
+                "COSTO DE MATERIALES",
+                ["CÓDIGO", "DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "% DESP", "PRECIO UNITARIO", "TOTAL"],
+                materiales
+            );
+            const totalHerrRow = agregarTabla(
+                "COSTO DE HERRAMIENTAS",
+                ["CÓDIGO", "DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "", "COSTO", "TOTAL"],
+                herramientas
+            );
+            const totalMoRow = agregarTabla(
+                "MANO DE OBRA",
+                ["CÓDIGO", "DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "", "PRECIO UNITARIO", "TOTAL"],
+                mano_obra
+            );
+            const totalLogRow = agregarTabla(
+                "LOGÍSTICA",
+                ["CÓDIGO", "DESCRIPCIÓN", "UNIDAD", "CANTIDAD", "", "PRECIO UNITARIO", "TOTAL"],
+                logistica
+            );
+
+            // === RESUMEN FINAL ===
+            const resumenStart = currentRow;
+            const row = resumenStart;
+
+            XLSX.utils.sheet_add_aoa(
+                ws,
+                [
+                    ["TOTAL MATERIALES", { f: `G${totalMatRow-1}` }],
+                    ["TOTAL HERRAMIENTAS", { f: `G${totalHerrRow-1}/B9` }],
+                    ["TOTAL MANO DE OBRA BASE", { f: `(G${totalMoRow-1}+G${totalLogRow-1})` }],
+                    ["BONO ALIMENTICIO ($15 × Días)", { f: `SUM(D${(totalMoRow-1) - mano_obra.length}:D${totalMoRow - 1})*15` }],
+                    ["PRESTACIONES SOCIALES (200%)", { f: `F${row + 2}*2` }],
+                    ["TOTAL MANO DE OBRA", { f: `F${row + 2}+F${row + 3}+F${row + 4}` }],
+                    ["COSTO POR UNIDAD", { f: `F${row + 5}/B9` }],
+                    [
+                        "COSTO DIRECTO POR UNIDAD",
+                        {
+                            f: `F${row}+F${row + 1}+F${row + 6}`,
+                        },
+                    ],
+                    ["15% ADMINISTRACIÓN Y GASTOS", { f: `F${row + 7}*0.15` }],
+                    ["SUBTOTAL", { f: `F${row + 7}+F${row + 8}` }],
+                    ["15% UTILIDAD", { f: `F${row + 9}*0.15` }],
+                    ["TOTAL UNITARIO", { f: `F${row + 9}+F${row + 10}` }],
+                ],
+                { origin: `E${resumenStart}` }
+            );
+
+            // === APLICAR ESTILOS ===
+            for (let i = 0; i < 14; i++) {
+                const c1 = `E${resumenStart + i}`;
+                const c2 = `F${resumenStart + i}`;
+                if (ws[c1]) ws[c1].s = excelStyles.resumenLabel;
+                if (ws[c2]) ws[c2].s = excelStyles.resumenValue;
+            }
+
+            ws["!cols"] = columnWidths;
+            XLSX.utils.book_append_sheet(wb, ws, hojaNombre);
+        });
+
+        XLSX.writeFile(
+            wb,
+            `Presupuesto_${formData?.cliente?.nombre || "Cliente"}_${new Date()
+                .toISOString()
+                .split("T")[0]}.xlsx`
+        );
+    };
+
+    return { generarExcelAPUs };
+}

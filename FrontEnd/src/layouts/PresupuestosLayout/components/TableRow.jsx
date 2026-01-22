@@ -1,0 +1,92 @@
+import { FaPlus, FaMinus } from "react-icons/fa";
+
+export default function TableRow({
+  item,
+  tipo,
+  cantidad,
+  desp,
+  onCantidadChange,
+  onDepreciacionChange,
+  onDescripcionClick,
+}) {
+  const precioUnitario = item.mts_ml_m2 ?? item.utilidad_15 ?? item.costo ?? 0;
+  const total = cantidad * (1 + desp / 100) * precioUnitario;
+
+  return (
+    <tr className="hover:bg-gray-50 border-b transition-colors last:border-none">
+      {/* Descripción (clickable para editar) */}
+      <td
+        className="py-2.5 px-2 text-sm font-medium text-gray-700 cursor-pointer hover:text-[#0B2C4D]"
+        onClick={onDescripcionClick}
+      >
+        {item.descripcion?.length > 25
+          ? item.descripcion.slice(0, 25) + "..."
+          : item.descripcion ?? "—"}
+      </td>
+
+      {/* Unidad */}
+      <td className="py-2.5 px-2 text-sm text-gray-700">
+        {item.pza || item.unidad || "—"}
+      </td>
+
+      {/* Cantidad */}
+      <td className="py-2.5 px-2 text-center">
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => onCantidadChange(item.id, -1)}
+            className="p-1 border rounded hover:bg-gray-100"
+          >
+            <FaMinus size={12} />
+          </button>
+
+          <input
+            type="number"
+            value={cantidad}
+            min="0"
+            step="any"
+            onChange={(e) =>
+              onCantidadChange(
+                item.id,
+                parseFloat(e.target.value || 0) - cantidad
+              )
+            }
+            className="w-12 text-center text-sm font-medium border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0B2C4D] no-spin"
+          />
+
+
+          <button
+            onClick={() => onCantidadChange(item.id, +1)}
+            className="p-1 border rounded hover:bg-gray-100"
+          >
+            <FaPlus size={12} />
+          </button>
+        </div>
+      </td>
+
+      {/* Desp (%) */}
+      <td className="py-2.5 px-2 text-center">
+        <input
+          type="number"
+          step="any"
+          value={desp}
+          onChange={(e) =>
+            onDepreciacionChange(item.id, parseFloat(e.target.value) || 0)
+          }
+          className="w-14 text-center text-sm font-medium border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0B2C4D] no-spin"
+        />
+      </td>
+
+      {/* Precio Unitario */}
+      {tipo !== "EPP" && (
+        <td className="py-2.5 px-2 text-sm text-gray-700 text-center">
+          ${precioUnitario}
+        </td>
+      )}
+
+      {/* Total */}
+      <td className="py-2.5 px-2 text-sm font-semibold text-gray-800 text-center">
+        ${isNaN(total) ? "0.00" : total.toFixed(2)}
+      </td>
+    </tr>
+  );
+}

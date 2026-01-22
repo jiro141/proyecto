@@ -9,7 +9,7 @@ const useMovimientos = () => {
     try {
       const res = await getMovimientos();
       
-      setMovimientos(res.data);
+      setMovimientos(res.data.results);
     } catch (err) {
       console.error("Error cargando movimientos", err);
     } finally {

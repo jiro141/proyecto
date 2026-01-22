@@ -13,7 +13,7 @@ export default function useReportes(search = "") {
     try {
       setLoading(true);
       const result = await getReporte(search);
-      setReportes(result);
+      setReportes(result.results);
     } catch (err) {
       setError(err);
     } finally {

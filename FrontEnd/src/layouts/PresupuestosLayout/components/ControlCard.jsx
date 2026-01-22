@@ -70,7 +70,7 @@ export default function ControlCard() {
 
       {/* Contenido */}
       <div className="flex flex-col justify-between flex-grow pt-2">
-        <p className="text-sm text-gray-500 ">Número de Control</p>
+        <p className="text-sm text-gray-500 ">Número de Presupuesto</p>
 
         {loading ? (
           <p className="text-gray-500 text-sm">Cargando...</p>

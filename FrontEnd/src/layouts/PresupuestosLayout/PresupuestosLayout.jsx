@@ -12,12 +12,12 @@ import { toast } from "react-toastify";
 import useReportes from "../../hooks/useReportes";
 
 const columns = [
-  { key: "n_control", label: "N° Control" },
-  { key: "fecha", label: "Fecha" },
-  { key: "lugar", label: "Lugar" },
-  { key: "presupuesto_estimado", label: "Presupuesto Estimado" },
-  { key: "porcentaje_productividad", label: "% Productividad" },
-  { key: "aprobado", label: "Aprobado" },
+  { key: "n_presupuesto", label: "Presupuesto" },
+  { key: "cliente_nombre", label: "Cliente" },
+  { key: "descripcion", label: "descripcion" },
+  { key: "fecha_creacion", label: "Fecha" },
+  { key: "total_reporte", label: "Presupuesto" },
+  { key: "aprobado", label: "Estado" },
 ];
 
 export default function ReportesLayout() {
@@ -117,7 +117,7 @@ export default function ReportesLayout() {
       <Tables
         columns={columns}
         data={reportes || []}
-        title="Reportes"
+        title="Presupuestos"
         refetch={refetch}
         loading={loading}
         onAdd={handleAddOrEdit}

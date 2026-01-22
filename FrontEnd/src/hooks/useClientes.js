@@ -13,7 +13,7 @@ export default function useClientes(search = "") {
     try {
       setLoading(true);
       const result = await getClientes(search);
-      setClientes(result);
+      setClientes(result.results);
     } catch (err) {
       setError(err);
     } finally {

@@ -8,7 +8,7 @@ const useLugaresConsumo = () => {
   const fetchLugares = async () => {
     try {
       const res = await AuthApi.get("/inventario/lugares/");
-      setLugares(res.data);
+      setLugares(res.data.results);
     } catch (err) {
       console.error("Error cargando lugares de consumo", err);
     } finally {

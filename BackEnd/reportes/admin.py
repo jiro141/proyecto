@@ -8,6 +8,7 @@ from .models import (
     APUHerramienta,
     APUManoObra,
     APULogistica,
+    NotaReporte,  # 📝 nuevo
 )
 
 
@@ -94,6 +95,18 @@ class APUAdmin(admin.ModelAdmin):
 
 
 # ==========================
+# 📝 NOTAS DE REPORTE (INLINE)
+# ==========================
+
+
+class NotaReporteInline(admin.TabularInline):
+    model = NotaReporte
+    extra = 1
+    fields = ("titulo", "descripcion", "creado_en", "actualizado_en")
+    readonly_fields = ("creado_en", "actualizado_en")
+
+
+# ==========================
 # 📊 REPORTE
 # ==========================
 
@@ -122,7 +135,7 @@ class ReporteAdmin(admin.ModelAdmin):
     list_filter = ("cliente",)
     search_fields = ("n_presupuesto", "cliente__nombre", "cliente__rif")
     readonly_fields = ("n_presupuesto", "fecha_creacion")
-    inlines = [APUInline]
+    inlines = [NotaReporteInline, APUInline]  # 📝 ahora incluye notas + APUs
     ordering = ("-fecha_creacion",)
 
     fieldsets = (

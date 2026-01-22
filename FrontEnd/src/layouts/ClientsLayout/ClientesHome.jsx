@@ -1,13 +1,11 @@
 import React, { useState } from "react";
-import Modal from "../components/Modal";
-import StepForm from "../components/StepForm";
-import Tables from "../components/Tables";
-import Accordion from "../components/Accordion"; // 🧩 asegúrate de tener este componente
-import { FaFileAlt } from "react-icons/fa"; // 🧩 icono para reportes
-import { createCliente, updateCliente } from "../api/controllers/Clientes";
-import { createItem } from "../api/controllers/Inventario";
+import Modal from "../../components/Modal";
+import StepForm from "../../components/StepForm";
+import Tables from "../../components/Tables";
+import { createCliente, updateCliente } from "../../api/controllers/Clientes";
+import { createItem } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
-import useClientes from "../hooks/useClientes";
+import useClientes from "../../hooks/useClientes";
 
 const columns = [
   { key: "nombre", label: "Nombre de la Empresa" },
@@ -99,17 +97,9 @@ export default function ClientesHome() {
         isOpen={isModalOpen}
         onClose={() => setModalOpen(false)}
         title={editItem ? "Editar Cliente" : "Agregar Cliente"}
-        width={`${
-          editItem && editItem.reportes?.length ? "max-w-6xl" : "max-w-3xl"
-        }`}
+        width={`${"max-w-3xl"}`}
       >
-        <div
-          className={`${
-            editItem && editItem.reportes?.length
-              ? "grid grid-cols-1 md:grid-cols-2 gap-6 items-start"
-              : "flex flex-col gap-4"
-          }`}
-        >
+        <div className={`${"flex flex-col gap-4"}`}>
           {/* 🧾 Formulario principal */}
           <div className="w-full">
             <StepForm
@@ -118,51 +108,6 @@ export default function ClientesHome() {
               initialValues={editItem || {}}
             />
           </div>
-
-          {/* 🧩 Acordeón de Reportes (solo si existen) */}
-          {editItem && editItem.reportes?.length > 0 && ( 
-            <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-2">
-              <Accordion
-                title={`Reportes (${editItem.reportes.length})`}
-                icon={FaFileAlt}
-                data={editItem.reportes}
-                filterKeys={["nombre", "fecha"]}
-                defaultOpen
-              >
-                {(filtered) => (
-                  <table className="w-full text-sm border-collapse mt-2">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="text-left p-2">Número del Reporte</th>
-                        <th className="text-left p-2">Fecha</th>
-                        <th className="text-left p-2">Monto Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filtered.map((reporte) => (
-                        <tr
-                          key={reporte.id}
-                          className="border-b hover:bg-gray-50 transition"
-                        >
-                          <td className="p-2">{reporte.n_control || "—"}</td>
-                          <td className="p-2">
-                            {new Date(reporte.fecha).toLocaleDateString(
-                              "es-VE"
-                            )}
-                          </td>
-                          <td className="p-2">
-                            {reporte.presupuesto_estimado
-                              ? `$ ${reporte.presupuesto_estimado}`
-                              : "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </Accordion>
-            </div>
-          )}
         </div>
       </Modal>
     </div>

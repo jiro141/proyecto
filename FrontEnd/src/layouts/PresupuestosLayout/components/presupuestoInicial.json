@@ -1,0 +1,115 @@
+{
+    "herramientas": [
+        {
+            "id": 1,
+            "codigo": "H-0001",
+            "descripcion": "HERRAMIENTAS MENORES",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 9.00
+        },
+        {
+            "id": 2,
+            "codigo": "H-0002",
+            "descripcion": "SOLDADOR TIG",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 18.00
+        },
+        {
+            "id": 3,
+            "codigo": "H-0003",
+            "descripcion": "CAMION",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 50.00
+        },
+        {
+            "id": 4,
+            "codigo": "H-0004",
+            "descripcion": "MAQUINA ROSCADORA",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 20.00
+        },
+        {
+            "id": 5,
+            "codigo": "H-0005",
+            "descripcion": "MAQUINA CILINDRADORA",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 60.00
+        },
+        {
+            "id": 6,
+            "codigo": "H-0006",
+            "descripcion": "MAQUINA SATINADORA",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 30.00
+        }
+    ],
+    "herramientas_total": 0,
+    "mano_obra": [
+        {
+            "id": 1,
+            "codigo": "M-0001",
+            "descripcion": "MECANICO",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 25.00
+        },
+        {
+            "id": 2,
+            "codigo": "M-0002",
+            "descripcion": "AYUDANTE MECANICO",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 25.00
+        },
+        {
+            "id": 3,
+            "codigo": "M-0003",
+            "descripcion": "ING INSPECTOR",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 25.00
+        },
+        {
+            "id": 4,
+            "codigo": "M-0004",
+            "descripcion": "SUPERVISOR DE SEGURIDAD INDUSTRIAL",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 25.00
+        }
+    ],
+    "mano_obra_total": 0,
+    "logistica": [
+        {
+            "id": 1,
+            "codigo": "L-0001",
+            "descripcion": "ALIMENTACION",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 15.00
+        },
+        {
+            "id": 2,
+            "codigo": "L-0002",
+            "descripcion": "HOTEL",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 13.00
+        },
+        {
+            "id": 3,
+            "codigo": "L-0003",
+            "descripcion": "VARIOS",
+            "unidad": "DIA",
+            "cantidad": 0,
+            "costo": 3.00
+        }
+    ],
+    "logistica_total": 0
+}

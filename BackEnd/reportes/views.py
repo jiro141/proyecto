@@ -1,4 +1,4 @@
-from rest_framework import generics, filters, status
+from rest_framework import generics, filters, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
@@ -12,6 +12,7 @@ from .models import (
     APUHerramienta,
     APUManoObra,
     APULogistica,
+    NotaReporte,
 )
 from .serializers import (
     ClienteSerializer,
@@ -22,6 +23,7 @@ from .serializers import (
     APUHerramientaSerializer,
     APUManoObraSerializer,
     APULogisticaSerializer,
+    NotaReporteSerializer,
 )
 
 
@@ -60,6 +62,7 @@ class ReporteListCreateView(generics.ListCreateAPIView):
         "n_presupuesto",
         "cliente__nombre",
         "cliente__rif",
+        "descripcion",
     ]
 
     # ya no necesitamos calcular_totales aquí
@@ -275,3 +278,36 @@ class APULogisticaDetailView(generics.RetrieveUpdateDestroyAPIView):
         apu = instance.apu
         super().perform_destroy(instance)
         apu.recalcular_totales()
+
+
+class NotaReporteListCreateView(generics.ListCreateAPIView):
+    """
+    Lista y crea notas para un reporte.
+    Si viene reporte_id en la URL, filtra por ese reporte
+    y al crear asigna ese reporte automáticamente.
+    """
+    serializer_class = NotaReporteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        reporte_id = self.kwargs.get("reporte_id")
+        qs = NotaReporte.objects.all()
+        if reporte_id is not None:
+            qs = qs.filter(reporte_id=reporte_id)
+        return qs.order_by("-creado_en")
+
+    def perform_create(self, serializer):
+        reporte_id = self.kwargs.get("reporte_id")
+        if reporte_id is not None:
+            serializer.save(reporte_id=reporte_id)
+        else:
+            serializer.save()
+
+
+class NotaReporteDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Ver / actualizar / eliminar una nota específica.
+    """
+    queryset = NotaReporte.objects.all()
+    serializer_class = NotaReporteSerializer
+    permission_classes = [permissions.IsAuthenticated]

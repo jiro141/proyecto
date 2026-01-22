@@ -1,255 +1,334 @@
-import React, { useMemo, useState } from "react";
-import { FaFileDownload } from "react-icons/fa";
+import { usePresupuesto } from "../../../context/PresupuestoContext";
+import useReportesActions from "../hooks/useReportesActions";
+import TotalesPanel from "../components/TotalesPanel";
+import { useState, useEffect } from "react";
 import Modal from "../../../components/Modal";
+import { FaTrashAlt, FaFilePdf, FaFileExcel } from "react-icons/fa";
+import useExcelGenerator from "../hooks/useExcelGenerator";
 
-export default function Etapa3({ formData, onCreate }) {
-  
-
+export default function Etapa3() {
   const {
-    cliente,
-    descripcion,
-    fechaCulminacion,
-    stock_almacen,
-    consumibles,
-    epps,
-    presupuesto_base,
-    porcentaje_productividad,
-  } = formData;
+    formData,
+    setFormData,
+    currentAPUIndex,
+    setCurrentAPUIndex,
+    resetPresupuesto,
+  } = usePresupuesto();
 
-  // 🧮 Calcular resumen
-  const resumen = useMemo(() => {
-    const calcularCosto = (lista = []) =>
-      lista.reduce((acc, item) => {
-        const precio = Number(item.monto || item.costo_unitario || 0);
-        const cantidad = Number(item.cantidad || 0);
-        return acc + precio * cantidad;
-      }, 0);
+  const { crearPresupuestoCompleto } = useReportesActions();
+  const [isSending, setIsSending] = useState(false);
 
-    const costoEPP = calcularCosto(epps);
-    const costoStock = calcularCosto(stock_almacen);
-    const costoCons = calcularCosto(consumibles);
-    const totalMateriales = costoEPP + costoStock + costoCons;
-    const totalBase = totalMateriales + Number(presupuesto_base || 0);
-    const factorAjuste = 1 - (Number(porcentaje_productividad) || 0);
-    const totalConProductividad = totalBase + totalBase * factorAjuste;
+  // 🔥 Estado de modales
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [apuToDelete, setApuToDelete] = useState(null);
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
 
-    return {
-      costoEPP,
-      costoStock,
-      costoCons,
-      totalMateriales,
-      presupuesto_base: Number(presupuesto_base || 0),
-      totalBase,
-      factorAjuste,
-      totalConProductividad,
-    };
-  }, [
-    epps,
-    stock_almacen,
-    consumibles,
-    presupuesto_base,
-    porcentaje_productividad,
-  ]);
+  // 📊 Hook para exportar Excel con fórmulas
+  const { generarExcelAPUs } = useExcelGenerator();
+
+  const apus = formData.apus || [];
+
+  // 🔁 Recalcula presupuesto estimado automáticamente
+  useEffect(() => {
+    if (!formData?.apus?.length) return;
+
+    const totalEstimado = formData.apus.reduce((acc, apu) => {
+      const valor = Number(apu.body?.presupuesto_base || 0);
+      return acc + valor;
+    }, 0);
+
+    if (totalEstimado !== formData.presupuesto_estimado) {
+      const updatedFormData = structuredClone(formData);
+      updatedFormData.presupuesto_estimado = totalEstimado;
+      setFormData(updatedFormData);
+    }
+  }, [formData.apus, setFormData]);
+
+  // ✏️ Cambios en inputs editables
+  const handleInputChange = (index, field, value) => {
+    const updatedForm = structuredClone(formData);
+    updatedForm.apus[index].body[field] =
+      field === "unidad" ? value : Number(value) || 0;
+    setFormData(updatedForm);
+  };
+
+  // 🗑️ Mostrar modal de confirmación
+  const handleShowDeleteModal = (index) => {
+    setApuToDelete(index);
+    setDeleteModalOpen(true);
+  };
+
+  // 🧹 Confirmar eliminación
+  const handleConfirmDelete = () => {
+    if (apuToDelete === null) return;
+    const updatedForm = structuredClone(formData);
+    updatedForm.apus.splice(apuToDelete, 1);
+    setFormData(updatedForm);
+    setDeleteModalOpen(false);
+    setApuToDelete(null);
+  };
+
+  const handleCancelarDelete = () => {
+    setDeleteModalOpen(false);
+    setApuToDelete(null);
+  };
+
+  // 💾 Guardar presupuesto
+  const handleGuardar = async () => {
+    try {
+      setIsSending(true);
+      await crearPresupuestoCompleto({ formData });
+      setSuccessModalOpen(true); // ✅ Abre el modal de exportación
+    } catch (err) {
+      console.error("Error al enviar presupuesto:", err);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // 📄 Exportar PDF
+  const handleGenerarPDF = () => {
+    console.log("📄 Generando PDF con formData:", formData);
+    // Aquí puedes conectar tu exportador de PDF
+  };
+
+  // 📊 Exportar Excel (ya conectado con el hook)
+  const handleGenerarExcel = () => {
+    if (!formData?.apus?.length) {
+      alert("⚠️ No hay APUs disponibles para exportar.");
+      return;
+    }
+    generarExcelAPUs(formData);
+  };
+
+  const formatoMoneda = (valor) =>
+    valor?.toLocaleString("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 2,
+    }) || "$0.00";
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-lg min-h-[400px] relative">
-      {/* === BOTÓN DE DESCARGA === */}
-
-      {/* === MODAL DESCARGA === */}
-     
-
-      {/* === CONTENIDO PRINCIPAL === */}
-      <h2 className="text-2xl font-semibold text-center text-[#0B2C4D] mb-8">
-        Confirmación Final del Presupuesto
+    <div className="p-6 space-y-10">
+      <h2 className="text-2xl font-bold text-[#0B2C4D] mb-6">
+        Resumen Final del Presupuesto
       </h2>
 
-      {/* INFORMACIÓN CLIENTE */}
-      <div className="max-w-3xl mx-auto mb-10 bg-gray-50 rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-[#0B2C4D] mb-4 text-center">
+      {/* === Información del Cliente === */}
+      <div className="bg-white shadow-md rounded-lg p-5 border border-gray-200">
+        <h3 className="text-lg font-semibold text-[#0B2C4D] mb-3">
           Información del Cliente
         </h3>
-
-        {cliente ? (
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-700">
-            <p>
-              <strong>Nombre:</strong> {cliente.nombre}
-            </p>
-            <p>
-              <strong>RIF / Cédula:</strong> {cliente.rif || "—"}
-            </p>
-            <p>
-              <strong>Teléfono:</strong> {cliente.telefono || "—"}
-            </p>
-            <p>
-              <strong>Email:</strong> {cliente.email || "—"}
-            </p>
-            <p className="col-span-2">
-              <strong>Dirección:</strong> {cliente.direccion || "Sin dirección"}
-            </p>
-          </div>
-        ) : (
-          <p className="text-center text-gray-500 italic">
-            No hay cliente seleccionado.
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+          <p>
+            <strong>Cliente:</strong> {formData?.cliente?.nombre || "—"}
           </p>
-        )}
+          <p>
+            <strong>RIF:</strong> {formData?.cliente?.rif || "—"}
+          </p>
+          <p>
+            <strong>Encargado:</strong> {formData?.cliente?.encargado || "—"}
+          </p>
+
+          <p>
+            <strong>Fecha de Culminación:</strong>{" "}
+            {new Date(formData?.fechaCulminacion).toLocaleDateString()}
+          </p>
+          <p>
+            <strong>Presupuesto Estimado:</strong>{" "}
+            {formatoMoneda(formData?.presupuesto_estimado || 0)}
+          </p>
+          <p>
+            <strong>% Productividad:</strong>{" "}
+            {formData?.porcentaje_productividad || 1}x
+          </p>
+        </div>
       </div>
 
-      {/* DETALLES DEL PRESUPUESTO */}
-      <div className="max-w-3xl mx-auto mb-10 bg-gray-50 rounded-lg border border-gray-200 p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-[#0B2C4D] mb-4 text-center">
-          Detalles del Presupuesto
+      {/* === ANÁLISIS DE PRESUPUESTO UNITARIO === */}
+      <section className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm">
+        <h3 className="text-xl font-bold text-[#0B2C4D] mb-6 text-center">
+          Análisis de Presupuesto Unitario
         </h3>
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-700">
-          <p>
-            <strong>Fecha estimada de culminación:</strong>{" "}
-            {fechaCulminacion
-              ? new Date(fechaCulminacion).toLocaleDateString("es-VE")
-              : "No definida"}
+        {apus.length === 0 ? (
+          <p className="text-gray-500 italic text-center py-10">
+            No hay APUs registrados
           </p>
-          <p>
-            <strong>Productividad estimada:</strong>{" "}
-            {porcentaje_productividad
-              ? `${(porcentaje_productividad * 100).toFixed(0)}%`
-              : "No definida"}
-          </p>
-          <p className="col-span-2">
-            <strong>Descripción del proyecto:</strong>{" "}
-            {descripcion || "Sin observaciones registradas"}
-          </p>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {apus.map((apu, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-xl shadow-md border border-gray-200 p-5 flex flex-col"
+              >
+                {/* === Encabezado con ícono de eliminar === */}
+                <div className="flex justify-between items-center border-b pb-2 mb-3">
+                  <h4 className="text-lg font-bold text-[#0B2C4D]">
+                    APU #{index + 1}
+                  </h4>
+                  <button
+                    onClick={() => handleShowDeleteModal(index)}
+                    className="text-red-500 hover:text-red-700 transition-all"
+                    title="Eliminar este APU"
+                  >
+                    <FaTrashAlt />
+                  </button>
+                </div>
 
-        {/* 💰 TOTAL */}
-        <div className="mt-6 text-center border-t pt-4">
-          <p className="text-base font-semibold text-[#0B2C4D] mb-1">
-            Presupuesto estimado total
-          </p>
-          <p className="text-3xl font-bold text-green-700 tracking-wide">
-            {resumen.totalConProductividad
-              ? `$ ${resumen.totalConProductividad.toLocaleString("es-VE", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`
-              : "$ 0.00"}
-          </p>
-          <div className="mt-3 text-xs text-gray-600 leading-relaxed">
-            <p>
-              Base: ${resumen.presupuesto_base.toFixed(2)} + Materiales: $
-              {resumen.totalMateriales.toFixed(2)} = $
-              {resumen.totalBase.toFixed(2)}
-            </p>
-            <p>
-              Productividad: +{(resumen.factorAjuste * 100).toFixed(0)}% → $
-              {(resumen.totalBase * resumen.factorAjuste).toFixed(2)} extra
-            </p>
+                {/* === Descripción === */}
+                <p className="text-sm text-gray-600 mb-2">
+                  {apu.body?.descripcion || "Sin descripción"}
+                </p>
+
+                {/* === Campos editables === */}
+                <div className="text-xs text-gray-600 grid grid-cols-2 gap-y-1 gap-x-4 mt-2">
+                  <label className="flex flex-col">
+                    <strong>Unidad:</strong>
+                    <input
+                      type="text"
+                      value={apu.body?.unidad || ""}
+                      onChange={(e) =>
+                        handleInputChange(index, "unidad", e.target.value)
+                      }
+                      className="border rounded-md px-2 py-1 text-xs mt-1 focus:outline-none focus:ring focus:ring-blue-200"
+                      placeholder="Ej: m², kg, m3"
+                    />
+                  </label>
+
+                  <label className="flex flex-col">
+                    <strong>Rendimiento:</strong>
+                    <input
+                      type="number"
+                      value={apu.body?.rendimiento || 0}
+                      onChange={(e) =>
+                        handleInputChange(index, "rendimiento", e.target.value)
+                      }
+                      className="border rounded-md px-2 py-1 text-xs mt-1 focus:outline-none focus:ring focus:ring-blue-200"
+                      step="0.01"
+                    />
+                  </label>
+
+                  <label className="flex flex-col">
+                    <strong>Cantidad:</strong>
+                    <input
+                      type="number"
+                      value={apu.body?.cantidad || 0}
+                      onChange={(e) =>
+                        handleInputChange(index, "cantidad", e.target.value)
+                      }
+                      className="border rounded-md px-2 py-1 text-xs mt-1 focus:outline-none focus:ring focus:ring-blue-200"
+                      step="0.01"
+                    />
+                  </label>
+
+                  <label className="flex flex-col">
+                    <strong>% Desp:</strong>
+                    <input
+                      type="number"
+                      value={apu.body?.porcentaje_desp || 0}
+                      onChange={(e) =>
+                        handleInputChange(
+                          index,
+                          "porcentaje_desp",
+                          e.target.value
+                        )
+                      }
+                      className="border rounded-md px-2 py-1 text-xs mt-1 focus:outline-none focus:ring focus:ring-blue-200"
+                      step="0.01"
+                    />
+                  </label>
+
+                  <label className="flex flex-col col-span-2">
+                    <strong>Presupuesto Base:</strong>
+                    <input
+                      type="text"
+                      readOnly
+                      value={formatoMoneda(apu.body?.presupuesto_base || 0)}
+                      className="border rounded-md px-2 py-1 text-xs mt-1 bg-gray-100 cursor-not-allowed"
+                    />
+                  </label>
+                </div>
+
+                {/* ✅ Panel independiente */}
+                <div className="flex-1 overflow-hidden z-[0]">
+                  <TotalesPanel apuIndex={index} />
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
+        )}
+      </section>
 
-      {/* TABLAS */}
-      <div className="space-y-10 max-w-4xl mx-auto">
-        <TablaBloque
-          titulo="Equipos de Protección Personal (EPP)"
-          data={epps}
-          tipo="EPP"
-        />
-        <TablaBloque
-          titulo="Materiales de Ferretería"
-          data={stock_almacen}
-          tipo="Ferretería"
-        />
-        <TablaBloque
-          titulo="Consumibles"
-          data={consumibles}
-          tipo="Consumibles"
-        />
-      </div>
-
-      {/* BOTÓN FINAL */}
-      <div className="flex justify-center mt-12">
+      {/* === Botón de envío === */}
+      <div className="flex justify-end pt-6">
         <button
-          onClick={() => onCreate(resumen.totalConProductividad)}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg shadow-md transition-all"
+          onClick={handleGuardar}
+          disabled={isSending}
+          className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${isSending
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-[#0B2C4D] hover:bg-[#15395A]"
+            }`}
         >
-          Confirmar y Crear Presupuesto
+          {isSending ? "Enviando..." : "Crear"}
         </button>
       </div>
-    </div>
-  );
-}
 
-/* === COMPONENTES SECUNDARIOS === */
-function TablaBloque({ titulo, data, tipo }) {
-  return (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 shadow-sm">
-      <h4 className="text-md font-semibold text-[#0B2C4D] mb-3 text-center">
-        {titulo}
-      </h4>
-      <TablaMateriales data={data} tipo={tipo} />
-    </div>
-  );
-}
+      {/* === MODAL ELIMINAR APU === */}
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={handleCancelarDelete}
+        title="Eliminar APU"
+        width="max-w-md"
+      >
+        <p className="text-gray-700 text-center mb-6">
+          ¿Seguro que deseas eliminar el <strong>APU #{(apuToDelete ?? 0) + 1}</strong>?<br />
+          Esta acción no se puede deshacer.
+        </p>
 
-function TablaMateriales({ data = [], tipo }) {
-  const mostrarModelo = tipo?.toLowerCase() !== "epp";
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={handleCancelarDelete}
+            className="px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirmDelete}
+            className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white font-semibold"
+          >
+            Eliminar
+          </button>
+        </div>
+      </Modal>
 
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm border-collapse text-gray-700">
-        <thead>
-          <tr className="bg-[#0B2C4D] text-white">
-            <th className="py-2 px-4 text-left font-medium">Nombre</th>
-            {mostrarModelo && (
-              <th className="py-2 px-4 text-center font-medium">Modelo</th>
-            )}
-            <th className="py-2 px-4 text-center font-medium">Cantidad</th>
-            <th className="py-2 px-4 text-center font-medium">
-              Precio Unitario
-            </th>
-            <th className="py-2 px-4 text-center font-medium">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data && data.length > 0 ? (
-            data.map((item, index) => {
-              const precio = Number(item.monto || item.costo_unitario || 0);
-              const cantidad = Number(item.cantidad || 0);
-              const subtotal = precio * cantidad;
-              return (
-                <tr
-                  key={`${tipo}-${item.id}-${index}`}
-                  className={`${
-                    index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                  } border-b`}
-                >
-                  <td className="py-2 px-4">{item.name || "—"}</td>
-                  {mostrarModelo && (
-                    <td className="py-2 px-4 text-center">
-                      {item.modelo || "—"}
-                    </td>
-                  )}
-                  <td className="py-2 px-4 text-center">{cantidad}</td>
-                  <td className="py-2 px-4 text-center">
-                    ${precio.toFixed(2)}
-                  </td>
-                  <td className="py-2 px-4 text-center font-medium">
-                    ${subtotal.toFixed(2)}
-                  </td>
-                </tr>
-              );
-            })
-          ) : (
-            <tr>
-              <td
-                colSpan={mostrarModelo ? 5 : 4}
-                className="py-3 text-center text-gray-500 italic"
-              >
-                No hay {tipo?.toLowerCase()} registrados.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      {/* === MODAL ÉXITO: GENERAR PDF / EXCEL === */}
+      <Modal
+        isOpen={successModalOpen}
+        onClose={() => setSuccessModalOpen(false)}
+        title="Presupuesto Generado"
+        width="max-w-md"
+      >
+        <div className="text-center space-y-6">
+          <p className="text-gray-700">
+            ✅ El presupuesto se ha guardado correctamente.
+          </p>
+          <div className="flex justify-center gap-6">
+            <button
+              onClick={handleGenerarPDF}
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white font-semibold"
+            >
+              <FaFilePdf /> Generar PDF
+            </button>
+            <button
+              onClick={handleGenerarExcel}
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white font-semibold"
+            >
+              <FaFileExcel /> Generar Excel
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

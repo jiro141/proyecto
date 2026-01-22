@@ -11,33 +11,29 @@ import { createItem, updateItem } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
 
 const columns = [
-  { key: "name", label: "Nombre" },
-  { key: "modelo", label: "Modelo" },
+  { key: "codigo", label: "Codigo" },
+  { key: "descripcion", label: "Descripcion" },
   { key: "departamento", label: "Departamento" },
   { key: "proveedor", label: "Proveedor" },
-  { key: "unidades", label: "Unidades" },
-  { key: "monto", label: "Monto" },
+  { key: "unidad", label: "Unidades" },
+  { key: "costo", label: "Costo" },
   { key: "consumo", label: "Consumo" },
   { key: "ubicacion", label: "Ubicación" },
 ];
 
 export default function ConsumiblesLayout() {
   const [search, setSearch] = useState("");
-  const { data, loading, error, refetch } = useInventario(
-    "consumibles",
-    search
-  );
-  console.log(data);
-
-  const { departamentos, refetch: refetchDepartamentos } = useDepartamentos();
-  const { ubicaciones, refetch: refetchUbicaciones } = useUbicaciones();
-  const { lugares, refetch: refetchLugares } = useLugaresConsumo();
-  const { proveedores, refetch: refetchProveedores } = useProveedores();
-
+  const [searchDept, setSearchDept] = useState(""); // ✅ Mueve esto arriba
   const [editItem, setEditItem] = useState(null);
   const [isModalOpen, setModalOpen] = useState(false);
   const [isDeptModalOpen, setDeptModalOpen] = useState(false);
   const [isProvModalOpen, setProvModalOpen] = useState(false);
+
+  const { data, loading, error, refetch } = useInventario("consumibles", search);
+  const { departamentos, loading: loadingDept, refetch: refetchDepartamentos } = useDepartamentos(searchDept);
+  const { ubicaciones, refetch: refetchUbicaciones } = useUbicaciones();
+  const { lugares, refetch: refetchLugares } = useLugaresConsumo();
+  const { proveedores, refetch: refetchProveedores } = useProveedores();
 
   const handleSubmit = async (formData) => {
     try {
@@ -93,14 +89,17 @@ export default function ConsumiblesLayout() {
         { label: "Nuevo Proveedor", onClick: () => setProvModalOpen(true) },
       ],
       fields: [
-        { name: "name", label: "Nombre", required: true },
-        { name: "modelo", label: "Modelo", required: true },
+        { name: "codigo", label: "Codigo", required: true },
+        { name: "descripcion", label: "Descripcion", required: true },
         {
           name: "departamento",
           label: "Departamento",
           type: "select",
           options: departamentos.map((d) => ({ label: d.name, value: d.id })),
           required: true,
+          loading: loadingDept,
+          // 🔹 cada vez que el usuario escribe, se actualiza el searchTerm
+          onSearch: (query) => setSearchDept(query),
         },
         {
           name: "proveedor",
@@ -123,8 +122,8 @@ export default function ConsumiblesLayout() {
           options: lugares.map((l) => ({ label: l.name, value: l.id })),
           required: true,
         },
-        { name: "unidades", label: "Unidades", type: "number", required: true },
-        { name: "monto", label: "Monto", type: "number", required: true },
+        { name: "unidad", label: "Pieza", required: true },
+        { name: "costo", label: "Costo", type: "number", required: true },
       ],
     },
   ];

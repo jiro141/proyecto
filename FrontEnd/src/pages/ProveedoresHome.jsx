@@ -76,9 +76,9 @@ export default function ProveedoresHome() {
           setEditItem(null);
         }}
         title={editItem ? "Editar Proveedor" : "Agregar Proveedor"}
-        width="max-w-5xl"
+        // width="max-w-5xl"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1  gap-6">
           <div className="flex justify-center items-center">
             <StepForm
               steps={formSteps}
@@ -88,7 +88,7 @@ export default function ProveedoresHome() {
           </div>
 
           {/* 🧩 Componente externo manejando artículos */}
-          <ArticulosProveedor proveedor={editItem} refetch={refetch} />
+          {/* <ArticulosProveedor proveedor={editItem} refetch={refetch} /> */}
         </div>
       </Modal>
     </div>

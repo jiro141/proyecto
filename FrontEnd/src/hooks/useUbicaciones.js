@@ -8,7 +8,7 @@ const useUbicaciones = () => {
   const fetchUbicaciones = async () => {
     try {
       const res = await AuthApi.get("/inventario/ubicaciones/");
-      setUbicaciones(res.data);
+      setUbicaciones(res.data.results);
     } catch (err) {
       console.error("Error cargando ubicaciones", err);
     } finally {

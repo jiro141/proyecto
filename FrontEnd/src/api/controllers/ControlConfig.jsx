@@ -7,7 +7,7 @@ import AuthApi from "../AuthApi";
  */
 export const getControlConfig = async () => {
   try {
-    const response = await AuthApi.get("reportes/reporte/config/");
+    const response = await AuthApi.get("reportes/reportes/config/");
     
     return response.data;
   } catch (error) {
@@ -22,7 +22,7 @@ export const getControlConfig = async () => {
  */
 export const createControlConfig = async (data = {}) => {
   try {
-    const response = await AuthApi.post("reportes/reporte/config/", data);
+    const response = await AuthApi.post("reportes/reportes/config/", data);
     return response.data;
   } catch (error) {
     console.error("Error al crear el número de control:", error);
@@ -36,7 +36,7 @@ export const createControlConfig = async (data = {}) => {
  */
 export const updateControlConfig = async (id, data) => {
   try {
-    const response = await AuthApi.put(`reportes/reporte/config/${id}/`, data);
+    const response = await AuthApi.put(`reportes/reportes/config/${id}/`, data);
     return response.data;
   } catch (error) {
     console.error("Error al actualizar el número de control:", error);

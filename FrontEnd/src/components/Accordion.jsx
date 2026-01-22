@@ -12,6 +12,7 @@ export default function Accordion({
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [query, setQuery] = useState("");
+ 
 
   // 🔎 Debounce de búsqueda
   useEffect(() => {
@@ -54,9 +55,8 @@ export default function Accordion({
 
       {/* Contenido */}
       <div
-        className={`transition-all duration-300 overflow-hidden ${
-          isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-        }`}
+        className={`transition-all duration-300 overflow-hidden ${isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          }`}
       >
         {isOpen && (
           <div className="p-3 overflow-y-auto max-h-[450px]">
@@ -74,7 +74,6 @@ export default function Accordion({
                 className="pl-8 pr-3 py-1 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0b2c4d] text-black w-full"
               />
             </div>
-
             {/* 🔥 Aquí está la clave */}
             <div>
               {typeof children === "function"

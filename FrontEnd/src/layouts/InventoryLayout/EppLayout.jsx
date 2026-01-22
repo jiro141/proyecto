@@ -65,7 +65,6 @@ export default function EppLayout() {
       refetch();
     } catch (err) {
       console.error("Error al guardar EPP:", err);
-      alert("No se pudo guardar el EPP.");
     }
   };
 
