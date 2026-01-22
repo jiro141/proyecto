@@ -99,12 +99,7 @@ export const PresupuestoProvider = ({ children }) => {
         }
     }, [formData]);
 
-    // 🧠 Opcional: reset si sales de la ruta /informes/crear
-    useEffect(() => {
-        if (!location.pathname.includes("/informes/crear")) {
-            resetPresupuesto();
-        }
-    }, [location.pathname]);
+
 
     return (
         <PresupuestoContext.Provider

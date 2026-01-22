@@ -218,7 +218,7 @@ const TotalesPanel = ({ apuIndex }) => {
               <span>{formatoMoneda(presupuestoConDesp)}</span>
             </div>
             <div className="flex justify-between font-medium">
-              <span>Costo por unidad (MO ÷ Rendimiento)</span>
+              <span>Costo por unidad</span>
               <span>{formatoMoneda(costoPorUnidad)}</span>
             </div>
             <div className="flex justify-between font-medium">

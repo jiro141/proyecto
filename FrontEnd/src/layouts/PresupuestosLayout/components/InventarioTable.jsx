@@ -7,6 +7,8 @@ import StepForm from "../../../components/StepForm";
 import { createItem, updateItem } from "../../../api/controllers/Inventario";
 import { toast } from "react-toastify";
 import useDepartamentos from "../../../hooks/useDepartamentos";
+import useUbicaciones from "../../../hooks/useUbicaciones";
+import useLugaresConsumo from "../../../hooks/useLugaresConsumo";
 import useProveedores from "../../../hooks/useProveedores";
 import React, { useMemo, useState } from "react";
 import { useInventarioTableLogic } from "../hooks/useInventarioTableLogic";
