@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
+import Select from "react-select";
 
 const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState(initialValues);
+  const [searchTerms, setSearchTerms] = useState({});
 
   useEffect(() => {
     setFormData(initialValues);
   }, [initialValues]);
 
   const step = steps[currentStep];
+  const isLastStep = currentStep === steps.length - 1;
 
   const handleChange = (e) => {
     const { name, type, checked, value } = e.target;
@@ -22,7 +25,9 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
     setFormData((prev) => ({ ...prev, [name]: newValue }));
   };
 
-  const isLastStep = currentStep === steps.length - 1;
+  const handleSearchChange = (name, inputValue) => {
+    setSearchTerms((prev) => ({ ...prev, [name]: inputValue }));
+  };
 
   const handleNext = () => {
     if (!isLastStep) setCurrentStep((prev) => prev + 1);
@@ -37,13 +42,11 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
     onSubmit(formData);
   };
 
-  // 🔹 Reordenar: primero "descripcion"
   const sortedFields = [
     ...step.fields.filter((f) => f.name === "descripcion"),
     ...step.fields.filter((f) => f.name !== "descripcion"),
   ];
 
-  // 🔹 Determinar columnas dinámicamente
   const columnCount = step.columns ?? (step.fields.length > 3 ? 2 : 1);
 
   return (
@@ -51,11 +54,19 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
       <div className={`grid gap-4 grid-cols-${columnCount}`}>
         {sortedFields.map((field) => {
           const value = formData[field.name] ?? "";
-          // 🔸 Si es "descripcion" → ocupar todas las columnas
-          const colSpanClass =
-            field.name === "descripcion"
-              ? `col-span-1`
-              : "col-span-1";
+          const colSpanClass = field.name === "descripcion" ? `col-span-1` : "col-span-1";
+
+          // 🔍 Hook dinámico para cargar datos según búsqueda
+          const hookData =
+            field.fetchHook && typeof field.fetchHook === "function"
+              ? field.fetchHook(searchTerms[field.name] || "")
+              : { [field.hookKey || "options"]: field.options || [] };
+
+          const options =
+            hookData[field.hookKey || "options"]?.map((item) => ({
+              label: item.label || item.nombre || item.descripcion || item.name,
+              value: item.value || item.id,
+            })) || [];
 
           return (
             <div key={field.name} className={colSpanClass}>
@@ -86,20 +97,22 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
                   </label>
                 </div>
               ) : field.type === "select" ? (
-                <select
+                <Select
                   name={field.name}
-                  value={value}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  required={field.required}
-                >
-                  <option value="">-------</option>
-                  {field.options?.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  options={options}
+                  value={options.find((opt) => opt.value === value) || null}
+                  onChange={(opt) =>
+                    handleCustomChange(field.name, opt ? opt.value : "")
+                  }
+                  onInputChange={(inputValue) =>
+                    field.fetchOnSearch && handleSearchChange(field.name, inputValue)
+                  }
+                  placeholder="Buscar..."
+                  isClearable
+                  isSearchable
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                />
               ) : field.type === "textarea" ? (
                 <textarea
                   name={field.name}
@@ -125,7 +138,6 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
         })}
       </div>
 
-      {/* BOTONES DE CONTROL */}
       <div className="flex items-center justify-between pt-4 gap-4">
         {step.actions?.map((action, index) => (
           <button

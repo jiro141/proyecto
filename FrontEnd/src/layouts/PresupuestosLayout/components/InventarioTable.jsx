@@ -69,22 +69,31 @@ export default function InventarioTable(props) {
         {
           columns: 3,
           fields: [
-            { name: "codigo", label: "Codigo", required: true },
-            { name: "descripcion", label: "Descripcion", required: true },
+            { name: "codigo", label: "Código", required: true },
+            { name: "descripcion", label: "Descripción", required: true },
+
+            // 🔹 Proveedor (buscable y cargado desde API)
             {
               name: "proveedor",
               label: "Proveedor",
               type: "select",
-              options: proveedorOptions,
               required: true,
+              fetchOnSearch: true,
+              fetchHook: useProveedores,
+              hookKey: "proveedores",
             },
+
+            // 🔹 Departamento (buscable desde API)
             {
               name: "departamento",
               label: "Departamento",
               type: "select",
               required: true,
-              options: deptOptions,
+              fetchOnSearch: true,
+              fetchHook: useDepartamentos,
+              hookKey: "departamentos",
             },
+
             { name: "pza", label: "Pieza", required: true },
             { name: "costo_dolares", label: "Costo en dólares" },
             { name: "costo_pesos", label: "Costo en pesos" },
@@ -112,7 +121,10 @@ export default function InventarioTable(props) {
               label: "Nuevo Departamento",
               onClick: () => setDeptModalOpen(true),
             },
-            { label: "Nuevo Proveedor", onClick: () => setProvModalOpen(true) },
+            {
+              label: "Nuevo Proveedor",
+              onClick: () => setProvModalOpen(true),
+            },
           ],
         },
       ]
@@ -123,41 +135,64 @@ export default function InventarioTable(props) {
               label: "Nuevo Departamento",
               onClick: () => setDeptModalOpen(true),
             },
-            { label: "Nuevo Proveedor", onClick: () => setProvModalOpen(true) },
+            {
+              label: "Nuevo Proveedor",
+              onClick: () => setProvModalOpen(true),
+            },
           ],
           fields: [
-            { name: "codigo", label: "Codigo", required: true },
-            { name: "descripcion", label: "Descripcion", required: true },
+            { name: "codigo", label: "Código", required: true },
+            { name: "descripcion", label: "Descripción", required: true },
+
+            // 🔹 Departamento (API + búsqueda)
             {
               name: "departamento",
               label: "Departamento",
               type: "select",
-              options: deptOptions,
               required: true,
+              fetchOnSearch: true,
+              fetchHook: useDepartamentos,
+              hookKey: "departamentos",
             },
+
+            // 🔹 Proveedor (API + búsqueda)
             {
               name: "proveedor",
               label: "Proveedor",
               type: "select",
-              options: proveedorOptions,
               required: true,
+              fetchOnSearch: true,
+              fetchHook: useProveedores,
+              hookKey: "proveedores",
             },
+
+            // 🔹 Ubicación (API)
             {
               name: "ubicacion",
               label: "Ubicación",
               type: "select",
-              options: ubicacionOptions,
               required: true,
+              fetchHook: useUbicaciones,
+              hookKey: "ubicaciones",
             },
+
+            // 🔹 Lugar de Consumo (API)
             {
               name: "consumo",
               label: "Lugar de Consumo",
               type: "select",
-              options: lugarOptions,
+              required: true,
+              fetchHook: useLugaresConsumo,
+              hookKey: "lugares",
+            },
+
+            { name: "unidad", label: "Pieza", required: true },
+            {
+              name: "costo",
+              label: "Costo",
+              type: "number",
               required: true,
             },
-            { name: "unidad", label: "Pieza", required: true },
-            { name: "costo", label: "Costo", type: "number", required: true },
           ],
         },
       ];
