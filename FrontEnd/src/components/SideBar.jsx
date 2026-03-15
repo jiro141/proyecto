@@ -116,10 +116,10 @@ const SideBar = () => {
 
         {showReports && (
           <div className="submenu">
-            <NavLink to="/informes/Lista" className="sidebar-sublink">
+            {/* <NavLink to="/informes/Lista" className="sidebar-sublink">
               <FaFileInvoiceDollar />
               <span>Ver Presupuestos</span>
-            </NavLink>
+            </NavLink> */}
             <NavLink to="/informes/Crear" className="sidebar-sublink">
               <FaPlusCircle />
               <span>Crear Nuevo</span>

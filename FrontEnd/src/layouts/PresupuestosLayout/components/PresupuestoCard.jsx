@@ -49,7 +49,7 @@ export default function PresupuestoCard({ label = "Presupuesto Estimado (USD)" }
   return (
     <div
       className="relative bg-white shadow-md rounded-lg p-5 pt-10 transition-all duration-200 flex flex-col justify-between"
-      style={{ minHeight: "220px", maxHeight: "220px" }}
+      style={{ minHeight: "200px", maxHeight: "200px" }}
     >
       <div
         className="absolute -top-4 left-5 w-12 h-12 flex items-center justify-center rounded-lg z-[5] shadow-md"
@@ -74,22 +74,6 @@ export default function PresupuestoCard({ label = "Presupuesto Estimado (USD)" }
             }}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-blue-400"
             placeholder="Ingrese el presupuesto estimado"
-          />
-        </div>
-
-        <div className="w-1/3">
-          <label className="text-xs text-gray-400">% Desperdicio / Margen</label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={depreciacion}
-            onChange={(e) => {
-              isUserEditing.current = true;
-              setDepreciacion(parseFloat(e.target.value) || 0);
-            }}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-blue-400"
-            placeholder="Ej: 10"
           />
         </div>
       </div>

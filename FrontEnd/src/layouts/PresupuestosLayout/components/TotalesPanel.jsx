@@ -5,7 +5,7 @@ import TableHeader from "./TableHeader";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 
 const TotalesPanel = ({ apuIndex }) => {
-  const { formData, setFormData, currentAPUIndex } = usePresupuesto();
+  const { formData, currentAPUIndex, updateAPUField, updateAPU } = usePresupuesto();
 
   // ✅ Si no viene apuIndex (Etapa 2), usamos el actual del contexto
   const effectiveIndex = typeof apuIndex === "number" ? apuIndex : currentAPUIndex;
@@ -93,7 +93,7 @@ const TotalesPanel = ({ apuIndex }) => {
     const costoDirectoPorUnidad =
       costoPorUnidad +
       materialesTotal +
-      herramientasPorRendimiento ;
+      herramientasPorRendimiento;
 
     const adminYGastos = costoDirectoPorUnidad * 0.15;
     const subTotal = costoDirectoPorUnidad + adminYGastos;
@@ -131,33 +131,41 @@ const TotalesPanel = ({ apuIndex }) => {
   ]);
   // 🔁 Sincroniza el totalUnitario calculado con el body del APU en formData
   useEffect(() => {
-    if (!formData?.apus || !formData.apus[effectiveIndex]) return;
+    if (!formData?.apus?.[effectiveIndex]) return;
 
     const apuActual = formData.apus[effectiveIndex];
     const cantidad = Number(apuActual.body?.cantidad || 0);
-    const nuevoPresupuesto = (totalUnitario * cantidad) || 0;
 
-    // 💰 Redondea a 2 decimales
-    const presupuestoRedondeado = Number(nuevoPresupuesto.toFixed(2));
+    const nuevoPresupuesto = Number(
+      (totalUnitario * cantidad).toFixed(2)
+    );
 
-    // ⚙️ Evita bucles: solo actualiza si el valor cambió realmente
-    if (apuActual.body?.presupuesto_base !== presupuestoRedondeado) {
-      const updatedFormData = structuredClone(formData);
-      updatedFormData.apus[effectiveIndex].body.presupuesto_base = presupuestoRedondeado;
-      setFormData(updatedFormData);
+    if (apuActual.body?.presupuesto_base !== nuevoPresupuesto) {
+      updateAPU(effectiveIndex, {
+        body: {
+          ...apuActual.body,
+          presupuesto_base: nuevoPresupuesto,
+        },
+      });
     }
-  }, [totalUnitario, effectiveIndex, formData.apus, setFormData]);
+  }, [totalUnitario, effectiveIndex, formData.apus]);
 
 
 
 
 
-  const formatoMoneda = (valor) =>
-    valor.toLocaleString("en-US", {
+  const formatoMoneda = (valor) => {
+    const numero = Number(valor ?? 0);
+
+    if (isNaN(numero)) return "$0.00";
+
+    return numero.toLocaleString("en-US", {
       style: "currency",
       currency: "USD",
       maximumFractionDigits: 2,
     });
+  };
+
 
   // Antes del return, en tu componente:
   const herramientasFiltradas = herramientas.filter(
@@ -200,7 +208,7 @@ const TotalesPanel = ({ apuIndex }) => {
 
             {/* 🔹 Detalle Mano de Obra */}
             <div className="flex justify-between font-medium text-[#0B2C4D] mt-2">
-              <span>Bono Alimenticio ($15 × Días Trabajados)</span>
+              <span>Bono Alimenticio ($15 × Días)</span>
               <span>{formatoMoneda(bonoAlimentacion)}</span>
             </div>
             <div className="flex justify-between font-medium text-[#0B2C4D]">
@@ -213,10 +221,6 @@ const TotalesPanel = ({ apuIndex }) => {
             </div>
 
             {/* 🔹 Totales de unidad y márgenes */}
-            <div className="flex justify-between font-medium mt-2">
-              <span>Presupuesto Base + % Desperdicio</span>
-              <span>{formatoMoneda(presupuestoConDesp)}</span>
-            </div>
             <div className="flex justify-between font-medium">
               <span>Costo por unidad</span>
               <span>{formatoMoneda(costoPorUnidad)}</span>

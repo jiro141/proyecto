@@ -53,10 +53,6 @@ export default function Etapa2HeaderGrid() {
 
         try {
             updateAPU(currentAPUIndex, apuActual);
-            toast.success(`💾 APU ${currentAPUIndex + 1} guardado`, {
-                toastId: `apu-save-${currentAPUIndex}`,
-                autoClose: 1000,
-            });
         } catch (err) {
             console.error("Error al guardar APU:", err);
             toast.error("❌ Error al guardar APU");

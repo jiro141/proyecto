@@ -38,7 +38,7 @@ export default function CrearPresupuestoLayout() {
     // 📊 Configuración base
     presupuesto_base: 0,
     presupuesto_estimado: 0,
-    porcentaje_productividad: 0.75, // 0–1
+    porcentaje_productividad: 1, // 0–1
 
     // 🧱 Lista de APUs (cada uno tiene sus propios datos)
     apus: [
@@ -276,7 +276,7 @@ export default function CrearPresupuestoLayout() {
         />
       )}
       {etapa === 3 && (
-        <Etapa3 formData={formData} onCreate={handleCreateReporte} />
+        <Etapa3 formData={formData} onCreate={handleCreateReporte} setEtapa={setEtapa} />
       )}
 
       {/* BOTONES DE NAVEGACIÓN */}

@@ -7,8 +7,13 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
   const [searchTerms, setSearchTerms] = useState({});
 
   useEffect(() => {
-    setFormData(initialValues);
-  }, [initialValues]);
+  setFormData((prev) => {
+    if (JSON.stringify(prev) === JSON.stringify(initialValues)) {
+      return prev;
+    }
+    return initialValues;
+  });
+}, [initialValues]);
 
   const step = steps[currentStep];
   const isLastStep = currentStep === steps.length - 1;

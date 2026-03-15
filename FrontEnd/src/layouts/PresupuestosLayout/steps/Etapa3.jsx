@@ -5,24 +5,29 @@ import { useState, useEffect } from "react";
 import Modal from "../../../components/Modal";
 import { FaTrashAlt, FaFilePdf, FaFileExcel } from "react-icons/fa";
 import useExcelGenerator from "../hooks/useExcelGenerator";
+import usePDFGenerator from "../hooks/usePDFGenerator";
 
 export default function Etapa3() {
   const {
     formData,
-    setFormData,
     currentAPUIndex,
     setCurrentAPUIndex,
     resetPresupuesto,
+    updatePresupuestoField,
+    updateAPU,
+    updateAPUCantidad,
   } = usePresupuesto();
 
-  const { crearPresupuestoCompleto } = useReportesActions();
-  const [isSending, setIsSending] = useState(false);
 
+  const { guardarPresupuesto } = useReportesActions();
+
+  const [isSending, setIsSending] = useState(false);
+  const [nPresupuesto, setNPresupuesto] = useState();
   // 🔥 Estado de modales
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [apuToDelete, setApuToDelete] = useState(null);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
-
+  const [isReportGenerated, setIsReportGenerated] = useState(false);
   // 📊 Hook para exportar Excel con fórmulas
   const { generarExcelAPUs } = useExcelGenerator();
 
@@ -38,19 +43,21 @@ export default function Etapa3() {
     }, 0);
 
     if (totalEstimado !== formData.presupuesto_estimado) {
-      const updatedFormData = structuredClone(formData);
-      updatedFormData.presupuesto_estimado = totalEstimado;
-      setFormData(updatedFormData);
+      updatePresupuestoField("presupuesto_estimado", totalEstimado);
     }
-  }, [formData.apus, setFormData]);
+  }, [formData.apus]);
+
 
   // ✏️ Cambios en inputs editables
   const handleInputChange = (index, field, value) => {
-    const updatedForm = structuredClone(formData);
-    updatedForm.apus[index].body[field] =
-      field === "unidad" ? value : Number(value) || 0;
-    setFormData(updatedForm);
+    updateAPU(index, {
+      body: {
+        ...formData.apus[index].body,
+        [field]: field === "unidad" ? value : Number(value) || 0,
+      },
+    });
   };
+
 
   // 🗑️ Mostrar modal de confirmación
   const handleShowDeleteModal = (index) => {
@@ -61,24 +68,34 @@ export default function Etapa3() {
   // 🧹 Confirmar eliminación
   const handleConfirmDelete = () => {
     if (apuToDelete === null) return;
-    const updatedForm = structuredClone(formData);
-    updatedForm.apus.splice(apuToDelete, 1);
-    setFormData(updatedForm);
+    deleteAPU(apuToDelete);
     setDeleteModalOpen(false);
     setApuToDelete(null);
   };
+
 
   const handleCancelarDelete = () => {
     setDeleteModalOpen(false);
     setApuToDelete(null);
   };
+  const handleCloseSuccessModal = () => {
+    setSuccessModalOpen(false);
+    setIsReportGenerated(false);
+    setNPresupuesto(undefined);
+
+    // 🔥 RESET TOTAL DEL CONTEXTO
+    resetPresupuesto();
+    window.location.reload();
+  };
+
 
   // 💾 Guardar presupuesto
   const handleGuardar = async () => {
     try {
       setIsSending(true);
-      await crearPresupuestoCompleto({ formData });
-      setSuccessModalOpen(true); // ✅ Abre el modal de exportación
+      const res = await guardarPresupuesto({ formData });
+      setNPresupuesto(res.reporte.n_presupuesto);
+      setSuccessModalOpen(true);
     } catch (err) {
       console.error("Error al enviar presupuesto:", err);
     } finally {
@@ -87,19 +104,21 @@ export default function Etapa3() {
   };
 
   // 📄 Exportar PDF
+  const { generarPDF } = usePDFGenerator();
   const handleGenerarPDF = () => {
-    console.log("📄 Generando PDF con formData:", formData);
-    // Aquí puedes conectar tu exportador de PDF
+    generarPDF(formData, nPresupuesto);
+    setIsReportGenerated(true);
   };
 
-  // 📊 Exportar Excel (ya conectado con el hook)
   const handleGenerarExcel = () => {
     if (!formData?.apus?.length) {
       alert("⚠️ No hay APUs disponibles para exportar.");
       return;
     }
-    generarExcelAPUs(formData);
+    generarExcelAPUs(formData, nPresupuesto);
+    setIsReportGenerated(true);
   };
+
 
   const formatoMoneda = (valor) =>
     valor?.toLocaleString("en-US", {
@@ -215,24 +234,12 @@ export default function Etapa3() {
                       type="number"
                       value={apu.body?.cantidad || 0}
                       onChange={(e) =>
-                        handleInputChange(index, "cantidad", e.target.value)
-                      }
-                      className="border rounded-md px-2 py-1 text-xs mt-1 focus:outline-none focus:ring focus:ring-blue-200"
-                      step="0.01"
-                    />
-                  </label>
-
-                  <label className="flex flex-col">
-                    <strong>% Desp:</strong>
-                    <input
-                      type="number"
-                      value={apu.body?.porcentaje_desp || 0}
-                      onChange={(e) =>
-                        handleInputChange(
-                          index,
-                          "porcentaje_desp",
-                          e.target.value
-                        )
+                        updateAPU(index, {
+                          body: {
+                            ...apu.body,
+                            cantidad: Number(e.target.value) || 0,
+                          },
+                        })
                       }
                       className="border rounded-md px-2 py-1 text-xs mt-1 focus:outline-none focus:ring focus:ring-blue-200"
                       step="0.01"
@@ -266,8 +273,8 @@ export default function Etapa3() {
           onClick={handleGuardar}
           disabled={isSending}
           className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${isSending
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-[#0B2C4D] hover:bg-[#15395A]"
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-[#0B2C4D] hover:bg-[#15395A]"
             }`}
         >
           {isSending ? "Enviando..." : "Crear"}
@@ -305,13 +312,13 @@ export default function Etapa3() {
       {/* === MODAL ÉXITO: GENERAR PDF / EXCEL === */}
       <Modal
         isOpen={successModalOpen}
-        onClose={() => setSuccessModalOpen(false)}
+        onClose={handleCloseSuccessModal}
         title="Presupuesto Generado"
         width="max-w-md"
       >
         <div className="text-center space-y-6">
           <p className="text-gray-700">
-            ✅ El presupuesto se ha guardado correctamente.
+            El presupuesto se ha guardado correctamente.
           </p>
           <div className="flex justify-center gap-6">
             <button

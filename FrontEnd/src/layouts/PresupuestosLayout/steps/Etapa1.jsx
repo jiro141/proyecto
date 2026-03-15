@@ -7,10 +7,10 @@ import ControlCard from "../components/ControlCard";
 import NotaCard from "../components/NotaCard";
 
 export default function Etapa1() {
-  const { formData, setFormData } = usePresupuesto();
+  const { formData, updatePresupuestoField } = usePresupuesto();
 
   const handleClienteSelect = (cliente) => {
-    setFormData((prev) => ({ ...prev, cliente }));
+    updatePresupuestoField("cliente", cliente);
     toast.info(`🧾 Cliente seleccionado: ${cliente?.nombre}`, {
       position: "top-right",
       autoClose: 2000,
@@ -18,25 +18,19 @@ export default function Etapa1() {
   };
 
   const handleDescripcionChange = (descripcion) => {
-    setFormData((prev) => ({ ...prev, descripcion }));
+    updatePresupuestoField("descripcion", descripcion);
   };
 
   const handleFechaChange = (fecha) => {
-    setFormData((prev) => ({ ...prev, fechaCulminacion: fecha }));
+    updatePresupuestoField("fechaCulminacion", fecha);
   };
 
   const handleProductividadChange = (valor) => {
-    setFormData((prev) => ({
-      ...prev,
-      porcentaje_productividad: valor / 100,
-    }));
+    updatePresupuestoField("porcentaje_productividad", valor / 100);
   };
 
   const handlePresupuestoChange = (valor) => {
-    setFormData((prev) => ({
-      ...prev,
-      presupuesto_base: Number(valor) || 0,
-    }));
+    updatePresupuestoField("presupuesto_base", Number(valor) || 0);
   };
 
   return (
@@ -57,8 +51,16 @@ export default function Etapa1() {
           fecha={formData.fechaCulminacion}
           onFechaChange={handleFechaChange}
         />
-        {/* <NotaCard /> */}
-
+        <NotaCard
+          titulo={formData.titulo}
+          descripcion={formData.notas}
+          onTituloChange={(value) =>
+            updatePresupuestoField("titulo", value)
+          }
+          onDescripcionChange={(value) =>
+            updatePresupuestoField("notas", value)
+          }
+        />
       </div>
 
       <div className="col-start-3 row-start-1">

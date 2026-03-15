@@ -4,16 +4,25 @@ export default function TableRow({
   item,
   tipo,
   cantidad,
+  isSelected,
   desp,
   onCantidadChange,
   onDepreciacionChange,
   onDescripcionClick,
+  handleCantidadInputChange,
 }) {
   const precioUnitario = item.mts_ml_m2 ?? item.utilidad_15 ?? item.costo ?? 0;
   const total = cantidad * (1 + desp / 100) * precioUnitario;
 
   return (
-    <tr className="hover:bg-gray-50 border-b transition-colors last:border-none">
+    <tr
+      className={`
+        border-b transition-colors last:border-none
+        ${isSelected
+          ? "bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-500"
+          : "hover:bg-gray-50"}
+      `}
+    >
       {/* Descripción (clickable para editar) */}
       <td
         className="py-2.5 px-2 text-sm font-medium text-gray-700 cursor-pointer hover:text-[#0B2C4D]"
@@ -41,18 +50,17 @@ export default function TableRow({
 
           <input
             type="number"
-            value={cantidad}
+            value={cantidad ?? ""}
             min="0"
             step="any"
             onChange={(e) =>
-              onCantidadChange(
+              handleCantidadInputChange(
                 item.id,
                 parseFloat(e.target.value || 0) - cantidad
               )
             }
             className="w-12 text-center text-sm font-medium border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0B2C4D] no-spin"
           />
-
 
           <button
             onClick={() => onCantidadChange(item.id, +1)}
@@ -68,7 +76,7 @@ export default function TableRow({
         <input
           type="number"
           step="any"
-          value={desp}
+          value={desp ?? ""}
           onChange={(e) =>
             onDepreciacionChange(item.id, parseFloat(e.target.value) || 0)
           }

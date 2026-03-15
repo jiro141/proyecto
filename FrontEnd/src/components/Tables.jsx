@@ -1,17 +1,11 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState } from "react";
 import { BounceLoader } from "react-spinners";
-import { useLocation } from "react-router-dom";
 import { FaSearch, FaSave, FaSyncAlt } from "react-icons/fa";
 import { FaRegTrashCan } from "react-icons/fa6";
-import useDepartamentos from "../hooks/useDepartamentos";
-import useUbicaciones from "../hooks/useUbicaciones";
-import useLugaresConsumo from "../hooks/useLugaresConsumo";
-import useProveedores from "../hooks/useProveedores";
+import { useLocation } from "react-router-dom";
 import Modal from "./Modal";
-import { deleteItem } from "../api/controllers/Inventario";
-import { createItem } from "../api/controllers/Inventario";
-import { toast } from "react-toastify";
-
+import useTablesLogic from "../hooks/useTablesLogic";
+import PresupuestosLayout from "../layouts/PresupuestosLayout/PresupuestosLayout";
 const Tables = ({
   columns,
   data = [],
@@ -26,134 +20,44 @@ const Tables = ({
   tazaRefetch,
 }) => {
   const location = useLocation();
+  const isClientesLista = location.pathname === "/clientes/Lista";
 
-  const isSubInventario =
-    (
-      location.pathname === "/clientes/Cuentas");
+  // 🔹 Nuevo estado para modal de reportes
+  const [isReportesModalOpen, setIsReportesModalOpen] = useState(false);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
 
-  const { departamentos = [] } = useDepartamentos();
-  const { ubicaciones = [] } = useUbicaciones();
-  const { lugares = [] } = useLugaresConsumo();
-  const { proveedores = [] } = useProveedores();
+  const {
+    isSubInventario,
+    query,
+    setQuery,
+    isDeleteModalOpen,
+    setDeleteModalOpen,
+    selectedItemName,
+    editando,
+    setEditando,
+    valorTaza,
+    setValorTaza,
+    handleDeleteClick,
+    confirmDelete,
+    handleGuardar,
+    handleCellClick,
+    formatDisplayValue,
+  } = useTablesLogic({
+    onSearch,
+    onAdd,
+    tipo,
+    refetch,
+    taza,
+    tazaRefetch,
+  });
 
-  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState(null);
-  const [selectedItemName, setSelectedItemName] = useState("");
-  const [editando, setEditando] = useState(false);
-  const [valorTaza, setValorTaza] = useState("");
+  const extraColumnsCount =
+    (!isSubInventario ? 1 : 0) + (isClientesLista ? 1 : 0);
 
-  useEffect(() => {
-    if (taza?.valor !== undefined && taza?.valor !== null) {
-      // Convertir el string del backend ("3650.0000") a número real
-      setValorTaza(parseFloat(taza.valor));
-    }
-  }, [taza]);
-
-  const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    if (!onSearch) return;
-    const delay = setTimeout(() => onSearch(query), 500);
-    return () => clearTimeout(delay);
-  }, [query, onSearch]);
-
-  const idToName = useMemo(
-    () => ({
-      departamento: (id) =>
-        departamentos.find((d) => d.id === id)?.name || `ID: ${id}`,
-      ubicacion: (id) =>
-        ubicaciones.find((u) => u.id === id)?.name || `ID: ${id}`,
-      consumo: (id) => lugares.find((l) => l.id === id)?.name || `ID: ${id}`,
-      proveedor: (id) =>
-        proveedores.find((p) => p.id === id)?.name || `ID: ${id}`,
-    }),
-    [departamentos, ubicaciones, lugares, proveedores]
-  );
-
-  const handleDeleteClick = (id, name) => {
-    setSelectedItemId(id);
-    setSelectedItemName(name);
-    setDeleteModalOpen(true);
+  const handleOpenReportes = (cliente) => {
+    setClienteSeleccionado(cliente);
+    setIsReportesModalOpen(true);
   };
-
-  const confirmDelete = async () => {
-    try {
-      await deleteItem(tipo, selectedItemId);
-      refetch && refetch();
-    } catch (err) {
-      console.error("Error eliminando:", err);
-    } finally {
-      setDeleteModalOpen(false);
-      setSelectedItemId(null);
-    }
-  };
-
-  const handleGuardar = async () => {
-    try {
-      // Construir payload según tu API
-      const payload = { valor: valorTaza.toString() };
-
-      // Hacer la petición PUT al endpoint /inventario/taza/1/
-      await createItem("taza", payload);
-
-      // Refrescar datos en pantalla si el hook lo permite
-      if (tazaRefetch) await tazaRefetch();
-      if (refetch) await refetch();
-      setTimeout(() => setEditando(false), 100);
-      // Mostrar éxito visual
-      toast.success("Valor de taza actualizado correctamente");
-
-      // Salir del modo edición
-      setEditando(false);
-    } catch (error) {
-      console.error("❌ Error al actualizar la taza:", error);
-      toast.error("Error al actualizar el valor de taza");
-    }
-  };
-
-  const formatDisplayValue = (value, colKey) => {
-    // 1️⃣ Resolver ID → texto
-    const resolver = idToName[colKey];
-    const resolvedValue = resolver ? resolver(value) : value;
-
-    // 2️⃣ Evitar errores de objetos
-    if (typeof resolvedValue === "object" && resolvedValue !== null)
-      return JSON.stringify(resolvedValue);
-
-    // 3️⃣ Truncar texto largo
-    const displayText =
-      typeof resolvedValue === "string" && resolvedValue.length > 15
-        ? resolvedValue.slice(0, 15) + "..."
-        : resolvedValue ?? "—";
-
-    const isMonetaryColumn =
-      colKey === "costo" ||
-      colKey === "utilidad_15" ||
-      (colKey === "mts_ml_m2" && resolvedValue !== null);
-
-    return isMonetaryColumn ? `$${resolvedValue}` : displayText;
-  };
-
-  // 👉 Nuevo handler para controlar el click en la celda
-  const handleCellClick = (col, row) => {
-    const value = row[col.key];
-
-    // Si la columna es "telefono", abrir WhatsApp
-    if (col.key === "telefono" && value) {
-      const phone = String(value).replace(/\D/g, ""); // limpiar a solo números
-      if (!phone) return;
-
-      const url = `https://wa.me/${phone}`;
-      window.open(url, "_blank");
-      return;
-    }
-
-    // De resto, comportamiento normal: abrir modal con onAdd
-    if (onAdd) {
-      onAdd(row);
-    }
-  };
-
   return (
     <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
       {/* HEADER */}
@@ -171,7 +75,7 @@ const Tables = ({
         ) : taza ? (
           <div className="flex flex-col gap-2 text-white">
             <div className="flex items-center gap-2">
-              <h2 className={`text-m font-semibold text-white `}>Taza:</h2>
+              <h2 className="text-m font-semibold text-white">Taza:</h2>
               <input
                 type="number"
                 step="0.0001"
@@ -179,11 +83,12 @@ const Tables = ({
                 value={valorTaza}
                 onChange={(e) => setValorTaza(e.target.value)}
                 className={`border rounded-lg px-3 py-2 w-28 text-gray-900 ${editando
-                  ? "focus:outline-none focus:ring-2 focus:ring-blue-300 border-blue-300"
-                  : "bg-gray-100 cursor-not-allowed"
+                    ? "focus:outline-none focus:ring-2 focus:ring-blue-300 border-blue-300"
+                    : "bg-gray-100 cursor-not-allowed"
                   }`}
               />
-              <h2 className={`text-m font-semibold text-white `}>$</h2>
+              <h2 className="text-m font-semibold text-white">$</h2>
+
               {editando ? (
                 <button
                   onClick={handleGuardar}
@@ -220,6 +125,7 @@ const Tables = ({
               />
             </div>
           )}
+
           {!isSubInventario && (
             <button
               className="bg-[#e53935] hover:bg-[#c2302d] text-white font-medium py-2 px-4 rounded"
@@ -240,8 +146,13 @@ const Tables = ({
                 {col.label}
               </th>
             ))}
+
+            {isClientesLista && (
+              <th className="px-6 py-3 text-center">Presupuestos</th>
+            )}
+
             {!isSubInventario && (
-              <th className="px-6 py-3 text-right">Acción</th>
+              <th className="px-6 py-3 text-right">Eliminar</th>
             )}
           </tr>
         </thead>
@@ -250,7 +161,7 @@ const Tables = ({
           {loading ? (
             <tr>
               <td
-                colSpan={columns.length + (!isSubInventario ? 1 : 0)}
+                colSpan={columns.length + extraColumnsCount}
                 className="px-6 py-8"
               >
                 <div className="flex justify-center items-center w-full h-full">
@@ -261,7 +172,7 @@ const Tables = ({
           ) : data.length === 0 ? (
             <tr>
               <td
-                colSpan={columns.length + (!isSubInventario ? 1 : 0)}
+                colSpan={columns.length + extraColumnsCount}
                 className="text-center py-6 text-gray-500"
               >
                 No hay registros disponibles
@@ -277,18 +188,34 @@ const Tables = ({
                   <td
                     key={col.key}
                     onClick={() => handleCellClick(col, row)}
-                    className={`px-6 py-4 text-gray-800 cursor-pointer hover:underline ${colIndex === 0 ? "font-medium whitespace-nowrap" : ""
+                    className={`px-6 py-4 text-gray-800 cursor-pointer hover:underline ${colIndex === 0
+                        ? "font-medium whitespace-nowrap"
+                        : ""
                       }`}
                   >
                     {formatDisplayValue(row[col.key], col.key)}
                   </td>
                 ))}
 
+                {isClientesLista && (
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => handleOpenReportes(row)}
+                      className="bg-[#0B2C4D] hover:bg-[#143d65] text-white px-3 py-1 rounded text-xs transition"
+                    >
+                      Ver
+                    </button>
+                  </td>
+                )}
+
                 {!isSubInventario && (
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={() =>
-                        handleDeleteClick(row.id, row.name || row.descripcion)
+                        handleDeleteClick(
+                          row.id,
+                          row.name || row.descripcion
+                        )
                       }
                       className="font-medium text-[#e53935] hover:underline"
                     >
@@ -302,7 +229,7 @@ const Tables = ({
         </tbody>
       </table>
 
-      {/* MODAL CONFIRMACIÓN */}
+      {/* MODAL CONFIRMACIÓN ELIMINAR */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
@@ -311,7 +238,10 @@ const Tables = ({
         <div className="space-y-4">
           <p>
             ¿Estás seguro de eliminar{" "}
-            <span className="font-bold text-red-700">{selectedItemName}</span>?
+            <span className="font-bold text-red-700">
+              {selectedItemName}
+            </span>
+            ?
           </p>
           <div className="flex justify-end gap-2">
             <button
@@ -327,6 +257,20 @@ const Tables = ({
               Eliminar
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* MODAL REPORTES DE CLIENTE */}
+      <Modal
+        isOpen={isReportesModalOpen}
+        onClose={() => setIsReportesModalOpen(false)}
+        title={`Presupuestos de ${clienteSeleccionado?.nombre || ""
+          }`}
+          width={"max-w-6xl"}
+          height={"h-[80vh]"}
+      >
+        <div className="py-6 text-center text-gray-600">
+          <PresupuestosLayout clienteSeleccionado={clienteSeleccionado} />
         </div>
       </Modal>
     </div>

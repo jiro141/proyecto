@@ -1,19 +1,16 @@
 import { useEffect, useState } from "react";
-import { getReporte } from "../api/controllers/Presupuesto";
+import { getReportes } from "../api/controllers/Presupuesto";
 
-export default function useReportes(search = "") {
+export default function useReportes(search = "", clienteId = null) {
   const [reportes, setReportes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  /** ======================
-   * Cargar Reportes
-   * ====================== */
-  const fetchData = async () => {
+  const fetchReportes = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const result = await getReporte(search);
-      setReportes(result.results);
+      const data = await getReportes(clienteId);
+      setReportes(data);
     } catch (err) {
       setError(err);
     } finally {
@@ -21,12 +18,15 @@ export default function useReportes(search = "") {
     }
   };
 
-  /** ======================
-   * Ejecutar al montar o cuando cambia `search`
-   * ====================== */
   useEffect(() => {
-    fetchData();
-  }, [search]);
+    if (!clienteId) return; // ⛔ no cargar si no hay cliente
+    fetchReportes();
+  }, [search, clienteId]);
 
-  return { reportes, loading, error, refetch: fetchData };
+  return {
+    reportes,
+    loading,
+    error,
+    refetch: fetchReportes,
+  };
 }

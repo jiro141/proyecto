@@ -22,7 +22,7 @@ export const useEtapa2Logic = () => {
         refetch: refetchCons,
     } = useInventario("consumibles", searchCons);
 
-    
+
 
     const { formData, currentAPUIndex, updateAPUSection } = usePresupuesto();
     const apuActual = formData.apus?.[currentAPUIndex] || {};
@@ -35,32 +35,37 @@ export const useEtapa2Logic = () => {
     const [consumibles, setConsumibles] = useState([]);
 
     useEffect(() => {
-        if (stockRaw?.length) {
-            const merged = stockRaw.map((item) => {
-                const saved = materiales.stock_almacen?.find((x) => x.id === item.id);
-                return saved
-                    ? { ...item, cantidad: saved.cantidad || 0, desp: saved.desp || 0 }
-                    : { ...item, cantidad: 0, desp: 0 };
-            });
-            setStock(merged);
-        } else {
+        if (!stockRaw) {
             setStock([]);
+            return;
         }
-    }, [stockRaw, materiales.stock_almacen]);
+
+        const merged = stockRaw.map((item) => {
+            const saved = materiales.stock_almacen?.find((x) => x.id === item.id);
+            return saved
+                ? { ...item, cantidad: saved.cantidad || 0, desp: saved.desp || 0 }
+                : { ...item, cantidad: 0, desp: 0 };
+        });
+
+        setStock(merged);
+    }, [stockRaw, currentAPUIndex]);
 
     useEffect(() => {
-        if (consRaw?.length) {
-            const merged = consRaw.map((item) => {
-                const saved = materiales.consumibles?.find((x) => x.id === item.id);
-                return saved
-                    ? { ...item, cantidad: saved.cantidad || 0, desp: saved.desp || 0 }
-                    : { ...item, cantidad: 0, desp: 0 };
-            });
-            setConsumibles(merged);
-        } else {
+        if (!consRaw) {
             setConsumibles([]);
+            return;
         }
-    }, [consRaw, materiales.consumibles]);
+
+        const merged = consRaw.map((item) => {
+            const saved = materiales.consumibles?.find((x) => x.id === item.id);
+            return saved
+                ? { ...item, cantidad: saved.cantidad || 0, desp: saved.desp || 0 }
+                : { ...item, cantidad: 0, desp: 0 };
+        });
+
+        setConsumibles(merged);
+    }, [consRaw, currentAPUIndex]);
+
 
     return {
         searchStock,

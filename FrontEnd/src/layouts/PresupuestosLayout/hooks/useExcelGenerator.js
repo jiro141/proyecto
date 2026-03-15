@@ -5,7 +5,7 @@ import { usePresupuesto } from "../../../context/PresupuestoContext";
 export default function useExcelGenerator() {
     const { formData } = usePresupuesto();
 
-    const generarExcelAPUs = () => {
+    const generarExcelAPUs = (otro,nPresupuesto) => {
         if (!formData?.apus?.length) return;
 
         const wb = XLSX.utils.book_new();
@@ -193,9 +193,10 @@ export default function useExcelGenerator() {
             XLSX.utils.book_append_sheet(wb, ws, hojaNombre);
         });
 
+
         XLSX.writeFile(
             wb,
-            `Presupuesto_${formData?.cliente?.nombre || "Cliente"}_${new Date()
+            `${nPresupuesto}_${formData?.descripcion}_${formData?.cliente?.nombre || ""}_${new Date()
                 .toISOString()
                 .split("T")[0]}.xlsx`
         );

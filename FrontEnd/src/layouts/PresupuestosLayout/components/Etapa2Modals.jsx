@@ -130,6 +130,7 @@ export default function Etapa2Modals({
                 isOpen={openModal === "stock"}
                 onClose={() => setOpenModal(null)}
                 width="max-w-5xl"
+                height={"h-3/4"}
             >
                 <div className="max-h-[80vh] overflow-y-auto p-4">
                     {renderInventarioContent({
@@ -148,6 +149,7 @@ export default function Etapa2Modals({
                 isOpen={openModal === "consumibles"}
                 onClose={() => setOpenModal(null)}
                 width="max-w-5xl"
+                height={"h-3/4"}
             >
                 <div className="max-h-[80vh] overflow-y-auto p-4">
                     {renderInventarioContent({
@@ -166,6 +168,7 @@ export default function Etapa2Modals({
                 isOpen={openModal === "herramientas"}
                 onClose={() => setOpenModal(null)}
                 width="max-w-4xl"
+                height={"h-3/4"}
             >
                 <PresupuestoTable
                     titulo="Costo de Herramientas"
@@ -190,6 +193,7 @@ export default function Etapa2Modals({
                 isOpen={openModal === "manoObra"}
                 onClose={() => setOpenModal(null)}
                 width="max-w-4xl"
+                height={"h-3/4"}
             >
                 <PresupuestoTable
                     titulo="Mano de Obra"
@@ -214,6 +218,7 @@ export default function Etapa2Modals({
                 isOpen={openModal === "logistica"}
                 onClose={() => setOpenModal(null)}
                 width="max-w-3xl"
+                height={"h-3/4"}
             >
                 <PresupuestoTable
                     titulo="Logística"

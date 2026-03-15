@@ -4,11 +4,17 @@ import AuthApi from "../AuthApi";
  * Obtener todos los reporte (con opción de búsqueda)
  * @param {string} search - texto a buscar por nombre, encargado o rif
  */
-export const getReporte = async (search = "") => {
+export const getReportes = async (search = "") => {
   const response = await AuthApi.get(`/reportes/reportes/?search=${search}`);
   return response.data;
 };
-
+export const getReporteDetalle = async (id) => {
+  
+  const response = await AuthApi.get(`/reportes/reportes/${id}/`);
+  console.log(response,'data detallada');
+  
+  return response.data;
+};
 /**
  * Crear un nuevo cliente
  * @param {Object} payload - datos del cliente
@@ -46,6 +52,51 @@ export const getClienteById = async (id) => {
   return response.data;
 };
 
+export const updateAPU = async (apuId, data) => {
+  try {
+    const response = await AuthApi.put(`/reportes/apus/${apuId}/`, data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error al actualizar APU:", error.response?.data || error);
+    throw error;
+  }
+};
+export const updateAPUMaterial = async (materialId, data) => {
+  try {
+    const response = await AuthApi.put(`/reportes/materiales/${materialId}/`, data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error actualizando material:", error.response?.data || error);
+    throw error;
+  }
+};
+export const updateAPUHerramienta = async (id, data) => {
+  try {
+    const response = await AuthApi.put(`/reportes/herramientas/${id}/`, data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error actualizando herramienta:", error.response?.data || error);
+    throw error;
+  }
+};
+export const updateAPUManoObra = async (id, data) => {
+  try {
+    const response = await AuthApi.put(`/reportes/mano-obra/${id}/`, data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error actualizando mano de obra:", error.response?.data || error);
+    throw error;
+  }
+};
+export const updateAPULogistica = async (id, data) => {
+  try {
+    const response = await AuthApi.put(`/reportes/logistica/${id}/`, data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error actualizando logística:", error.response?.data || error);
+    throw error;
+  }
+};
 
 
 
