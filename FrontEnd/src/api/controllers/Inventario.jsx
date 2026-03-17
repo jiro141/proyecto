@@ -97,3 +97,13 @@ export const getProveedoresSearch = async (search = "") => {
   );
   return response.data;
 };
+
+/**
+ * Actualizar parcialmente los porcentajes de utilidad globales en Taza (PATCH)
+ * @param {number|string} tazaId — ID del registro Taza_pesos_dolares activo
+ * @param {Object} payload — { utilidad_porcentaje_1, utilidad_porcentaje_2, utilidad_porcentaje_3 }
+ */
+export const patchTazaPorcentajes = async (tazaId, payload) => {
+  const response = await AuthApi.patch(`/inventario/taza/${tazaId}/porcentajes/`, payload);
+  return response.data;
+};

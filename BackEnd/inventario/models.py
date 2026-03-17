@@ -56,6 +56,18 @@ class Taza_pesos_dolares(models.Model):
     valor = models.DecimalField(
         max_digits=10, decimal_places=2, help_text="Tasa pesos/dólar actual"
     )
+    utilidad_porcentaje_1 = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+        help_text="Primer porcentaje de utilidad global (0 = sin margen, muestra costo base)"
+    )
+    utilidad_porcentaje_2 = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+        help_text="Segundo porcentaje de utilidad global"
+    )
+    utilidad_porcentaje_3 = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+        help_text="Tercer porcentaje de utilidad global"
+    )
 
     def __str__(self):
         return f"Tasa: {self.valor}"
@@ -94,6 +106,15 @@ class Stock(models.Model):
     mts_ml_m2 = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True
     )
+    mts_ml_m2_1 = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    mts_ml_m2_2 = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    mts_ml_m2_3 = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
     item_fijo = models.BooleanField(
         default=False, help_text="Indica si es un ítem fijo del sistema."
     )
@@ -116,8 +137,15 @@ class Stock(models.Model):
 
     def calcular_costos(self):
         """Cálculo automático de costo, utilidad y mts_ml_m2."""
-        taza = Taza_pesos_dolares.objects.first()
+        # Get the latest Taza record (most recent by ID) to ensure we use current tasa and percentages
+        taza = Taza_pesos_dolares.objects.order_by("-id").first()
         tasa_valor = taza.valor if taza else Decimal("1.0")
+        
+        # Obtener porcentajes globales de utilidad
+        p1 = taza.utilidad_porcentaje_1 if taza else Decimal("0.00")
+        p2 = taza.utilidad_porcentaje_2 if taza else Decimal("0.00")
+        p3 = taza.utilidad_porcentaje_3 if taza else Decimal("0.00")
+        
         costo_pesos = self.costo_pesos or Decimal("0.00")
         envio = self.envio or Decimal("0.00")
 
@@ -132,15 +160,41 @@ class Stock(models.Model):
             self.utilidad_15 = (self.costo * Decimal("1.15")).quantize(
                 Decimal("0.01"), rounding=ROUND_HALF_UP
             )
+            # Calcular utilidades para los 3 porcentajes
+            utilidad_p1 = (self.costo * (Decimal("1.0") + p1 / Decimal("100"))).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+            utilidad_p2 = (self.costo * (Decimal("1.0") + p2 / Decimal("100"))).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+            utilidad_p3 = (self.costo * (Decimal("1.0") + p3 / Decimal("100"))).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
         else:
             self.utilidad_15 = Decimal("0.00")
+            utilidad_p1 = Decimal("0.00")
+            utilidad_p2 = Decimal("0.00")
+            utilidad_p3 = Decimal("0.00")
 
         if self.factor_conversion and self.factor_conversion > 0:
             self.mts_ml_m2 = (self.utilidad_15 / self.factor_conversion).quantize(
                 Decimal("0.01"), rounding=ROUND_HALF_UP
             )
+            # Calcular mts_ml_m2 para los 3 porcentajes
+            self.mts_ml_m2_1 = (utilidad_p1 / self.factor_conversion).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+            self.mts_ml_m2_2 = (utilidad_p2 / self.factor_conversion).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+            self.mts_ml_m2_3 = (utilidad_p3 / self.factor_conversion).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
         else:
             self.mts_ml_m2 = None
+            self.mts_ml_m2_1 = None
+            self.mts_ml_m2_2 = None
+            self.mts_ml_m2_3 = None
 
     def save(self, *args, **kwargs):
         self.calcular_costos()
@@ -225,11 +279,13 @@ class MovimientoInventario(models.Model):
 
 @receiver(post_save, sender=Taza_pesos_dolares)
 def actualizar_costos_stock(sender, instance, **kwargs):
-    """Actualiza automáticamente los costos de todos los Stock al cambiar la tasa."""
-    tasa_valor = instance.valor or Decimal("1.0")
+    """Actualiza automáticamente los costos de todos los Stock al cambiar la tasa o porcentajes."""
     stocks = Stock.objects.all()
 
     for item in stocks:
-        if not item.costo_dolares:
-            item.calcular_costos()
-            item.save(update_fields=["costo", "utilidad_15", "mts_ml_m2"])
+        # Update all cost-related fields including the new mts_ml_m2_1/2/3 fields
+        # Stock.save() will call calcular_costos() internally
+        item.save(update_fields=[
+            "costo", "utilidad_15", "mts_ml_m2", 
+            "mts_ml_m2_1", "mts_ml_m2_2", "mts_ml_m2_3"
+        ])

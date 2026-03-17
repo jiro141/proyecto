@@ -8,6 +8,7 @@ import useUbicaciones from "../hooks/useUbicaciones";
 import useLugaresConsumo from "../hooks/useLugaresConsumo";
 import useProveedores from "../hooks/useProveedores";
 import Modal from "./Modal";
+import UtilityPercentagesModal from "./UtilityPercentagesModal";
 import { deleteItem } from "../api/controllers/Inventario";
 import { createItem } from "../api/controllers/Inventario";
 import { toast } from "react-toastify";
@@ -41,6 +42,7 @@ const Tables = ({
   const [selectedItemName, setSelectedItemName] = useState("");
   const [editando, setEditando] = useState(false);
   const [valorTaza, setValorTaza] = useState("");
+  const [isUtilityModalOpen, setUtilityModalOpen] = useState(false);
 
   useEffect(() => {
     if (taza?.valor !== undefined && taza?.valor !== null) {
@@ -129,7 +131,10 @@ const Tables = ({
     const isMonetaryColumn =
       colKey === "costo" ||
       colKey === "utilidad_15" ||
-      (colKey === "mts_ml_m2" && resolvedValue !== null);
+      (colKey === "mts_ml_m2" && resolvedValue !== null) ||
+      (colKey === "mts_ml_m2_1" && resolvedValue !== null) ||
+      (colKey === "mts_ml_m2_2" && resolvedValue !== null) ||
+      (colKey === "mts_ml_m2_3" && resolvedValue !== null);
 
     return isMonetaryColumn ? `$${resolvedValue}` : displayText;
   };
@@ -199,6 +204,13 @@ const Tables = ({
                   <FaSyncAlt size={14} /> Editar
                 </button>
               )}
+              {/* Botón para editar porcentajes de utilidad */}
+              <button
+                onClick={() => setUtilityModalOpen(true)}
+                className="bg-[#0B2C4D] hover:bg-[#143d65] text-white px-3 py-2 rounded-lg flex items-center gap-2 transition"
+              >
+                % Utilidad
+              </button>
             </div>
           </div>
         ) : null}
@@ -303,6 +315,23 @@ const Tables = ({
       </table>
 
       {/* MODAL CONFIRMACIÓN */}
+      {/* Modal para editar porcentajes de utilidad */}
+      <UtilityPercentagesModal
+        isOpen={isUtilityModalOpen}
+        onClose={() => setUtilityModalOpen(false)}
+        tazaId={taza?.id}
+        currentValues={{
+          utilidad_porcentaje_1: taza?.utilidad_porcentaje_1 ?? 0,
+          utilidad_porcentaje_2: taza?.utilidad_porcentaje_2 ?? 0,
+          utilidad_porcentaje_3: taza?.utilidad_porcentaje_3 ?? 0,
+        }}
+        onSaved={() => { 
+          setUtilityModalOpen(false); 
+          if (tazaRefetch) tazaRefetch(); 
+          if (refetch) refetch(); 
+        }}
+      />
+
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}

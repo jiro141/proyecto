@@ -104,3 +104,52 @@ class TazaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Taza_pesos_dolares
         fields = "__all__"
+
+
+class TazaPorcentajesSerializer(serializers.ModelSerializer):
+    """Serializer específico para actualizar porcentajes de utilidad global."""
+    
+    class Meta:
+        model = Taza_pesos_dolares
+        fields = [
+            "id",
+            "utilidad_porcentaje_1",
+            "utilidad_porcentaje_2",
+            "utilidad_porcentaje_3",
+        ]
+    
+    def validate_utilidad_porcentaje_1(self, value):
+        """Validar que el porcentaje no sea negativo y esté dentro del rango permitido."""
+        if value < 0:
+            raise serializers.ValidationError(
+                "El porcentaje de utilidad 1 no puede ser negativo."
+            )
+        if value > 999.99:
+            raise serializers.ValidationError(
+                "El porcentaje de utilidad 1 no puede ser mayor a 999.99."
+            )
+        return value
+    
+    def validate_utilidad_porcentaje_2(self, value):
+        """Validar que el porcentaje no sea negativo y esté dentro del rango permitido."""
+        if value < 0:
+            raise serializers.ValidationError(
+                "El porcentaje de utilidad 2 no puede ser negativo."
+            )
+        if value > 999.99:
+            raise serializers.ValidationError(
+                "El porcentaje de utilidad 2 no puede ser mayor a 999.99."
+            )
+        return value
+    
+    def validate_utilidad_porcentaje_3(self, value):
+        """Validar que el porcentaje no sea negativo y esté dentro del rango permitido."""
+        if value < 0:
+            raise serializers.ValidationError(
+                "El porcentaje de utilidad 3 no puede ser negativo."
+            )
+        if value > 999.99:
+            raise serializers.ValidationError(
+                "El porcentaje de utilidad 3 no puede ser mayor a 999.99."
+            )
+        return value

@@ -119,18 +119,7 @@ def registrar_salida_por_borrado(sender, instance, **kwargs):
 # ==========================================================
 # 💱 ACTUALIZAR STOCK TRAS CAMBIO DE TASA
 # ==========================================================
-
-
-@receiver(post_save, sender=Taza_pesos_dolares)
-def actualizar_costos_stock(sender, instance, **kwargs):
-    """
-    Cada vez que se actualiza la tasa de conversión (Taza_pesos_dolares),
-    se recalculan automáticamente todos los costos, utilidades y conversiones (mts_ml_m2)
-    de los productos en la tabla Stock.
-
-    🔹 Llama a stock.save() para que cada instancia ejecute su lógica de cálculo.
-    🔹 Esto garantiza que todos los costos estén siempre sincronizados con la tasa actual.
-    """
-    stocks = Stock.objects.all()
-    for stock in stocks:
-        stock.save()  # 🔄 Ejecuta la lógica interna de cálculo definida en Stock.save()
+# NOTE: This signal has been moved to models.py (line 279)
+# to avoid confusion with the duplicate implementation.
+# The active signal is now in models.py attached to Taza_pesos_dolares.post_save
+# ==========================================================

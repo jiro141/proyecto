@@ -1,5 +1,6 @@
 from rest_framework import viewsets, filters, generics, status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 from .models import *
 from .serializers import *
 from rest_framework.response import Response
@@ -76,7 +77,7 @@ class TazaViewSet(viewsets.ViewSet):
     """
 
     def list(self, request):
-        tasa = Taza_pesos_dolares.objects.first()
+        tasa = Taza_pesos_dolares.objects.order_by("-id").first()
         if not tasa:
             return Response(
                 {"detail": "No existe tasa registrada."},
@@ -86,7 +87,7 @@ class TazaViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def create(self, request):
-        tasa = Taza_pesos_dolares.objects.first()
+        tasa = Taza_pesos_dolares.objects.order_by("-id").first()
         if tasa:
             serializer = TazaSerializer(tasa, data=request.data, partial=True)
         else:
@@ -94,4 +95,26 @@ class TazaViewSet(viewsets.ViewSet):
 
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["patch"], url_path="porcentajes")
+    def porcentajes(self, request, pk=None):
+        """
+        PATCH endpoint para actualizar porcentajes de utilidad global.
+        
+        Permite actualizar 1, 2 o los 3 porcentajes a la vez.
+        Al guardar, se dispara la señal post_save que recalcula
+        todos los stocks automáticamente.
+        """
+        try:
+            taza = Taza_pesos_dolares.objects.get(pk=pk)
+        except Taza_pesos_dolares.DoesNotExist:
+            return Response(
+                {"detail": "No se encontró la tasa especificada."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = TazaPorcentajesSerializer(taza, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()  # triggers post_save signal → recalculates ALL stocks
         return Response(serializer.data, status=status.HTTP_200_OK)

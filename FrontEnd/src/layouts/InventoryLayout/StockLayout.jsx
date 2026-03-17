@@ -15,6 +15,9 @@ const columns = [
   { key: "costo", label: "Costo" },
   { key: "utilidad_15", label: "%15 de Utilidad" },
   { key: "mts_ml_m2", label: "MTS ML M2" },
+  { key: "mts_ml_m2_1", label: "$/ml 1" },
+  { key: "mts_ml_m2_2", label: "$/ml 2" },
+  { key: "mts_ml_m2_3", label: "$/ml 3" },
   { key: "departamento", label: "Departamento" },
 ];
 
@@ -116,6 +119,9 @@ export default function StockLayout() {
           disabled: true,
         },
         { name: "mts_ml_m2", label: "MTS ML M2", disabled: true },
+        { name: "mts_ml_m2_1", label: "$/ml 1", disabled: true },
+        { name: "mts_ml_m2_2", label: "$/ml 2", disabled: true },
+        { name: "mts_ml_m2_3", label: "$/ml 3", disabled: true },
       ],
       actions: [
         {
