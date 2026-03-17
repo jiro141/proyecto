@@ -1,18 +1,21 @@
 from rest_framework.routers import DefaultRouter
 from django.urls import path, include
-from .views import *
+
+from .views import (
+    DepartamentoViewSet,
+    StockViewSet,
+    ProveedorViewSet,
+    MovimientoInventarioViewSet,
+    TazaViewSet,
+)
 
 router = DefaultRouter()
-router.register(r'lugares', LugarConsumoViewSet)
-router.register(r'ubicaciones', UbicacionViewSet)
-router.register(r'departamentos', DepartamentoViewSet)
-router.register(r'epp', EPPViewSet)
-router.register(r'stock', StockViewSet)
-router.register(r'consumibles', ConsumibleViewSet)
-router.register(r'proveedores', ProveedorViewSet)
-router.register(r'movimientos', MovimientoInventarioViewSet)
+router.register(r"departamentos", DepartamentoViewSet, basename="departamento")
+router.register(r"stock", StockViewSet, basename="stock")
+router.register(r"proveedores", ProveedorViewSet, basename="proveedor")
+router.register(r"movimientos", MovimientoInventarioViewSet, basename="movimiento")
 router.register(r"taza", TazaViewSet, basename="taza")
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path("", include(router.urls)),
 ]
