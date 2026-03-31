@@ -11,7 +11,6 @@ from .models import (
     NotaReporte,  # 📝 nuevo
 )
 
-
 # ==========================
 # 🧍 CLIENTE
 # ==========================

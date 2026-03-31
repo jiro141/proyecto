@@ -23,10 +23,13 @@ class Cliente(models.Model):
     def __str__(self):
         return f"{self.nombre} ({self.rif})"
 
-
 # ==========================
 # CONFIGURACIÓN DE REPORTES
 # ==========================
+class EstadoChoices(models.TextChoices):
+        EN_ESPERA = 'ESPERA', 'En espera'
+        APROBADO = 'APROBADO', 'Aprobado'
+        RECHAZADO = 'CANCELADO', 'Cancelado'
 
 
 class ReporteConfig(models.Model):
@@ -184,6 +187,14 @@ class APU(models.Model):
         blank=True,
         null=True,
     )
+    
+    estado = models.CharField(
+        max_length=10,
+        choices=EstadoChoices.choices,
+        default=EstadoChoices.EN_ESPERA,
+        help_text="Estado actual de aprobación del APU"
+    )
+
 
     unidad = models.CharField(max_length=50, blank=True, null=True)
 
