@@ -1,5 +1,5 @@
 from decimal import Decimal
-
+from django.db.models import Sum
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -27,10 +27,12 @@ class Cliente(models.Model):
 # CONFIGURACIÓN DE REPORTES
 # ==========================
 class EstadoChoices(models.TextChoices):
-        EN_ESPERA = 'ESPERA', 'En espera'
-        APROBADO = 'APROBADO', 'Aprobado'
-        RECHAZADO = 'CANCELADO', 'Cancelado'
-
+    EN_ESPERA = 'ESPERA', 'En espera'
+    RECHAZADO = 'RECHAZADO', 'Rechazado'
+    APROBADO_ESPERA = 'APROBADO_ESPERA', 'Aprobado a espera de ejecución'
+    EJECUTADO = 'EJECUTADO', 'Ejecutado'
+    EJECUTADO_POR_PAGAR = 'EJECUTADO_POR_PAGAR', 'Ejecutado Por pagar'
+    EJECUTADO_PAGADO = 'EJECUTADO_PAGADO', 'Ejecutado Pagado'
 
 class ReporteConfig(models.Model):
     """
@@ -83,11 +85,13 @@ class NotaReporte(models.Model):
 
 class Reporte(models.Model):
     """
-    Un reporte agrupa múltiples APUs.
+    Un reporte agrupa múltiples APUs y gestiona su ciclo de vida operativo y financiero.
     """
 
     cliente = models.ForeignKey(
-        Cliente, on_delete=models.CASCADE, related_name="reportes"
+        Cliente, 
+        on_delete=models.CASCADE, 
+        related_name="reportes"
     )
 
     n_presupuesto = models.CharField(
@@ -104,12 +108,18 @@ class Reporte(models.Model):
         verbose_name="Fecha de creación",
     )
 
-    # 🔢 Total del reporte (suma de total_apu)
+    estado = models.CharField(
+        max_length=300,
+        choices=EstadoChoices.choices,
+        default=EstadoChoices.EN_ESPERA,
+        help_text="Estado detallado del ciclo de vida del reporte"
+    )
+
     total_reporte = models.DecimalField(
         max_digits=14,
         decimal_places=2,
         default=Decimal("0.00"),
-        help_text="Suma de total_apu de todos los APUs del reporte",
+        help_text="Suma de total_apu de todos los APUs vinculados",
     )
 
     class Meta:
@@ -117,10 +127,18 @@ class Reporte(models.Model):
         verbose_name = "Reporte"
         verbose_name_plural = "Reportes"
 
+    @property
+    def saldo_pendiente(self):
+        """
+        Calcula cuánto falta por pagar restando los abonos del total del reporte.
+        """
+        # Intentamos obtener la suma de los abonos relacionados
+        total_abonado = self.abonos.aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
+        return (self.total_reporte - total_abonado).quantize(Decimal("0.01"))
+
     def save(self, *args, **kwargs):
         """
-        Genera n_presupuesto autoincremental usando ReporteConfig
-        la primera vez que se guarda.
+        Genera n_presupuesto autoincremental usando ReporteConfig.
         """
         if not self.n_presupuesto:
             config = ReporteConfig.objects.first()
@@ -139,19 +157,28 @@ class Reporte(models.Model):
 
     def recalcular_total(self):
         """
-        Suma el total_apu de todos los APUs relacionados y guarda el resultado.
+        Suma el total_apu de todos los APUs relacionados, actualiza el total 
+        y verifica si el estado debe pasar a Pagado.
         """
-        total = self.apus.aggregate(total=models.Sum("presupuesto_base"))["total"] or Decimal(
-            "0.00"
-        )
-        self.total_reporte = total.quantize(Decimal("0.01"))
-        self.save(update_fields=["total_reporte"])
+        # 1. Sumar APUs (Usa 'total_apu' o el campo que guarde el precio final del APU)
+        total_apus = self.apus.aggregate(total=Sum("total_apu"))["total"] or Decimal("0.00")
+        self.total_reporte = total_apus.quantize(Decimal("0.01"))
+        
+        # 2. Lista de campos a actualizar
+        campos_a_actualizar = ["total_reporte"]
+
+        # 3. Lógica automática de pago: Si el saldo es 0 o menor, y ya estaba aprobado
+        if self.total_reporte > 0 and self.saldo_pendiente <= 0:
+            if self.estado in [EstadoChoices.APROBADO_ESPERA, EstadoChoices.EJECUTADO, EstadoChoices.EJECUTADO_POR_PAGAR]:
+                self.estado = EstadoChoices.EJECUTADO_PAGADO
+                campos_a_actualizar.append("estado")
+
+        self.save(update_fields=campos_a_actualizar)
         return self.total_reporte
 
     def __str__(self):
-        return f"Presupuesto {self.n_presupuesto} - {self.cliente.nombre}"
-
-
+        return f"Presupuesto {self.n_presupuesto} - {self.cliente.nombre} [{self.get_estado_display()}]"
+    
 # ==========================
 # APU
 # ==========================
@@ -189,7 +216,7 @@ class APU(models.Model):
     )
     
     estado = models.CharField(
-        max_length=10,
+        max_length=30,
         choices=EstadoChoices.choices,
         default=EstadoChoices.EN_ESPERA,
         help_text="Estado actual de aprobación del APU"
