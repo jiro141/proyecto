@@ -9,7 +9,7 @@ export default function useReportes(search = "", clienteId = null) {
   const fetchReportes = async () => {
     setLoading(true);
     try {
-      const data = await getReportes(clienteId);
+      const data = await getReportes(search);
       setReportes(data);
     } catch (err) {
       setError(err);
@@ -19,7 +19,7 @@ export default function useReportes(search = "", clienteId = null) {
   };
 
   useEffect(() => {
-    if (!clienteId) return; // ⛔ no cargar si no hay cliente
+    if (!clienteId) return;
     fetchReportes();
   }, [search, clienteId]);
 

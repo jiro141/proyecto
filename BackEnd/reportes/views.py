@@ -17,6 +17,7 @@ from .models import (
 from .serializers import (
     ClienteSerializer,
     ReporteSerializer,
+    ReporteListaSerializer,
     ReporteConfigSerializer,
     APUSerializer,
     APUMaterialSerializer,
@@ -311,3 +312,30 @@ class NotaReporteDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = NotaReporte.objects.all()
     serializer_class = NotaReporteSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+# ============================================================
+# 💰 CUENTAS POR COBRAR
+# ============================================================
+
+
+class CuentasPorCobrarView(generics.ListAPIView):
+    """
+    Lista todos los reportes con su info de cuentas por cobrar.
+    """
+    serializer_class = ReporteListaSerializer
+
+    def get_queryset(self):
+        return Reporte.objects.select_related("cliente").all().order_by("-fecha_creacion")
+
+
+class ReporteAbonosView(APIView):
+    """
+    Lista los abonos de un reporte específico.
+    """
+    def get(self, request, reporte_id):
+        from cuentas.models import Abono
+        from cuentas.serializers import AbonoSerializer
+        abonos = Abono.objects.filter(reporte_id=reporte_id).order_by("-fecha_abono")
+        serializer = AbonoSerializer(abonos, many=True)
+        return Response(serializer.data)

@@ -204,6 +204,9 @@ class ReporteSerializer(serializers.ModelSerializer):
 
     apus = APUSerializer(many=True, read_only=True)
     cliente_nombre = serializers.CharField(source="cliente.nombre", read_only=True)
+    saldo_pendiente = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    total_abonado = serializers.SerializerMethodField()
+    estado_display = serializers.CharField(source="get_estado_display", read_only=True)
 
     class Meta:
         model = Reporte
@@ -215,9 +218,18 @@ class ReporteSerializer(serializers.ModelSerializer):
             "descripcion",
             "fecha_creacion",
             "total_reporte",
+            "total_abonado",
+            "saldo_pendiente",
+            "estado",
+            "estado_display",
             "apus",
         ]
         read_only_fields = ["n_presupuesto", "fecha_creacion"]
+
+    def get_total_abonado(self, obj):
+        from django.db.models import Sum
+        total = obj.abonos.aggregate(total=Sum('monto'))['total']
+        return total or 0
 
 
 # ============================================================
@@ -265,3 +277,37 @@ class NotaReporteSerializer(serializers.ModelSerializer):
             "actualizado_en",
         ]
         read_only_fields = ["creado_en", "actualizado_en"]
+
+
+# ============================================================
+# 📊 REPORTE LISTA (ligero, sin APUs)
+# ============================================================
+
+
+class ReporteListaSerializer(serializers.ModelSerializer):
+    """Serializer ligero para listar reportes en cuentas por cobrar."""
+    cliente_nombre = serializers.CharField(source="cliente.nombre", read_only=True)
+    saldo_pendiente = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    total_abonado = serializers.SerializerMethodField()
+    estado_display = serializers.CharField(source="get_estado_display", read_only=True)
+
+    class Meta:
+        model = Reporte
+        fields = [
+            "id",
+            "n_presupuesto",
+            "cliente",
+            "cliente_nombre",
+            "descripcion",
+            "fecha_creacion",
+            "total_reporte",
+            "total_abonado",
+            "saldo_pendiente",
+            "estado",
+            "estado_display",
+        ]
+
+    def get_total_abonado(self, obj):
+        from django.db.models import Sum
+        total = obj.abonos.aggregate(total=Sum('monto'))['total']
+        return float(total) if total else 0

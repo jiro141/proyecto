@@ -14,6 +14,25 @@ const formatDate = (value) => {
   return `${d}/${m}/${y}`;
 };
 
+const getEstadoBadge = (estado) => {
+  const badges = {
+    ESPERA: { bg: "bg-gray-500", text: "text-white", label: "En espera" },
+    RECHAZADO: { bg: "bg-red-600", text: "text-white", label: "Rechazado" },
+    APROBADO_ESPERA: { bg: "bg-yellow-500", text: "text-white", label: "Aprobado - Espera" },
+    EJECUTADO: { bg: "bg-blue-600", text: "text-white", label: "Ejecutado" },
+    EJECUTADO_POR_PAGAR: { bg: "bg-orange-500", text: "text-white", label: "Por pagar" },
+    EJECUTADO_PAGADO: { bg: "bg-green-600", text: "text-white", label: "Pagado" },
+  };
+
+  const badge = badges[estado] || { bg: "bg-gray-400", text: "text-white", label: estado };
+
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
+      {badge.label}
+    </span>
+  );
+};
+
 export default function ReportesTable({
   columns,
   data = [],
@@ -75,6 +94,8 @@ export default function ReportesTable({
                           ? formatDate(value)
                           : value ?? "—";
 
+                      const isEstadoColumn = col.key === "estado_display";
+
                       return (
                         <td
                           key={col.key}
@@ -83,7 +104,7 @@ export default function ReportesTable({
                               : "text-gray-700"
                             }`}
                         >
-                          {display}
+                          {isEstadoColumn ? getEstadoBadge(row.estado) : display}
                         </td>
                       );
                     })}

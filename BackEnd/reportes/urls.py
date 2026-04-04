@@ -7,6 +7,8 @@ from .views import (
     ReporteListCreateView,
     ReporteDetailView,
     ReporteConfigView,
+    CuentasPorCobrarView,
+    ReporteAbonosView,
     # APUs
     APUListCreateView,
     APUDetailView,
@@ -36,17 +38,22 @@ urlpatterns = [
     # ===============================
     # 📊 REPORTES (Presupuestos Globales)
     # ===============================
-    path("reportes/", ReporteListCreateView.as_view(), name="reporte-list"),
-    path("reportes/<int:pk>/", ReporteDetailView.as_view(), name="reporte-detail"),
+    path("", ReporteListCreateView.as_view(), name="reporte-list"),
+    path("<int:pk>/", ReporteDetailView.as_view(), name="reporte-detail"),
+    # ===============================
+    # 💰 CUENTAS POR COBRAR
+    # ===============================
+    path("cuentas-cobrar/", CuentasPorCobrarView.as_view(), name="cuentas-cobrar"),
+    path("<int:reporte_id>/abonos/", ReporteAbonosView.as_view(), name="reporte-abonos"),
     # ===============================
     # ⚙️ CONFIGURACIÓN GLOBAL
     # ===============================
-    path("reportes/config/", ReporteConfigView.as_view(), name="reporte-config"),
+    path("config/", ReporteConfigView.as_view(), name="reporte-config"),
     # ===============================
     # 🧮 APUs (Análisis de Precios Unitarios)
     # ===============================
     path(
-        "reportes/<int:reporte_id>/apus/",
+        "<int:reporte_id>/apus/",
         APUListCreateView.as_view(),
         name="apu-list",
     ),
@@ -107,7 +114,7 @@ urlpatterns = [
     # 📝 NOTAS DE REPORTE
     # ===============================
     path(
-        "reportes/<int:reporte_id>/notas/",
+        "<int:reporte_id>/notas/",
         NotaReporteListCreateView.as_view(),
         name="nota-reporte-list",
     ),
