@@ -4,7 +4,8 @@ import { getControlConfig, createControlConfig } from "../../../api/controllers/
 import { toast } from "react-toastify";
 
 export default function ControlCard() {
-  const [numeroControl, setNumeroControl] = useState("");
+  const [puntoInicio, setPuntoInicio] = useState("");
+  const [siguienteNumero, setSiguienteNumero] = useState("");
   const [loading, setLoading] = useState(true);
   const [editando, setEditando] = useState(false);
 
@@ -15,8 +16,9 @@ export default function ControlCard() {
     const fetchControl = async () => {
       try {
         const data = await getControlConfig();
-        if (data?.punto_inicio) {
-          setNumeroControl(data.punto_inicio);
+        if (data?.punto_inicio !== undefined) {
+          setPuntoInicio(data.punto_inicio);
+          setSiguienteNumero(data.siguiente_n_presupuesto || data.punto_inicio);
         } else {
           toast.warning("No existe un número de control configurado.");
         }
@@ -34,13 +36,16 @@ export default function ControlCard() {
    * Guardar número de control
    * ======================== */
   const handleGuardar = async () => {
-    if (!numeroControl || isNaN(numeroControl)) {
+    if (!siguienteNumero || isNaN(siguienteNumero)) {
       toast.error("Debe ingresar un número válido.");
       return;
     }
 
     try {
-      await createControlConfig({ punto_inicio: numeroControl });
+      // El punto de inicio será el siguiente número - 1
+      const nuevoPuntoInicio = parseInt(siguienteNumero) - 1;
+      await createControlConfig({ punto_inicio: nuevoPuntoInicio });
+      setPuntoInicio(nuevoPuntoInicio);
       toast.success("Número de control actualizado correctamente.");
       setEditando(false);
     } catch (error) {
@@ -76,14 +81,13 @@ export default function ControlCard() {
           <p className="text-gray-500 text-sm">Cargando...</p>
         ) : (
           <div className="flex flex-col gap-4">
-            {/* Campo editable */}
-            {/* <h2 className="text-center text-3xl text-[#0B2C4D] font-bold">{numeroControl}</h2> */}
+            {/* Campo editable - muestra el siguiente número */}
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 disabled={!editando}
-                value={numeroControl}
-                onChange={(e) => setNumeroControl(e.target.value)}
+                value={siguienteNumero}
+                onChange={(e) => setSiguienteNumero(e.target.value)}
                 className={`border rounded-lg px-3 py-2 w-full text-lg font-semibold text-gray-800 ${
                   editando
                     ? "focus:outline-none focus:ring-2 focus:ring-blue-400 border-blue-300"
@@ -109,9 +113,9 @@ export default function ControlCard() {
 
             {/* Estado actual */}
             <div className="flex justify-between text-sm text-gray-600">
-              <span>Último número registrado:</span>
+              <span>Punto de inicio:</span>
               <span className="font-semibold text-gray-800">
-                #{numeroControl || "—"}
+                #{puntoInicio || "—"}
               </span>
             </div>
           </div>

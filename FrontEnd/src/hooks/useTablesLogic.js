@@ -45,14 +45,30 @@ const useTablesLogic = ({
 
   const idToName = useMemo(
     () => ({
-      departamento: (id) =>
-        departamentos.find((d) => d.id === id)?.name || `ID: ${id}`,
-      ubicacion: (id) =>
-        ubicaciones.find((u) => u.id === id)?.name || `ID: ${id}`,
-      consumo: (id) =>
-        lugares.find((l) => l.id === id)?.name || `ID: ${id}`,
-      proveedor: (id) =>
-        proveedores.find((p) => p.id === id)?.name || `ID: ${id}`,
+      departamento: (id) => {
+        if (!id) return "—";
+        const numId = typeof id === "string" ? parseInt(id) : id;
+        const dept = departamentos.find((d) => d.id === numId || d.id === id);
+        return dept?.name || `ID: ${id}`;
+      },
+      ubicacion: (id) => {
+        if (!id) return "—";
+        const numId = typeof id === "string" ? parseInt(id) : id;
+        const ubi = ubicaciones.find((u) => u.id === numId || u.id === id);
+        return ubi?.name || `ID: ${id}`;
+      },
+      consumo: (id) => {
+        if (!id) return "—";
+        const numId = typeof id === "string" ? parseInt(id) : id;
+        const lug = lugares.find((l) => l.id === numId || l.id === id);
+        return lug?.name || `ID: ${id}`;
+      },
+      proveedor: (id) => {
+        if (!id) return "—";
+        const numId = typeof id === "string" ? parseInt(id) : id;
+        const prov = proveedores.find((p) => p.id === numId || p.id === id);
+        return prov?.name || `ID: ${id}`;
+      },
     }),
     [departamentos, ubicaciones, lugares, proveedores]
   );

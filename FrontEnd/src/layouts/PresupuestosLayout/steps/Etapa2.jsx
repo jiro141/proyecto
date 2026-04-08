@@ -5,7 +5,6 @@ import TotalesPanel from "../components/TotalesPanel";
 import Etapa2HeaderGrid from "../components/Etapa2HeaderGrid";
 import Etapa2ActionButtons from "../components/Etapa2ActionButtons";
 import Etapa2Modals from "../components/Etapa2Modals";
-import presupuestoInicial from "../components/presupuestoInicial.json";
 
 export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
   // 🧠 Hook con toda la lógica de inventario, búsqueda y modales
@@ -18,14 +17,21 @@ export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
     setOpenModal,
     stock,
     consumibles,
+    herramientas,
+    manoObra,
+    logistica,
     loadingStock,
     loadingCons,
+    loadingHerramientas,
+    loadingEmpleados,
+    loadingLogistica,
     errorStock,
     errorCons,
     refetchStock,
     refetchCons,
-    handleCantidadChange,
-    handleTotalChange,
+    refetchHerramientas,
+    refetchEmpleados,
+    refetchLogistica,
   } = useEtapa2Logic();
 
   // 🧩 Hook del contexto Presupuesto
@@ -36,9 +42,43 @@ export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
     addAPU,
   } = usePresupuesto();
 
-  // 💰 Estado local de presupuesto
-  const [presupuestoData, setPresupuestoData] = useState(presupuestoInicial);
+  // 💰 Estado local de presupuesto (solo para materiales)
+  const [presupuestoData, setPresupuestoData] = useState({
+    herramientas: [],
+    mano_obra: [],
+    logistica: [],
+  });
   const [totales, setTotales] = useState({ grandTotal: 0 });
+
+  // 🔄 Sincronizar herramientas/manoObra/logistica desde el hook al estado local
+  useEffect(() => {
+    setPresupuestoData((prev) => ({
+      ...prev,
+      herramientas: herramientas,
+      mano_obra: manoObra,
+      logistica: logistica,
+    }));
+  }, [herramientas, manoObra, logistica]);
+
+  // 🔄 Cuando se edita un presupuesto, sincronizar presupuestoData con los datos del APU
+  useEffect(() => {
+    const apuActual = formData.apus?.[currentAPUIndex];
+    if (!apuActual) return;
+
+    // Solo sincronizar si hay datos reales (no vacíos) del APU
+    const tieneHerramientas = (apuActual.herramientas || []).some(h => Number(h.cantidad) > 0);
+    const tieneManoObra = (apuActual.mano_obra || []).some(mo => Number(mo.cantidad) > 0);
+    const tieneLogistica = (apuActual.logistica || []).some(l => Number(l.cantidad) > 0);
+
+    if (tieneHerramientas || tieneManoObra || tieneLogistica) {
+      setPresupuestoData((prev) => ({
+        ...prev,
+        herramientas: apuActual.herramientas || [],
+        mano_obra: apuActual.mano_obra || [],
+        logistica: apuActual.logistica || [],
+      }));
+    }
+  }, [formData.id, currentAPUIndex]);
 
   // 🔄 Recalcular total general al cambiar datos
   useEffect(() => {
@@ -127,8 +167,15 @@ export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
         onStockInsuficiente={onStockInsuficiente}
         presupuestoData={presupuestoData}
         setPresupuestoData={setPresupuestoData}
-        handleCantidadChange={handleCantidadChange}
-        handleTotalChange={handleTotalChange}
+        herramientas={herramientas}
+        manoObra={manoObra}
+        logistica={logistica}
+        loadingHerramientas={loadingHerramientas}
+        loadingEmpleados={loadingEmpleados}
+        loadingLogistica={loadingLogistica}
+        refetchHerramientas={refetchHerramientas}
+        refetchEmpleados={refetchEmpleados}
+        refetchLogistica={refetchLogistica}
       />
     </div>
   );

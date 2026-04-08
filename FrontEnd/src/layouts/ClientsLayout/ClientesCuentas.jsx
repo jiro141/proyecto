@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { BounceLoader } from "react-spinners";
 import { FaSearch, FaMoneyBillWave, FaPlus, FaHistory } from "react-icons/fa";
 import { FaRegTrashCan, FaChevronLeft, FaChevronRight } from "react-icons/fa6";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Modal from "../../components/Modal";
 import Select from "react-select";
 import useCuentas from "../../hooks/useCuentas";
@@ -184,6 +185,7 @@ export default function ClientesCuentas() {
 
   return (
     <div className="p-4 space-y-4">
+      <ToastContainer position="top-right" autoClose={3000} />
       {/* Cards de resumen */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-[#0b2c4d] text-white rounded-lg p-4 shadow-lg">

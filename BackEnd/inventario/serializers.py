@@ -26,6 +26,24 @@ class EPPSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class HerramientaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Herramienta
+        fields = "__all__"
+
+
+class EmpleadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Empleado
+        fields = "__all__"
+
+
+class LogisticaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Logistica
+        fields = "__all__"
+
+
 class StockSerializer(serializers.ModelSerializer):
     class Meta:
         model = Stock

@@ -17,13 +17,21 @@ export default function Etapa2Modals({
     onStockInsuficiente,
     presupuestoData,
     setPresupuestoData,
-    handleTotalChange,
     departamentos = [],
     proveedores = [],
     ubicaciones = [],
     lugares = [],
     refetchDepartamentos,
     refetchProveedores,
+    herramientas,
+    manoObra,
+    logistica,
+    loadingHerramientas,
+    loadingEmpleados,
+    loadingLogistica,
+    refetchHerramientas,
+    refetchEmpleados,
+    refetchLogistica,
 }) {
     const { formData, currentAPUIndex, updateAPUSection } = usePresupuesto();
     const apuActual = formData.apus?.[currentAPUIndex] || {};
@@ -35,7 +43,9 @@ export default function Etapa2Modals({
         setPresupuestoData((prev) => {
             const newData = typeof updater === "function" ? updater(prev) : updater;
             const items = newData[section] || [];
-            updateAPUSection(section, items);
+            // ✅ Solo guardar en el contexto los elementos con cantidad > 0
+            const itemsFiltrados = items.filter(item => Number(item.cantidad) > 0);
+            updateAPUSection(section, itemsFiltrados);
             return newData;
         });
     };
@@ -171,19 +181,26 @@ export default function Etapa2Modals({
                 height={"h-3/4"}
             >
                 <PresupuestoTable
-                    titulo="Costo de Herramientas"
+                    titulo="Herramientas"
                     tipo="herramientas"
                     columnas={[
                         { key: "descripcion", label: "Descripción" },
                         { key: "unidad", label: "Unidad" },
                         { key: "cantidad", label: "Cantidad" },
-                        { key: "costo", label: "Depreciación (BS/Hora)" },
+                        { key: "depreciacion_bs_hora", label: "Depreciación (BS/Hora)" },
                         { key: "total", label: "Total" },
                     ]}
-                    presupuestoData={presupuestoData}
+                    dataSource={herramientas}
+                    loading={loadingHerramientas}
                     setPresupuestoData={(updater) =>
                         handlePresupuestoTableChange("herramientas", updater)
                     }
+                    formFields={[
+                        { name: "descripcion", label: "Descripción", required: true },
+                        { name: "unidad", label: "Unidad", required: true },
+                        { name: "depreciacion_bs_hora", label: "Depreciación (BS/Hora)", type: "number" },
+                    ]}
+                    onRefetch={refetchHerramientas}
                 />
             </Modal>
 
@@ -202,13 +219,20 @@ export default function Etapa2Modals({
                         { key: "descripcion", label: "Descripción" },
                         { key: "unidad", label: "Unidad" },
                         { key: "cantidad", label: "Cantidad" },
-                        { key: "costo", label: "Precio Unitario" },
+                        { key: "precio_unitario", label: "Precio Unitario" },
                         { key: "total", label: "Total" },
                     ]}
-                    presupuestoData={presupuestoData}
+                    dataSource={manoObra}
+                    loading={loadingEmpleados}
                     setPresupuestoData={(updater) =>
                         handlePresupuestoTableChange("mano_obra", updater)
                     }
+                    formFields={[
+                        { name: "descripcion", label: "Descripción", required: true },
+                        { name: "unidad", label: "Unidad", required: true },
+                        { name: "precio_unitario", label: "Precio Unitario", type: "number" },
+                    ]}
+                    onRefetch={refetchEmpleados}
                 />
             </Modal>
 
@@ -227,13 +251,20 @@ export default function Etapa2Modals({
                         { key: "descripcion", label: "Descripción" },
                         { key: "unidad", label: "Unidad" },
                         { key: "cantidad", label: "Cantidad" },
-                        { key: "costo", label: "Precio Unitario" },
+                        { key: "precio_unitario", label: "Precio Unitario" },
                         { key: "total", label: "Total" },
                     ]}
-                    presupuestoData={presupuestoData}
+                    dataSource={logistica}
+                    loading={loadingLogistica}
                     setPresupuestoData={(updater) =>
                         handlePresupuestoTableChange("logistica", updater)
                     }
+                    formFields={[
+                        { name: "descripcion", label: "Descripción", required: true },
+                        { name: "unidad", label: "Unidad", required: true },
+                        { name: "precio_unitario", label: "Precio Unitario", type: "number" },
+                    ]}
+                    onRefetch={refetchLogistica}
                 />
             </Modal>
         </>

@@ -8,6 +8,9 @@ import DashboardLayout from "../layouts/DashboardLayout/DashboardLayout";
 import Dashboard from "../pages/Dashboard";
 import InventarioHome from "../pages/InventarioHome";
 import EppLayout from "../layouts/InventoryLayout/EppLayout";
+import HerramientasLayout from "../layouts/InventoryLayout/HerramientasLayout";
+import EmpleadosLayout from "../layouts/InventoryLayout/EmpleadosLayout";
+import LogisticaLayout from "../layouts/InventoryLayout/LogisticaLayout";
 import StockLayout from "../layouts/InventoryLayout/StockLayout";
 import PresupuestosLayout from "../layouts/PresupuestosLayout/PresupuestosLayout";
 import ConsumiblesLayout from "../layouts/InventoryLayout/ConsumiblesLayout";
@@ -31,6 +34,9 @@ const AppRouter = () => {
           <Route path="inventario">
             <Route index />
             <Route path="epp" element={<EppLayout />} />
+            <Route path="herramientas" element={<HerramientasLayout />} />
+            <Route path="empleados" element={<EmpleadosLayout />} />
+            <Route path="logistica" element={<LogisticaLayout />} />
             <Route path="stock" element={<StockLayout />} />
             <Route path="consumibles" element={<ConsumiblesLayout />} />
           </Route>

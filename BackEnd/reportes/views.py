@@ -84,7 +84,7 @@ class ReporteDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class ReporteConfigView(APIView):
     """
-    GET: obtiene la configuración
+    GET: obtiene la configuración y el siguiente número de presupuesto
     POST: crea/actualiza el primer registro
     """
 
@@ -95,8 +95,24 @@ class ReporteConfigView(APIView):
                 {"detail": "No existe configuración de reportes."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        
+        # Calcular el siguiente número de presupuesto
+        punto_inicio = config.punto_inicio or 1
+        ultimo_reporte = Reporte.objects.order_by("-id").first()
+        
+        if ultimo_reporte:
+            try:
+                siguiente_numero = int(ultimo_reporte.n_presupuesto) + 1
+            except (ValueError, TypeError):
+                siguiente_numero = punto_inicio
+        else:
+            siguiente_numero = punto_inicio
+        
         serializer = ReporteConfigSerializer(config)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        data = serializer.data
+        data["siguiente_n_presupuesto"] = str(siguiente_numero)
+        
+        return Response(data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         config = ReporteConfig.objects.first()

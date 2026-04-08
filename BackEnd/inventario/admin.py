@@ -4,6 +4,9 @@ from .models import (
     Ubicacion,
     Departamento,
     EPP,
+    Herramienta,
+    Empleado,
+    Logistica,
     Stock,
     Consumible,
     Proveedor,
@@ -112,6 +115,33 @@ class EPPAdmin(admin.ModelAdmin):
     search_fields = ("name",)
     list_editable = ("item_fijo",)
     ordering = ("-item_fijo", "name")
+
+
+@admin.register(Herramienta)
+class HerramientaAdmin(admin.ModelAdmin):
+    list_display = ("descripcion", "unidad", "cantidad", "depreciacion_bs_hora", "item_fijo")
+    list_filter = ("item_fijo",)
+    search_fields = ("descripcion",)
+    list_editable = ("item_fijo",)
+    ordering = ("-item_fijo", "descripcion")
+
+
+@admin.register(Empleado)
+class EmpleadoAdmin(admin.ModelAdmin):
+    list_display = ("descripcion", "unidad", "cantidad", "precio_unitario", "item_fijo")
+    list_filter = ("item_fijo",)
+    search_fields = ("descripcion",)
+    list_editable = ("item_fijo",)
+    ordering = ("-item_fijo", "descripcion")
+
+
+@admin.register(Logistica)
+class LogisticaAdmin(admin.ModelAdmin):
+    list_display = ("descripcion", "unidad", "cantidad", "precio_unitario", "item_fijo")
+    list_filter = ("item_fijo",)
+    search_fields = ("descripcion",)
+    list_editable = ("item_fijo",)
+    ordering = ("-item_fijo", "descripcion")
 
 
 @admin.register(Consumible)

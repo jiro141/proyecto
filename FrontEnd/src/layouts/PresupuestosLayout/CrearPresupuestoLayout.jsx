@@ -8,6 +8,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 import useReportes from "../../hooks/useReportes";
 import { createReporte } from "../../api/controllers/Presupuesto";
 import { getControlConfig } from "../../api/controllers/ControlConfig";
+import { usePresupuesto } from "../../context/PresupuestoContext";
 
 // 🧩 Componentes
 import Etapa1 from "./steps/Etapa1";
@@ -18,6 +19,16 @@ import logo from "../../assets/img/logo.png";
 
 export default function CrearPresupuestoLayout() {
   const { refetch: refetchReportes } = useReportes();
+  const { 
+    formData, 
+    updatePresupuestoField, 
+    updateAPUField, 
+    updateAPUSection, 
+    updateAPU, 
+    addAPU, 
+    deleteAPU, 
+    resetPresupuesto 
+  } = usePresupuesto();
 
   const [etapa, setEtapa] = useState(1);
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -27,40 +38,18 @@ export default function CrearPresupuestoLayout() {
   const [modalDescarga, setModalDescarga] = useState(false);
   const [resumen, setResumen] = useState(null);
   const [guardarBorradorEtapa1, setGuardarBorradorEtapa1] = useState(null);
+  const [modalLimpiarOpen, setModalLimpiarOpen] = useState(false);
 
-  const [formData, setFormData] = useState({
-    // 🧾 Datos generales del reporte
-    cliente: null,
-    descripcion: "",
-    fechaCulminacion: new Date(),
-    n_presupuesto: null,
-
-    // 📊 Configuración base
-    presupuesto_base: 0,
-    presupuesto_estimado: 0,
-    porcentaje_productividad: 1, // 0–1
-
-    // 🧱 Lista de APUs (cada uno tiene sus propios datos)
-    apus: [
-      {
-        body: {
-          descripcion: "",
-          rendimiento: 0.75,
-          unidad: "PZA",
-          cantidad: 1,
-          depreciacion: 0,
-        },
-        materiales: {
-          stock_almacen: [], // [{ stock_id, cantidad, desperdicio }]
-          consumibles: [],   // [{ consumible_id, cantidad, desperdicio }]
-          epps: [],           // [{ stock_id, cantidad, desperdicio }]
-        },
-        mano_obra: [],        // [{ descripcion, unidad, cantidad, precio_unitario }]
-        herramientas: [],     // [{ descripcion, unidad, cantidad, precio_unitario }]
-        logistica: [],        // [{ descripcion, unidad, cantidad, precio_unitario }]
-      },
-    ],
-  });
+  // ================================
+  // LIMPIAR PRESUPUESTO
+  // ================================
+  const handleLimpiarPresupuesto = () => {
+    localStorage.removeItem("presupuesto_edicion");
+    localStorage.removeItem("presupuesto_draft");
+    resetPresupuesto();
+    setModalLimpiarOpen(false);
+    window.location.reload();
+  };
 
   // ================================
   // CONSULTAR CONFIGURACIÓN INICIAL
@@ -88,35 +77,6 @@ export default function CrearPresupuestoLayout() {
     };
     fetchNumeroControl();
   }, []);
-
-  // ================================
-  // AUTO-CÁLCULO DEL PRESUPUESTO
-  // ================================
-  useEffect(() => {
-    const calcularCosto = (lista = []) =>
-      lista.reduce((acc, item) => {
-        const precio = Number(item.precio || item.costo_unitario || 0);
-        const cantidad = Number(item.cantidad || 0);
-        return acc + precio * cantidad;
-      }, 0);
-
-    const totalMateriales =
-      calcularCosto(formData.epps) +
-      calcularCosto(formData.stock_almacen) +
-      calcularCosto(formData.consumibles);
-
-    const totalFinal = totalMateriales + Number(formData.presupuesto_base || 0);
-
-    setFormData((prev) => ({
-      ...prev,
-      presupuesto_estimado: Number(totalFinal.toFixed(2)),
-    }));
-  }, [
-    formData.epps,
-    formData.stock_almacen,
-    formData.consumibles,
-    formData.presupuesto_base,
-  ]);
 
   // ================================
   // CREAR REPORTE FINAL
@@ -266,17 +226,15 @@ export default function CrearPresupuestoLayout() {
       </div>
 
       {/* CONTENIDO DE ETAPAS */}
-      {etapa === 1 && <Etapa1 formData={formData} setFormData={setFormData} />}
+      {etapa === 1 && <Etapa1 />}
       {etapa === 2 && (
         <Etapa2
-          formData={formData}
-          setFormData={setFormData}
           onStockInsuficiente={handleStockInsuficiente}
           etapa={etapa}
         />
       )}
       {etapa === 3 && (
-        <Etapa3 formData={formData} onCreate={handleCreateReporte} setEtapa={setEtapa} />
+        <Etapa3 onCreate={handleCreateReporte} setEtapa={setEtapa} />
       )}
 
       {/* BOTONES DE NAVEGACIÓN */}
@@ -289,7 +247,12 @@ export default function CrearPresupuestoLayout() {
             ← Anterior
           </button>
         ) : (
-          <span></span>
+          <button
+            onClick={() => setModalLimpiarOpen(true)}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+          >
+            🗑️ Limpiar
+          </button>
         )}
 
         {etapa < 3 && (
@@ -301,6 +264,36 @@ export default function CrearPresupuestoLayout() {
           </button>
         )}
       </div>
+
+      {/* MODAL LIMPIAR PRESUPUESTO */}
+      <Modal
+        isOpen={modalLimpiarOpen}
+        onClose={() => setModalLimpiarOpen(false)}
+        title="Limpiar Presupuesto"
+        width="max-w-md"
+      >
+        <div className="text-center">
+          <p className="text-gray-600 text-sm mb-6">
+            ¿Estás seguro de que deseas limpiar todo el presupuesto?
+            <br />
+            <strong className="text-red-500">Esta acción no se puede deshacer.</strong>
+          </p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => setModalLimpiarOpen(false)}
+              className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleLimpiarPresupuesto}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+            >
+              🗑️ Limpiar Todo
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

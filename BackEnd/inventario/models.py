@@ -162,6 +162,63 @@ class EPP(models.Model):
         return self.name
 
 
+class Herramienta(models.Model):
+    """Catálogo de herramientas con depreciación por hora."""
+    descripcion = models.CharField(max_length=255)
+    unidad = models.CharField(max_length=20, default="DIA")
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    depreciacion_bs_hora = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    item_fijo = models.BooleanField(
+        default=False, help_text="Indica si es un ítem fijo del sistema."
+    )
+
+    def __str__(self):
+        return self.descripcion
+
+    class Meta:
+        verbose_name = "Herramienta"
+        verbose_name_plural = "Herramientas"
+        ordering = ("descripcion",)
+
+
+class Empleado(models.Model):
+    """Catálogo de empleados/mano de obra."""
+    descripcion = models.CharField(max_length=255)
+    unidad = models.CharField(max_length=20, default="DIA")
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    item_fijo = models.BooleanField(
+        default=False, help_text="Indica si es un ítem fijo del sistema."
+    )
+
+    def __str__(self):
+        return self.descripcion
+
+    class Meta:
+        verbose_name = "Empleado"
+        verbose_name_plural = "Empleados"
+        ordering = ("descripcion",)
+
+
+class Logistica(models.Model):
+    """Catálogo de logística."""
+    descripcion = models.CharField(max_length=255)
+    unidad = models.CharField(max_length=20, default="DIA")
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    item_fijo = models.BooleanField(
+        default=False, help_text="Indica si es un ítem fijo del sistema."
+    )
+
+    def __str__(self):
+        return self.descripcion
+
+    class Meta:
+        verbose_name = "Logística"
+        verbose_name_plural = "Logística"
+        ordering = ("descripcion",)
+
+
 class Consumible(models.Model):
     codigo = models.CharField(max_length=100)
     descripcion = models.CharField(max_length=100, db_column="descipcion")

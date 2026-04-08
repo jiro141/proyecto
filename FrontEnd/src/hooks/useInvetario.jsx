@@ -4,14 +4,19 @@ import {
   getStock,
   getConsumibles,
   getTaza,
+  getHerramientas,
+  getEmpleados,
+  getLogistica,
 } from "../api/controllers/Inventario";
 
-// Mapa de controladores según el tipo
 const controllerMap = {
   epp: getEpp,
   stock: getStock,
   consumibles: getConsumibles,
   taza: getTaza,
+  herramientas: getHerramientas,
+  empleados: getEmpleados,
+  logistica: getLogistica,
 };
 
 export default function useInventario(tipo, search = "") {

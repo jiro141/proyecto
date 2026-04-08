@@ -34,6 +34,30 @@ class EPPViewSet(viewsets.ModelViewSet):
     search_fields = ["name"]
 
 
+class HerramientaViewSet(viewsets.ModelViewSet):
+    queryset = Herramienta.objects.all().order_by("-item_fijo", "descripcion")
+    serializer_class = HerramientaSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["descripcion"]
+
+
+class EmpleadoViewSet(viewsets.ModelViewSet):
+    queryset = Empleado.objects.all().order_by("-item_fijo", "descripcion")
+    serializer_class = EmpleadoSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["descripcion"]
+
+
+class LogisticaViewSet(viewsets.ModelViewSet):
+    queryset = Logistica.objects.all().order_by("-item_fijo", "descripcion")
+    serializer_class = LogisticaSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["descripcion"]
+
+
 class StockViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar los ítems de inventario (Stock).

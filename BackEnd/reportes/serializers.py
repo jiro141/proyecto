@@ -24,21 +24,9 @@ class APUMaterialSerializer(serializers.ModelSerializer):
     stock = StockSerializer(read_only=True)
     consumible = ConsumibleSerializer(read_only=True)
 
-    # IDs para escritura
-    stock_id = serializers.PrimaryKeyRelatedField(
-        queryset=Stock.objects.all(),
-        source="stock",
-        write_only=True,
-        required=False,
-        allow_null=True,
-    )
-    consumible_id = serializers.PrimaryKeyRelatedField(
-        queryset=Consumible.objects.all(),
-        source="consumible",
-        write_only=True,
-        required=False,
-        allow_null=True,
-    )
+    # IDs para escritura - aceptar como entero directamente
+    stock_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    consumible_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = APUMaterial
@@ -191,6 +179,7 @@ class APUSerializer(serializers.ModelSerializer):
             "utilidad_15",
             "total_apu",
             "fecha_creacion",
+            "presupuesto_con_desp",
         ]
 
 
@@ -266,6 +255,10 @@ class ReporteConfigSerializer(serializers.ModelSerializer):
 
 
 class NotaReporteSerializer(serializers.ModelSerializer):
+    # Campo reporte es opcional cuando se crea desde la URL con reporte_id en el path
+    # Aceptar como entero directamente
+    reporte = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+
     class Meta:
         model = NotaReporte
         fields = [

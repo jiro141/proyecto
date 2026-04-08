@@ -33,6 +33,69 @@ export const getConsumibles = async (search = "") => {
   );
   return response.data;
 };
+
+export const getHerramientas = async (search = "") => {
+  const response = await AuthApi.get(`/inventario/herramientas/?search=${search}`);
+  return response.data;
+};
+
+export const getEmpleados = async (search = "") => {
+  const response = await AuthApi.get(`/inventario/empleados/?search=${search}`);
+  return response.data;
+};
+
+export const getLogistica = async (search = "") => {
+  const response = await AuthApi.get(`/inventario/logistica/?search=${search}`);
+  return response.data;
+};
+
+/**
+ * Crear herramienta en el backend
+ */
+export const createHerramienta = async (payload) => {
+  const response = await AuthApi.post(`/inventario/herramientas/`, payload);
+  return response.data;
+};
+
+/**
+ * Actualizar herramienta en el backend
+ */
+export const updateHerramienta = async (id, payload) => {
+  const response = await AuthApi.put(`/inventario/herramientas/${id}/`, payload);
+  return response.data;
+};
+
+/**
+ * Crear empleado en el backend
+ */
+export const createEmpleado = async (payload) => {
+  const response = await AuthApi.post(`/inventario/empleados/`, payload);
+  return response.data;
+};
+
+/**
+ * Actualizar empleado en el backend
+ */
+export const updateEmpleado = async (id, payload) => {
+  const response = await AuthApi.put(`/inventario/empleados/${id}/`, payload);
+  return response.data;
+};
+
+/**
+ * Crear logística en el backend
+ */
+export const createLogistica = async (payload) => {
+  const response = await AuthApi.post(`/inventario/logistica/`, payload);
+  return response.data;
+};
+
+/**
+ * Actualizar logística en el backend
+ */
+export const updateLogistica = async (id, payload) => {
+  const response = await AuthApi.put(`/inventario/logistica/${id}/`, payload);
+  return response.data;
+};
 export const getMovimientos = async (search = "") => {
   const response = await AuthApi.get(
     `/inventario/movimientos/?search=${search}`

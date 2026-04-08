@@ -58,8 +58,20 @@ const SideBar = () => {
               <FaHelmetSafety />
               E.P.P.
             </NavLink>
-            <NavLink to="/inventario/stock" className="sidebar-sublink">
+            <NavLink to="/inventario/herramientas" className="sidebar-sublink">
               <FaTools />
+              Herramientas
+            </NavLink>
+            <NavLink to="/inventario/empleados" className="sidebar-sublink">
+              <FaUserFriends />
+              Empleados
+            </NavLink>
+            <NavLink to="/inventario/logistica" className="sidebar-sublink">
+              <FaTruckLoading />
+              Logística
+            </NavLink>
+            <NavLink to="/inventario/stock" className="sidebar-sublink">
+              <FaBoxOpen />
               Ferretería
             </NavLink>
             <NavLink to="/inventario/consumibles" className="sidebar-sublink">

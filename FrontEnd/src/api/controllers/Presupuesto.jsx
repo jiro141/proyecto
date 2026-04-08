@@ -158,3 +158,51 @@ export const createAPULogistica = async (apuId, data) => {
     throw error;
   }
 };
+
+// =========================
+// 📝 NOTAS DEL REPORTE
+// =========================
+
+// Obtener notas de un reporte
+export const getNotasByReporte = async (reporteId) => {
+  try {
+    const response = await AuthApi.get(`/reportes/${reporteId}/notas/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener notas:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// Crear una nota para un reporte
+export const createNotaReporte = async (reporteId, data) => {
+  try {
+    const response = await AuthApi.post(`/reportes/${reporteId}/notas/`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error al crear nota:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// Actualizar una nota
+export const updateNotaReporte = async (notaId, data) => {
+  try {
+    const response = await AuthApi.put(`/reportes/notas/${notaId}/`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error al actualizar nota:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// Eliminar una nota
+export const deleteNotaReporte = async (notaId) => {
+  try {
+    const response = await AuthApi.delete(`/reportes/notas/${notaId}/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al eliminar nota:", error.response?.data || error);
+    throw error;
+  }
+};

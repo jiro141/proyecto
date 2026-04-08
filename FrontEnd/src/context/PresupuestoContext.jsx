@@ -45,8 +45,9 @@ const initialPresupuesto = () => ({
 ===================== */
 
 export const PresupuestoProvider = ({ children }) => {
+  // ✅ Solo inicial con estructura vacía - la hidratación ocurre en useEffect
   const [formData, setFormData] = useState(initialPresupuesto);
-  const [hydrated, setHydrated] = useState(false);
+  const [loading, setLoading] = useState(true); // Estado de carga para la hidratación
 
   const [currentAPUIndex, setCurrentAPUIndex] = useState(0);
 
@@ -131,44 +132,68 @@ export const PresupuestoProvider = ({ children }) => {
     }));
   };
   /* =====================
-     Persistencia
+     Persistencia e Hidratación
   ===================== */
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setFormData({
-          ...initialPresupuesto(),
-          ...parsed,
-          fechaCulminacion: new Date(parsed.fechaCulminacion),
-        });
+    const hydrateFromStorage = () => {
+      try {
+        // 1️⃣ Primero: verificar si viene de edición (presupuesto_edicion)
+        const edicionData = localStorage.getItem("presupuesto_edicion");
+        if (edicionData) {
+          const parsed = JSON.parse(edicionData);
+          console.log("🔄 [PresupuestoContext] Hidratando desde edición:", parsed);
+          localStorage.removeItem("presupuesto_edicion");
+          setFormData({
+            ...initialPresupuesto(),
+            ...parsed,
+          });
+          setLoading(false);
+          return;
+        }
+
+        // 2️⃣ Segundo: verificar si hay un borrador (presupuesto_draft)
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          console.log("🔄 [PresupuestoContext] Hidratando desde draft:", parsed);
+          setFormData({
+            ...initialPresupuesto(),
+            ...parsed,
+            fechaCulminacion: new Date(parsed.fechaCulminacion),
+          });
+        }
+      } catch (e) {
+        console.error("Error hidratando presupuesto:", e);
+        setFormData(initialPresupuesto());
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error("Error hidratando presupuesto:", e);
-      setFormData(initialPresupuesto());
-    } finally {
-      setHydrated(true);
-    }
+    };
+
+    hydrateFromStorage();
   }, []);
 
+  // Guardar a localStorage solo cuando NO está cargando (después de hidratación)
   useEffect(() => {
-    if (!hydrated) return;
+    if (loading) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-  }, [formData, hydrated]);
+  }, [formData, loading]);
 
   const hydratePresupuesto = (data) => {
+    console.log("🔄 [PresupuestoContext] hydratePresupuesto llamado:", data);
     setFormData({
       ...initialPresupuesto(),
       ...data,
     });
     setCurrentAPUIndex(0);
+    setLoading(false); // Ya tenemos datos, no hay más espera
   };
   return (
     <PresupuestoContext.Provider
       value={{
         formData,
+        loading, // ✅ Exportar estado de carga
         currentAPUIndex,
         setCurrentAPUIndex,
         addAPU,
