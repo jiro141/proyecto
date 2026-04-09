@@ -202,6 +202,7 @@ class ReporteSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "n_presupuesto",
+            "orden_servicio",
             "cliente",
             "cliente_nombre",
             "descripcion",

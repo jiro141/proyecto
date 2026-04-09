@@ -101,6 +101,14 @@ class Reporte(models.Model):
         verbose_name="Número de presupuesto",
     )
 
+    orden_servicio = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Orden de Servicio",
+        help_text="Número de orden de servicio (opcional)",
+    )
+
     descripcion = models.TextField(blank=True, null=True)
 
     fecha_creacion = models.DateTimeField(
