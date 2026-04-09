@@ -1,10 +1,7 @@
-// src/modules/reportes/hooks/usePDFGenerator.js
-// src/modules/reportes/hooks/usePDFGenerator.js
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-// REVISA ESTAS DOS LÍNEAS:
-import logo from "../../../assets/img/Logotipo.png"; // L mayúscula según tu foto
-import sello from "../../../assets/img/sello.png";   // s minúscula según tu foto
+import logo from "../../../assets/img/Logotipo.png";
+import sello from "../../../assets/img/sello.png";
 
 export default function usePDFGenerator() {
   const generarPDF = (formData, nPresupuesto) => {
@@ -157,39 +154,42 @@ export default function usePDFGenerator() {
       { maxWidth: 190, align: "justify" },
     );
 
-    // MOSTRAR NOTA (si existe)
-    const titulo = formData?.titulo;
-    const notas = formData?.notas;
+    // NOTA ESPECIAL PARA SAN SIMON
+    const nombreCliente = formData?.cliente?.nombre?.trim()?.toUpperCase() || "";
+    const rifCliente = formData?.cliente?.rif?.trim()?.toUpperCase() || "";
 
-    if ((titulo && titulo !== "Nota") || notas) {
+    const esSanSimon =
+      nombreCliente === "INVERSIONES LACTEAS SAN SIMON C.A" &&
+      rifCliente === "J-412577999";
+
+    // MOSTRAR NOTA
+    const titulo = esSanSimon ? "NOTA" : formData?.titulo;
+    const notas = esSanSimon
+      ? "LOGISTICA, ALIMENTACION Y HOSPEDAJE ASUME SAN SIMON"
+      : formData?.notas;
+
+    if (titulo || notas) {
       finalY += 30;
 
-      // Título de la nota
-      if (titulo && titulo !== "Nota") {
+      if (titulo) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(15);
         doc.setTextColor(0, 0, 0);
-
-        doc.text(titulo.toUpperCase(), 10, finalY); // ✅ AQUÍ
+        doc.text(titulo.toUpperCase(), 10, finalY);
         finalY += 8;
       }
 
-      // Descripción de la nota
       if (notas) {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         doc.setTextColor(85, 85, 85);
 
-        const notasLineas = doc.splitTextToSize(
-          notas.toUpperCase(), // ✅ AQUÍ
-          190,
-        );
-
+        const notasLineas = doc.splitTextToSize(notas.toUpperCase(), 190);
         doc.text(notasLineas, 10, finalY);
       }
     }
 
-    doc.setTextColor(0, 0, 0); // Reset color
+    doc.setTextColor(0, 0, 0);
     doc.addImage(sello, "PNG", 155, finalY + 15, 45, 15);
 
     /* =========================
