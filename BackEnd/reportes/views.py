@@ -13,6 +13,7 @@ from .models import (
     APUManoObra,
     APULogistica,
     NotaReporte,
+    EstadoChoices,
 )
 from .serializers import (
     ClienteSerializer,
@@ -337,21 +338,40 @@ class NotaReporteDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class CuentasPorCobrarView(generics.ListAPIView):
     """
-    Lista todos los reportes con su info de cuentas por cobrar.
+    Lista todos los reportes con estado EJECUTADO, EJECUTADO_POR_PAGAR o EJECUTADO_PAGADO.
     """
     serializer_class = ReporteListaSerializer
 
     def get_queryset(self):
-        return Reporte.objects.select_related("cliente").all().order_by("-fecha_creacion")
+        return Reporte.objects.select_related("cliente").filter(
+            estado__in=[
+                EstadoChoices.EJECUTADO,
+                EstadoChoices.EJECUTADO_POR_PAGAR,
+                EstadoChoices.EJECUTADO_PAGADO,
+            ]
+        ).order_by("-fecha_creacion")
 
 
 class ReporteAbonosView(APIView):
     """
-    Lista los abonos de un reporte específico.
+    Lista los abonos de un reporte específico (solo si el reporte está en estado ejecutado).
     """
     def get(self, request, reporte_id):
         from cuentas.models import Abono
         from cuentas.serializers import AbonoSerializer
+        
+        # Verificar que el reporte esté en estado ejecutado
+        reporte = get_object_or_404(
+            Reporte.objects.filter(
+                estado__in=[
+                    EstadoChoices.EJECUTADO,
+                    EstadoChoices.EJECUTADO_POR_PAGAR,
+                    EstadoChoices.EJECUTADO_PAGADO,
+                ]
+            ),
+            pk=reporte_id
+        )
+        
         abonos = Abono.objects.filter(reporte_id=reporte_id).order_by("-fecha_abono")
         serializer = AbonoSerializer(abonos, many=True)
         return Response(serializer.data)
