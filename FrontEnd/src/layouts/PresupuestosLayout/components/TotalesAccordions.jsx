@@ -55,7 +55,7 @@ export const TotalesAccordions = ({
             <div key={item.id} className="flex justify-between text-sm border-b py-1">
               <span>{item.descripcion}</span>
               <span>
-                {item.cantidad} × {formatoMoneda(item.costo)}
+                {item.cantidad} × {formatoMoneda(Number(item.depreciacion_bs_hora || 0))}
               </span>
             </div>
           ))
@@ -75,7 +75,7 @@ export const TotalesAccordions = ({
               <div key={item.id} className="flex justify-between text-sm border-b py-1">
                 <span>{item.descripcion}</span>
                 <span>
-                  {item.cantidad} × {formatoMoneda(item.costo)}
+                  {item.cantidad} × {formatoMoneda(Number(item.precio_unitario || 0))}
                 </span>
               </div>
             ))}
@@ -107,7 +107,7 @@ export const TotalesAccordions = ({
             <div key={item.id} className="flex justify-between text-sm border-b py-1">
               <span>{item.descripcion}</span>
               <span>
-                {item.cantidad} × {formatoMoneda(item.costo)}
+                {item.cantidad} × {formatoMoneda(Number(item.precio_unitario || 0))}
               </span>
             </div>
           ))

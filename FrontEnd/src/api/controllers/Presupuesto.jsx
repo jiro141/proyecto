@@ -4,8 +4,10 @@ import AuthApi from "../AuthApi";
  * Obtener todos los reportes (con opción de búsqueda)
  */
 export const getReportes = async (search = "") => {
-  const response = await AuthApi.get(`/reportes/?search=${search}`);
-  return response.data;
+  const url = search ? `/reportes/?search=${search}` : "/reportes/";
+  const response = await AuthApi.get(url);
+  // El backend puede devolver { results: [...] } o un array directo
+  return response.data.results || response.data;
 };
 
 export const getReporteDetalle = async (id) => {

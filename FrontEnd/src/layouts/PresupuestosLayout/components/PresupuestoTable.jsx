@@ -29,6 +29,9 @@ export default function PresupuestoTable({
     const [editItem, setEditItem] = useState(null);
     const [formData, setFormData] = useState({});
 
+    // ✅ Helper para verificar si un item está seleccionado (cantidad > 0)
+    const isItemSelected = (item) => Number(item.cantidad || 0) > 0;
+
     useEffect(() => {
         setLocalData(rows);
     }, [rows]);
@@ -123,7 +126,8 @@ export default function PresupuestoTable({
                         setPresupuestoData((prev) => ({ ...prev, [tipo]: actualizados }));
                     }
                 } else {
-                    const nuevo = { id: response.id || Date.now(), cantidad: 0, ...formData };
+                    // ✅ Agregar con cantidad = 1 (como stock y consumibles)
+                    const nuevo = { id: response.id || Date.now(), cantidad: 1, ...formData };
                     if (setPresupuestoData) {
                         setPresupuestoData((prev) => ({
                             ...prev,
@@ -155,7 +159,16 @@ export default function PresupuestoTable({
 
     // Obtener el campo de precio según el tipo
     const getPrecio = (item) => {
-        const val = item.costo || item.precio_unitario || item.depreciacion_bs_hora || 0;
+        // Para herramientas usar depreciacion_bs_hora
+        // Para mano_obra y logistica usar precio_unitario
+        let val = 0;
+        if (tipo === "herramientas") {
+            val = item.depreciacion_bs_hora || 0;
+        } else if (tipo === "mano_obra" || tipo === "logistica") {
+            val = item.precio_unitario || 0;
+        } else {
+            val = item.costo || item.precio_unitario || 0;
+        }
         return Number(val) || 0;
     };
 
@@ -187,7 +200,12 @@ export default function PresupuestoTable({
                         {localData.map((item) => (
                             <tr 
                                 key={item.id} 
-                                className="border-b hover:bg-gray-50 text-sm"
+                                className={`
+                                    border-b text-sm transition-colors
+                                    ${isItemSelected(item) 
+                                        ? "bg-blue-50 hover:bg-blue-100 border-l-4 border-blue-500" 
+                                        : "hover:bg-gray-50"}
+                                `}
                             >
                                 <td 
                                     className="px-2 py-2 text-[#0B2C4D] font-semibold text-left cursor-pointer hover:underline"

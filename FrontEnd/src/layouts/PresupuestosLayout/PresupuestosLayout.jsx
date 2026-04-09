@@ -45,7 +45,7 @@ export const columns = [
 
 export default function ReportesLayout({ clienteSeleccionado }) {
   const [search, setSearch] = useState("");
-  const { reportes, loading, error, refetch } = useReportes(search, clienteSeleccionado?.nombre);
+  const { reportes, loading, error, refetch } = useReportes(search, clienteSeleccionado?.id);
   const [isModalOpen, setModalOpen] = useState(false);
 
   const { generarExcelAPUs } = useExcelGenerator();
@@ -112,7 +112,7 @@ export default function ReportesLayout({ clienteSeleccionado }) {
     <div className="p-4">
       <ReportesTable
         columns={columns}
-        data={reportes?.results || []}
+        data={reportes}
         loading={loading}
         onRowClick={handleRowClick}
         onAction={handleAction}

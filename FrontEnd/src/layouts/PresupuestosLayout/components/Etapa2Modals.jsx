@@ -40,12 +40,12 @@ export default function Etapa2Modals({
     // 🔧 Guardar secciones tipo tabla (herramientas, mano_obra, logistica)
     // ======================================
     const handlePresupuestoTableChange = (section, updater) => {
+        // ✅ Actualizar el estado local
         setPresupuestoData((prev) => {
             const newData = typeof updater === "function" ? updater(prev) : updater;
+            // ✅ Guardar TODOS los items en el contexto (como materiales)
             const items = newData[section] || [];
-            // ✅ Solo guardar en el contexto los elementos con cantidad > 0
-            const itemsFiltrados = items.filter(item => Number(item.cantidad) > 0);
-            updateAPUSection(section, itemsFiltrados);
+            updateAPUSection(section, items);
             return newData;
         });
     };

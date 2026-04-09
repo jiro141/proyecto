@@ -155,12 +155,13 @@ export default function usePDFGenerator() {
     );
 
     // NOTA ESPECIAL PARA SAN SIMON
-    const nombreCliente = formData?.cliente?.nombre?.trim()?.toUpperCase() || "";
+    const nombreCliente =
+      formData?.cliente?.nombre?.trim()?.toUpperCase() || "";
     const rifCliente = formData?.cliente?.rif?.trim()?.toUpperCase() || "";
 
     const esSanSimon =
-      nombreCliente === "INVERSIONES LACTEAS SAN SIMON C.A" &&
-      rifCliente === "J-412577999";
+      nombreCliente === "INVERSIONES LACTEAS SAN SIMON C.A" ? true : false;
+    console.log(esSanSimon, "hola ");
 
     // MOSTRAR NOTA
     const titulo = esSanSimon ? "NOTA" : formData?.titulo;

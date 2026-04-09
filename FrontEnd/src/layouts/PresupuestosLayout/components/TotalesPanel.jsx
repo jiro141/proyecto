@@ -5,7 +5,13 @@ import TotalesSidebar from "./TotalesSidebar";
 import TotalesAccordions from "./TotalesAccordions";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 
-const TotalesPanel = ({ apuIndex, hideAccordions }) => {
+const TotalesPanel = ({ 
+  apuIndex, 
+  hideAccordions, 
+  // Props de Etapa2
+  presupuestoData = null,
+  etapa 
+}) => {
   const { formData, currentAPUIndex, updateAPU, loading } = usePresupuesto();
 
   // ✅ Si no viene apuIndex (Etapa 2), usamos el actual del contexto
@@ -32,11 +38,12 @@ const TotalesPanel = ({ apuIndex, hideAccordions }) => {
     epps = [],
   } = materiales;
 
-  const {
-    herramientas = [],
-    mano_obra = [],
-    logistica = [],
-  } = apuActual || {};
+  // ✅ Para herramientas, mano_obra, logistica: siempre usar el contexto (como materiales)
+  const herramientas = apuActual.herramientas || [];
+  const mano_obra = apuActual.mano_obra || [];
+  const logistica = apuActual.logistica || [];
+  
+  console.log("📊 apuActual.herramientas:", apuActual.herramientas);
 
   // 🧩 Tomar presupuesto_base del body del APU
   const presupuesto_base = Number(apuActual.body?.presupuesto_base || 0);
@@ -45,9 +52,19 @@ const TotalesPanel = ({ apuIndex, hideAccordions }) => {
   // ===============================
   // 🧮 Función genérica de subtotal
   // ===============================
-  const calcularSubtotal = (items) =>
+  const calcularSubtotal = (items, tipo = "default") =>
     items.reduce((acc, item) => {
-      const costo = Number(item.costo || item.precio_unitario || 0);
+      // Para herramientas usar depreciacion_bs_hora
+      // Para mano_obra y logistica usar precio_unitario
+      // Para materiales usar costo
+      let costo = 0;
+      if (tipo === "herramienta") {
+        costo = Number(item.depreciacion_bs_hora || 0);
+      } else if (tipo === "mano_obra" || tipo === "logistica") {
+        costo = Number(item.precio_unitario || 0);
+      } else {
+        costo = Number(item.costo || item.precio_unitario || 0);
+      }
       const cant = Number(item.cantidad || 0);
       const desp = Number(item.desp || 0);
       return acc + cant * (1 + desp / 100) * costo;
@@ -74,13 +91,13 @@ const TotalesPanel = ({ apuIndex, hideAccordions }) => {
   } = useMemo(() => {
     const eppTotal = calcularSubtotal(epps);
     const materialesTotal = calcularSubtotal([...stock_almacen, ...consumibles]);
-    const herramientasTotal = calcularSubtotal(herramientas);
+    const herramientasTotal = calcularSubtotal(herramientas, "herramienta");
     const herramientasPorRendimiento = herramientasTotal / rendimiento;
 
     // ✅ Cálculos siguiendo sistema viejo:
     // Mano de obra base = suma de mano de obra (sin logística)
-    const manoObraBaseTotal = calcularSubtotal(mano_obra);
-    const logisticaTotal = calcularSubtotal(logistica);
+    const manoObraBaseTotal = calcularSubtotal(mano_obra, "mano_obra");
+    const logisticaTotal = calcularSubtotal(logistica, "logistica");
 
     // Total días trabajados (solo mano de obra)
     const totalDiasTrabajados = mano_obra.reduce(
