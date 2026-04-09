@@ -9,9 +9,17 @@ export default function ProductividadCard({
   const [valor, setValor] = useState(defaultValue);
 
   const handleChange = (e) => {
-    const nuevoValor = parseFloat(e.target.value);
+    const value = e.target.value;
+
+    if (value === "") {
+      setValor("");
+      if (onChange) onChange("");
+      return;
+    }
+
+    const nuevoValor = parseFloat(value);
     if (!isNaN(nuevoValor)) {
-      setValor(nuevoValor);
+      setValor(value);
       if (onChange) onChange(nuevoValor);
     }
   };
@@ -53,7 +61,6 @@ export default function ProductividadCard({
             {/* <span className="absolute right-3 text-gray-500 text-sm font-medium">%</span> */}
           </div>
         </div>
-
       </div>
     </div>
   );

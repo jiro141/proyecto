@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaPlus, FaMinus, FaEdit } from "react-icons/fa";
+import { FaPlus, FaMinus } from "react-icons/fa";
 import TableHeader from "./TableHeader";
 import { toast } from "react-toastify";
 import Modal from "../../../components/Modal";
@@ -23,41 +23,118 @@ export default function PresupuestoTable({
     formFields,
     onRefetch,
 }) {
-    const rows = dataSource || presupuestoData?.[tipo] || [];
-    const [localData, setLocalData] = useState([]);
+    const catalogItems = dataSource || [];
+    
+    const selectedItems = Array.isArray(presupuestoData?.[tipo]) ? presupuestoData[tipo] : [];
+    
+    const selectedMap = {};
+    if (Array.isArray(selectedItems)) {
+        selectedItems.forEach(item => {
+            selectedMap[item.id] = item;
+        });
+    }
+    
+    const displayItems = catalogItems.map(item => {
+        const selected = selectedMap[item.id];
+        if (selected) {
+            return { ...item, cantidad: selected.cantidad };
+        }
+        return item;
+    });
+    
     const [isModalOpen, setModalOpen] = useState(false);
     const [editItem, setEditItem] = useState(null);
     const [formData, setFormData] = useState({});
 
-    // ✅ Helper para verificar si un item está seleccionado (cantidad > 0)
     const isItemSelected = (item) => Number(item.cantidad || 0) > 0;
 
-    useEffect(() => {
-        setLocalData(rows);
-    }, [rows]);
+    const getPrecio = (item) => {
+        if (tipo === "herramientas") {
+            return item.depreciacion_bs_hora || 0;
+        }
+        return item.precio_unitario || 0;
+    };
 
     const handleCantidadChange = (id, val) => {
-        const actualizados = localData.map((r) =>
-            r.id === id ? { ...r, cantidad: Math.max(Number(val), 0) } : r
+        const nuevaCantidad = Math.max(Number(val), 0);
+        
+        const updatedItems = displayItems.map((r) =>
+            r.id === id ? { ...r, cantidad: nuevaCantidad } : r
         );
-        setLocalData(actualizados);
+        
+        const cantidadMap = {};
+        updatedItems.forEach(item => {
+            cantidadMap[item.id] = item.cantidad;
+        });
+        
+        const itemsActualizados = catalogItems.map(item => {
+            if (cantidadMap[item.id] !== undefined) {
+                return { ...item, cantidad: cantidadMap[item.id] };
+            }
+            return item;
+        }).filter(item => Number(item.cantidad) > 0);
+        
         if (setPresupuestoData) {
-            setPresupuestoData((prev) => ({ ...prev, [tipo]: actualizados }));
+            setPresupuestoData((prev) => ({ ...prev, [tipo]: itemsActualizados }));
         }
     };
 
     const handleCantidadStep = (id, delta) => {
-        const actualizados = localData.map((r) =>
-            r.id === id ? { ...r, cantidad: Math.max(r.cantidad + delta, 0) } : r
+        const currentItem = displayItems.find(r => r.id === id);
+        const currentCantidad = currentItem?.cantidad || 0;
+        
+        const updatedItems = displayItems.map((r) =>
+            r.id === id ? { ...r, cantidad: Math.max(currentCantidad + delta, 0) } : r
         );
-        setLocalData(actualizados);
+        
+        const cantidadMap = {};
+        updatedItems.forEach(item => {
+            cantidadMap[item.id] = item.cantidad;
+        });
+        
+        const itemsActualizados = catalogItems.map(item => {
+            if (cantidadMap[item.id] !== undefined) {
+                return { ...item, cantidad: cantidadMap[item.id] };
+            }
+            return item;
+        }).filter(item => Number(item.cantidad) > 0);
+        
         if (setPresupuestoData) {
-            setPresupuestoData((prev) => ({ ...prev, [tipo]: actualizados }));
+            setPresupuestoData((prev) => ({ ...prev, [tipo]: itemsActualizados }));
         }
     };
 
-    const handleCantidadClick = (e) => {
+    const handleRowClick = (e, item) => {
         e.stopPropagation();
+        
+        const selectedItem = selectedMap[item.id];
+        
+        if (selectedItem) {
+            setEditItem({ ...item, ...selectedItem });
+            setFormData({ ...item, ...selectedItem });
+            setModalOpen(true);
+        } else {
+            const updatedItems = displayItems.map((r) =>
+                r.id === item.id ? { ...r, cantidad: 1 } : r
+            );
+            
+            const cantidadMap = {};
+            updatedItems.forEach(i => {
+                cantidadMap[i.id] = i.cantidad;
+            });
+            
+            const itemsFiltrados = catalogItems.map(item => {
+                if (cantidadMap[item.id] !== undefined) {
+                    return { ...item, cantidad: cantidadMap[item.id] };
+                }
+                return item;
+            }).filter(i => Number(i.cantidad) > 0);
+            
+            if (setPresupuestoData) {
+                setPresupuestoData((prev) => ({ ...prev, [tipo]: itemsFiltrados }));
+            }
+            toast.success("Registro agregado al APU");
+        }
     };
 
     const handleAddClick = () => {
@@ -66,110 +143,53 @@ export default function PresupuestoTable({
         setModalOpen(true);
     };
 
-    const handleRowClick = (e, item) => {
-        e.stopPropagation();
-        if (item.id && item.id > 0) {
-            const actualizados = rows.map((r) =>
-                r.id === item.id ? { ...r, cantidad: r.cantidad || 1 } : r
-            );
-            if (setPresupuestoData) {
-                setPresupuestoData((prev) => ({ ...prev, [tipo]: actualizados }));
-            }
-            toast.success("Registro agregado al APU");
-        } else {
-            setEditItem(item);
-            setFormData(item);
-            setModalOpen(true);
-        }
-    };
-
-    const handleFormChange = (fieldName, value) => {
-        setFormData((prev) => ({ ...prev, [fieldName]: value }));
+    const handleFormChange = (name, value) => {
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleFormSubmit = async () => {
         try {
-            let response;
-            
+            const data = {
+                descripcion: formData.descripcion,
+                unidad: formData.unidad || "und",
+            };
+
             if (tipo === "herramientas") {
-                if (editItem && editItem.id) {
-                    response = await updateHerramienta(editItem.id, formData);
-                    toast.success("Herramienta actualizada");
-                } else {
-                    response = await createHerramienta(formData);
-                    toast.success("Herramienta creada");
-                }
+                data.depreciacion_bs_hora = parseFloat(formData.depreciacion_bs_hora) || 0;
             } else if (tipo === "mano_obra") {
-                if (editItem && editItem.id) {
-                    response = await updateEmpleado(editItem.id, formData);
-                    toast.success("Empleado actualizado");
-                } else {
-                    response = await createEmpleado(formData);
-                    toast.success("Empleado creado");
-                }
+                data.precio_unitario = parseFloat(formData.precio_unitario) || 0;
             } else if (tipo === "logistica") {
-                if (editItem && editItem.id) {
-                    response = await updateLogistica(editItem.id, formData);
-                    toast.success("Logística actualizada");
-                } else {
-                    response = await createLogistica(formData);
-                    toast.success("Logística creada");
-                }
+                data.precio_unitario = parseFloat(formData.precio_unitario) || 0;
             }
 
-            if (response) {
-                if (editItem && editItem.id) {
-                    const actualizados = rows.map((r) =>
-                        r.id === editItem.id ? { ...r, ...formData } : r
-                    );
-                    if (setPresupuestoData) {
-                        setPresupuestoData((prev) => ({ ...prev, [tipo]: actualizados }));
-                    }
-                } else {
-                    // ✅ Agregar con cantidad = 1 (como stock y consumibles)
-                    const nuevo = { id: response.id || Date.now(), cantidad: 1, ...formData };
-                    if (setPresupuestoData) {
-                        setPresupuestoData((prev) => ({
-                            ...prev,
-                            [tipo]: [...rows, nuevo],
-                        }));
-                    }
+            if (editItem?.id && editItem.id > 0) {
+                if (tipo === "herramientas") {
+                    await updateHerramienta(editItem.id, data);
+                } else if (tipo === "mano_obra") {
+                    await updateEmpleado(editItem.id, data);
+                } else if (tipo === "logistica") {
+                    await updateLogistica(editItem.id, data);
                 }
-                if (onRefetch) onRefetch();
+                toast.success("Registro actualizado");
+            } else {
+                if (tipo === "herramientas") {
+                    await createHerramienta(data);
+                } else if (tipo === "mano_obra") {
+                    await createEmpleado(data);
+                } else if (tipo === "logistica") {
+                    await createLogistica(data);
+                }
+                toast.success("Registro creado");
             }
+
+            setModalOpen(false);
+            setEditItem(null);
+            setFormData({});
+            if (onRefetch) onRefetch();
         } catch (error) {
-            console.error("Error al guardar:", error);
-            toast.error("Error al guardar en el backend");
+            console.error("Error guardando:", error);
+            toast.error("Error al guardar");
         }
-        setModalOpen(false);
-        setEditItem(null);
-    };
-
-    useEffect(() => {
-        if (!presupuestoData || !setPresupuestoData) return;
-        const total = localData.reduce((acc, r) => {
-            const precio = getPrecio(r);
-            return acc + (Number(r.cantidad) || 0) * precio;
-        }, 0);
-        setPresupuestoData((prev) => ({
-            ...prev,
-            [`${tipo}_total`]: total,
-        }));
-    }, [localData]);
-
-    // Obtener el campo de precio según el tipo
-    const getPrecio = (item) => {
-        // Para herramientas usar depreciacion_bs_hora
-        // Para mano_obra y logistica usar precio_unitario
-        let val = 0;
-        if (tipo === "herramientas") {
-            val = item.depreciacion_bs_hora || 0;
-        } else if (tipo === "mano_obra" || tipo === "logistica") {
-            val = item.precio_unitario || 0;
-        } else {
-            val = item.costo || item.precio_unitario || 0;
-        }
-        return Number(val) || 0;
     };
 
     if (loading) {
@@ -197,7 +217,7 @@ export default function PresupuestoTable({
                         </tr>
                     </thead>
                     <tbody>
-                        {localData.map((item) => (
+                        {displayItems.map((item) => (
                             <tr 
                                 key={item.id} 
                                 className={`
@@ -214,7 +234,7 @@ export default function PresupuestoTable({
                                     {item.descripcion}
                                 </td>
                                 <td className="text-center">{item.unidad}</td>
-                                <td className="text-center" onClick={(e) => handleCantidadClick(e)}>
+                                <td className="text-center">
                                     <div className="flex items-center justify-center gap-2">
                                         <button
                                             onClick={() => handleCantidadStep(item.id, -1)}
@@ -229,11 +249,10 @@ export default function PresupuestoTable({
                                             step="any"
                                             value={item.cantidad}
                                             onChange={(e) =>
-                                                handleCantidadChange(item.id, parseFloat(e.target.value))
+                                                handleCantidadChange(item.id, parseFloat(e.target.value) || 0)
                                             }
                                             className="w-16 border rounded text-center"
                                         />
-
 
                                         <button
                                             onClick={() => handleCantidadStep(item.id, 1)}
@@ -266,8 +285,8 @@ export default function PresupuestoTable({
 
             <Modal
                 isOpen={isModalOpen}
-                onClose={() => { setModalOpen(false); setEditItem(null); }}
-                title={editItem ? `Editar ${titulo}` : `Agregar ${titulo}`}
+                onClose={() => { setModalOpen(false); setEditItem(null); setFormData({}); }}
+                title={editItem?.id && editItem.id > 0 ? `Editar ${titulo}` : `Agregar ${titulo}`}
                 width="max-w-md"
             >
                 {formFields && formFields.length > 0 ? (
@@ -288,7 +307,7 @@ export default function PresupuestoTable({
                         ))}
                         <div className="flex justify-end gap-2 pt-4">
                             <button
-                                onClick={() => { setModalOpen(false); setEditItem(null); }}
+                                onClick={() => { setModalOpen(false); setEditItem(null); setFormData({}); }}
                                 className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded"
                             >
                                 Cancelar
@@ -297,7 +316,7 @@ export default function PresupuestoTable({
                                 onClick={handleFormSubmit}
                                 className="bg-[#e53935] hover:bg-[#c2302d] text-white px-4 py-2 rounded"
                             >
-                                {editItem ? "Actualizar" : "Crear"}
+                                {editItem?.id && editItem.id > 0 ? "Actualizar" : "Crear"}
                             </button>
                         </div>
                     </div>

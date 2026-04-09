@@ -40,7 +40,9 @@ const TotalesPanel = ({
   const mano_obra = apuActual.mano_obra || [];
   const logistica = apuActual.logistica || [];
 
-  console.log("📊 apuActual.herramientas:", apuActual.herramientas);
+  console.log("📊 APU herramientas:", herramientas);
+  console.log("📊 APU mano_obra:", mano_obra);
+  console.log("📊 APU logistica:", logistica);
 
   // 🧩 Tomar presupuesto_base del body del APU
   const presupuesto_base = Number(apuActual.body?.presupuesto_base || 0);
@@ -49,8 +51,11 @@ const TotalesPanel = ({
   // ===============================
   // 🧮 Función genérica de subtotal
   // ===============================
-  const calcularSubtotal = (items, tipo = "default") =>
-    items.reduce((acc, item) => {
+  const calcularSubtotal = (items, tipo = "default") => {
+    // ✅ Asegurar que items sea un array
+    if (!Array.isArray(items) || items.length === 0) return 0;
+    
+    return items.reduce((acc, item) => {
       // Para herramientas usar depreciacion_bs_hora
       // Para mano_obra y logistica usar precio_unitario
       // Para materiales usar costo
@@ -66,6 +71,7 @@ const TotalesPanel = ({
       const desp = Number(item.desp || 0);
       return acc + cant * (1 + desp / 100) * costo;
     }, 0);
+  };
 
   // ===============================
   // 🔢 Cálculos principales (memoizados)
@@ -100,10 +106,9 @@ const TotalesPanel = ({
     const logisticaTotal = calcularSubtotal(logistica, "logistica");
 
     // Total días trabajados (solo mano de obra)
-    const totalDiasTrabajados = mano_obra.reduce(
-      (acc, item) => acc + Number(item.cantidad || 0),
-      0,
-    );
+    const totalDiasTrabajados = Array.isArray(mano_obra) 
+      ? mano_obra.reduce((acc, item) => acc + Number(item.cantidad || 0), 0)
+      : 0;
 
     // Bono alimenticio: $15 × días trabajados
     const bonoAlimentacion = totalDiasTrabajados * 15;
@@ -179,15 +184,15 @@ const TotalesPanel = ({
   }, [totalUnitario, effectiveIndex, formData?.apus, updateAPU]);
 
   // Filtrar items con cantidad > 0
-  const herramientasFiltradas = herramientas.filter(
-    (item) => Number(item.cantidad) > 0,
-  );
-  const manoObraFiltrada = mano_obra.filter(
-    (item) => Number(item.cantidad) > 0,
-  );
-  const logisticaFiltrada = logistica.filter(
-    (item) => Number(item.cantidad) > 0,
-  );
+  const herramientasFiltradas = Array.isArray(herramientas) 
+    ? herramientas.filter((item) => Number(item.cantidad) > 0)
+    : [];
+  const manoObraFiltrada = Array.isArray(mano_obra)
+    ? mano_obra.filter((item) => Number(item.cantidad) > 0)
+    : [];
+  const logisticaFiltrada = Array.isArray(logistica)
+    ? logistica.filter((item) => Number(item.cantidad) > 0)
+    : [];
 
   return (
     <div className="relative bg-white shadow-md rounded-lg p-5 pt-10 flex flex-col h-full min-h-[calc(65vh-8rem)]">

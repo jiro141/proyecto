@@ -43,7 +43,7 @@ export default function usePDFGenerator() {
     doc.text("ORDEN DE", 155, 50, { align: "center" });
     doc.text("SERVICIO", 155, 54, { align: "center" });
     doc.setFontSize(13);
-    doc.text(`${formData?.orden_servicio}` ,155, 62, { align: "center" })
+    doc.text(`${formData?.orden_servicio}`, 155, 62, { align: "center" });
     doc.setTextColor(0, 0, 0);
 
     doc.setFontSize(9);
@@ -155,24 +155,18 @@ export default function usePDFGenerator() {
       finalY,
       { maxWidth: 190, align: "justify" },
     );
-
     // NOTA ESPECIAL PARA SAN SIMON
     const nombreCliente =
       formData?.cliente?.nombre?.trim()?.toUpperCase() || "";
-    const rifCliente = formData?.cliente?.rif?.trim()?.toUpperCase() || "";
 
     const esSanSimon = nombreCliente === "INVERSIONES LACTEAS SAN SIMON C.A";
 
     const notaSanSimon = "LOGISTICA, ALIMENTACION Y HOSPEDAJE ASUME SAN SIMON";
 
-    // MOSTRAR NOTA
-    const titulo = esSanSimon ? "NOTA" : formData?.titulo;
+    // FUNCION PARA DIBUJAR BLOQUE DE NOTA
+    const dibujarNota = (titulo, contenido) => {
+      if (!titulo && !contenido) return;
 
-    const notas = esSanSimon
-      ? [notaSanSimon, formData?.notas].filter(Boolean).join("\n")
-      : formData?.notas;
-
-    if (titulo || notas) {
       finalY += 30;
 
       if (titulo) {
@@ -183,14 +177,24 @@ export default function usePDFGenerator() {
         finalY += 8;
       }
 
-      if (notas) {
+      if (contenido) {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         doc.setTextColor(85, 85, 85);
 
-        const notasLineas = doc.splitTextToSize(notas.toUpperCase(), 190);
-        doc.text(notasLineas, 10, finalY);
+        const lineas = doc.splitTextToSize(contenido.toUpperCase(), 190);
+        doc.text(lineas, 10, finalY);
       }
+    };
+
+    // 👉 1. NOTA SAN SIMON (SI APLICA)
+    if (esSanSimon) {
+      dibujarNota("NOTA SAN SIMON", notaSanSimon);
+    }
+
+    // 👉 2. OTRAS NOTAS (SI EXISTEN)
+    if (formData?.notas) {
+      dibujarNota(formData?.titulo || "NOTA", formData?.notas);
     }
 
     doc.setTextColor(0, 0, 0);

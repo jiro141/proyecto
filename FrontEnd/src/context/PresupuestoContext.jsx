@@ -144,7 +144,11 @@ export const PresupuestoProvider = ({ children }) => {
         const edicionData = localStorage.getItem("presupuesto_edicion");
         if (edicionData) {
           const parsed = JSON.parse(edicionData);
-          console.log("🔄 [PresupuestoContext] Hidratando desde edición:", parsed);
+          console.log("🔄 [PresupuestoContext] Hidratando desde edición");
+          console.log("📋 APUs en edición:", parsed.apus?.length);
+          if (parsed.apus?.[0]?.herramientas) {
+            console.log("📋 Herramientas APU 0:", parsed.apus[0].herramientas);
+          }
           localStorage.removeItem("presupuesto_edicion");
           setFormData({
             ...initialPresupuesto(),
@@ -158,7 +162,11 @@ export const PresupuestoProvider = ({ children }) => {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          console.log("🔄 [PresupuestoContext] Hidratando desde draft:", parsed);
+          console.log("🔄 [PresupuestoContext] Hidratando desde draft");
+          console.log("📋 APUs en draft:", parsed.apus?.length);
+          if (parsed.apus?.[0]?.herramientas) {
+            console.log("📋 Herramientas APU 0:", parsed.apus[0].herramientas);
+          }
           setFormData({
             ...initialPresupuesto(),
             ...parsed,

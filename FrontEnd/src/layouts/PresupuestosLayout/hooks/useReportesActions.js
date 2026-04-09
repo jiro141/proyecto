@@ -52,16 +52,20 @@ export default function useReportesActions() {
                 const titulo = formData.titulo || "Nota";
                 const descripcion = formData.notas || "";
 
+                console.log("📝 Guardando nota:", { titulo, descripcion, notaId: formData.notaId });
+
                 // Solo guardar nota si hay descripción (no vacía)
                 if (descripcion && descripcion.trim() !== "") {
                     if (formData.notaId) {
                         // Actualizar nota existente
+                        console.log("🔄 Actualizando nota existente:", formData.notaId);
                         await updateNotaReporte(formData.notaId, {
                             titulo: titulo,
                             descripcion: descripcion,
                         });
                     } else {
                         // Crear nueva nota ASOCIADA AL REPORTE
+                        console.log("➕ Creando nueva nota para reporte:", reporte.id);
                         const nota = await createNotaReporte(reporte.id, {
                             titulo: titulo,
                             descripcion: descripcion,
@@ -69,6 +73,8 @@ export default function useReportesActions() {
                         // Guardar el ID de la nota para futuras actualizaciones
                         formData.notaId = nota.id;
                     }
+                } else {
+                    console.log("⚠️ Nota vacía, no se guarda");
                 }
 
                 // =========================
@@ -143,12 +149,17 @@ export default function useReportesActions() {
                         // Solo enviar si tiene descripción válida Y cantidad > 0
                         if (!herramienta.descripcion || herramienta.descripcion.trim() === "") continue;
                         if (Number(herramienta.cantidad) <= 0) continue;
+                        
+                        // ✅ Usar depreciacion_bs_hora como precio_unitario para que se sume
+                        const precio = Number(herramienta.depreciacion_bs_hora) || 0;
+                        
                         await createAPUHerramienta(apuResponse.id, {
                             apu: apuResponse.id,
                             descripcion: herramienta.descripcion,
                             cantidad: Number(herramienta.cantidad) || 1,
-                            precio_unitario: Number(herramienta.costo) || 0,
-                            depreciacion_hora: 0,
+                            // El backend espera "depreciacion_hora" y también "precio_unitario"
+                            depreciacion_hora: precio,
+                            precio_unitario: precio,  // ✅ Agregar precio_unitario igual a depreciacion
                             unidad: herramienta.unidad || "UND",
                         });
                     }
@@ -164,7 +175,8 @@ export default function useReportesActions() {
                             apu: apuResponse.id,
                             descripcion: mo.descripcion,
                             cantidad: Number(mo.cantidad) || 1,
-                            precio_unitario: Number(mo.costo) || 0,
+                            // ✅ Usar precio_unitario para mano de obra
+                            precio_unitario: Number(mo.precio_unitario) || 0,
                             unidad: mo.unidad || "DIA",
                         });
                     }
@@ -180,7 +192,8 @@ export default function useReportesActions() {
                             apu: apuResponse.id,
                             descripcion: log.descripcion,
                             cantidad: Number(log.cantidad) || 1,
-                            precio_unitario: Number(log.costo) || 0,
+                            // ✅ Usar precio_unitario para logística
+                            precio_unitario: Number(log.precio_unitario) || 0,
                             unidad: log.unidad || "UND",
                         });
                     }

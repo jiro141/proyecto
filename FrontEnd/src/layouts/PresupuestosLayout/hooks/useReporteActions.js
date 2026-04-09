@@ -109,11 +109,13 @@ export const useReporteActions = () => {
             unidad: mo.unidad || "",
           })),
           // ✅ Solo cargar registros con cantidad > 0
+          // El backend usa "depreciacion_hora", mapear a "depreciacion_bs_hora" para el frontend
           herramientas: (apu.herramientas || []).filter(h => Number(h.cantidad) > 0).map((h) => ({
             id: h.id,
             descripcion: h.descripcion || "",
             cantidad: Number(h.cantidad) || 0,
-            depreciacion_bs_hora: Number(h.depreciacion_bs_hora) || 0,  // ✅ Usar depreciacion_bs_hora
+            // Mapear depreciacion_hora (backend) -> depreciacion_bs_hora (frontend)
+            depreciacion_bs_hora: Number(h.depreciacion_hora || h.depreciacion_bs_hora || 0),
             unidad: h.unidad || "",
           })),
           // ✅ Solo cargar registros con cantidad > 0
@@ -121,7 +123,7 @@ export const useReporteActions = () => {
             id: l.id,
             descripcion: l.descripcion || "",
             cantidad: Number(l.cantidad) || 0,
-            precio_unitario: Number(l.precio_unitario) || 0,  // ✅ Usar precio_unitario
+            precio_unitario: Number(l.precio_unitario || 0),
             unidad: l.unidad || "",
           })),
         })),
@@ -130,6 +132,8 @@ export const useReporteActions = () => {
       // ✅ Limpiar cualquier dato anterior antes de cargar edición
       localStorage.removeItem("presupuesto_edicion");
       localStorage.removeItem("presupuesto_draft");
+      
+      console.log("📦 Datos adaptados para edición:", JSON.stringify(adaptedData, null, 2));
       
       // Guardar en localStorage para persistencia
       localStorage.setItem("presupuesto_edicion", JSON.stringify(adaptedData));

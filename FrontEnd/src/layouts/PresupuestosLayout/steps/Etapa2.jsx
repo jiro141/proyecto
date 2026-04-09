@@ -176,6 +176,8 @@ export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
         refetchHerramientas={refetchHerramientas}
         refetchEmpleados={refetchEmpleados}
         refetchLogistica={refetchLogistica}
+        // ✅ Agregar formData para que los modales vean los datos del APU actual
+        formData={formData}
       />
     </div>
   );
