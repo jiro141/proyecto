@@ -1,8 +1,11 @@
 // src/modules/reportes/hooks/usePDFGenerator.js
+// src/modules/reportes/hooks/usePDFGenerator.js
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import logo from "../../../assets/img/Logotipo.png";
-import sello from "../../../assets/img/sello.png";
+
+// REVISA ESTAS DOS LÍNEAS:
+import logo from "../../../assets/img/Logotipo.png"; // L mayúscula según tu foto
+import sello from "../../../assets/img/sello.png";   // s minúscula según tu foto
 
 export default function usePDFGenerator() {
   const generarPDF = (formData, nPresupuesto) => {
