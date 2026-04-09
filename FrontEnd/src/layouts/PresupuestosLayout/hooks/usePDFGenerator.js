@@ -1,7 +1,7 @@
 // src/modules/reportes/hooks/usePDFGenerator.js
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import logo from "../../../assets/img/logotipo.png";
+import logo from "../../../assets/img/Logotipo.png";
 import sello from "../../../assets/img/sello.png";
 
 export default function usePDFGenerator() {
