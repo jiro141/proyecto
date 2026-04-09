@@ -2,7 +2,6 @@
 // src/modules/reportes/hooks/usePDFGenerator.js
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
 // REVISA ESTAS DOS LÍNEAS:
 import logo from "../../../assets/img/Logotipo.png"; // L mayúscula según tu foto
 import sello from "../../../assets/img/sello.png";   // s minúscula según tu foto
