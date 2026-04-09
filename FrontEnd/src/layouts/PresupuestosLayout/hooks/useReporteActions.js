@@ -100,12 +100,12 @@ export const useReporteActions = () => {
               })),
             epps: [],
           },
-          // ✅ Solo cargar registros con cantidad > 0
+          // ✅ Solo cargar registros con cantidad > 0 (usar campos correctos)
           mano_obra: (apu.manos_obra || []).filter(mo => Number(mo.cantidad) > 0).map((mo) => ({
             id: mo.id,
             descripcion: mo.descripcion || "",
             cantidad: Number(mo.cantidad) || 0,
-            costo: Number(mo.precio_unitario) || 0,  // ✅ Ahora usa precio_unitario
+            precio_unitario: Number(mo.precio_unitario) || 0,  // ✅ Usar precio_unitario
             unidad: mo.unidad || "",
           })),
           // ✅ Solo cargar registros con cantidad > 0
@@ -113,7 +113,7 @@ export const useReporteActions = () => {
             id: h.id,
             descripcion: h.descripcion || "",
             cantidad: Number(h.cantidad) || 0,
-            costo: Number(h.precio_unitario) || 0,  // ✅ Ahora usa precio_unitario
+            depreciacion_bs_hora: Number(h.depreciacion_bs_hora) || 0,  // ✅ Usar depreciacion_bs_hora
             unidad: h.unidad || "",
           })),
           // ✅ Solo cargar registros con cantidad > 0
@@ -121,12 +121,16 @@ export const useReporteActions = () => {
             id: l.id,
             descripcion: l.descripcion || "",
             cantidad: Number(l.cantidad) || 0,
-            costo: Number(l.precio_unitario) || 0,  // ✅ Ahora usa precio_unitario
+            precio_unitario: Number(l.precio_unitario) || 0,  // ✅ Usar precio_unitario
             unidad: l.unidad || "",
           })),
         })),
       };
 
+      // ✅ Limpiar cualquier dato anterior antes de cargar edición
+      localStorage.removeItem("presupuesto_edicion");
+      localStorage.removeItem("presupuesto_draft");
+      
       // Guardar en localStorage para persistencia
       localStorage.setItem("presupuesto_edicion", JSON.stringify(adaptedData));
       hydratePresupuesto(adaptedData);

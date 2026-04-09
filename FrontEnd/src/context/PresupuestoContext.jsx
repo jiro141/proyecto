@@ -176,9 +176,18 @@ export const PresupuestoProvider = ({ children }) => {
     hydrateFromStorage();
   }, []);
 
-  // Guardar a localStorage solo cuando NO está cargando (después de hidratación)
+  // Guardar a localStorage solo cuando NO está cargando Y no viene de edición reciente
+  // Si hay presupuesto_edicion, no guardar hasta que se hydrate
   useEffect(() => {
     if (loading) return;
+    
+    // Si viene de edición (tiene ID), no guardar en draft para evitar duplicación
+    const edicionPendiente = localStorage.getItem("presupuesto_edicion");
+    if (edicionPendiente) return;
+    
+    // Si el formData tiene ID (edición), no guardar en draft
+    if (formData?.id) return;
+    
     localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
   }, [formData, loading]);
 

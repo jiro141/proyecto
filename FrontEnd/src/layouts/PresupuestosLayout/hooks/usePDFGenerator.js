@@ -42,6 +42,8 @@ export default function usePDFGenerator() {
     doc.setTextColor(...rojoHermabe);
     doc.text("ORDEN DE", 155, 50, { align: "center" });
     doc.text("SERVICIO", 155, 54, { align: "center" });
+    doc.setFontSize(13);
+    doc.text(`${formData?.orden_servicio}` ,155, 62, { align: "center" })
     doc.setTextColor(0, 0, 0);
 
     doc.setFontSize(9);
@@ -159,14 +161,15 @@ export default function usePDFGenerator() {
       formData?.cliente?.nombre?.trim()?.toUpperCase() || "";
     const rifCliente = formData?.cliente?.rif?.trim()?.toUpperCase() || "";
 
-    const esSanSimon =
-      nombreCliente === "INVERSIONES LACTEAS SAN SIMON C.A" ? true : false;
-    console.log(esSanSimon, "hola ");
+    const esSanSimon = nombreCliente === "INVERSIONES LACTEAS SAN SIMON C.A";
+
+    const notaSanSimon = "LOGISTICA, ALIMENTACION Y HOSPEDAJE ASUME SAN SIMON";
 
     // MOSTRAR NOTA
     const titulo = esSanSimon ? "NOTA" : formData?.titulo;
+
     const notas = esSanSimon
-      ? "LOGISTICA, ALIMENTACION Y HOSPEDAJE ASUME SAN SIMON"
+      ? [notaSanSimon, formData?.notas].filter(Boolean).join("\n")
       : formData?.notas;
 
     if (titulo || notas) {
