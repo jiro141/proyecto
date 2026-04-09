@@ -112,7 +112,7 @@ const TotalesPanel = ({
     const prestacionesSociales = (manoObraBaseTotal + bonoAlimentacion) * 2;
     
     // ✅ Total mano de obra (como sistema viejo): base + bono + prestaciones + logística
-    const manoObraTotal = manoObraBaseTotal + bonoAlimentacion + prestacionesSociales + logisticaTotal;
+    const manoObraTotal = manoObraBaseTotal  + prestacionesSociales + logisticaTotal;
 
     // ✅ Costo por unidad = manoObraTotal / rendimiento (sin logística)
     const costoPorUnidad = rendimiento
