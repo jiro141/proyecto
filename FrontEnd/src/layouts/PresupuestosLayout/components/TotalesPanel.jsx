@@ -5,17 +5,18 @@ import TotalesSidebar from "./TotalesSidebar";
 import TotalesAccordions from "./TotalesAccordions";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 
-const TotalesPanel = ({ 
-  apuIndex, 
-  hideAccordions, 
+const TotalesPanel = ({
+  apuIndex,
+  hideAccordions,
   // Props de Etapa2
   presupuestoData = null,
-  etapa 
+  etapa,
 }) => {
   const { formData, currentAPUIndex, updateAPU, loading } = usePresupuesto();
 
   // ✅ Si no viene apuIndex (Etapa 2), usamos el actual del contexto
-  const effectiveIndex = typeof apuIndex === "number" ? apuIndex : currentAPUIndex;
+  const effectiveIndex =
+    typeof apuIndex === "number" ? apuIndex : currentAPUIndex;
 
   // ✅ Esperar a que cargue la hidratación
   if (loading) {
@@ -28,21 +29,17 @@ const TotalesPanel = ({
 
   const apus = formData?.apus || [];
   const apuActual = apus[effectiveIndex] || {};
-  
+
   const materiales = apuActual.materiales || {};
   const rendimiento = Number(apuActual.body?.rendimiento || 1) || 1;
 
-  const {
-    stock_almacen = [],
-    consumibles = [],
-    epps = [],
-  } = materiales;
+  const { stock_almacen = [], consumibles = [], epps = [] } = materiales;
 
   // ✅ Para herramientas, mano_obra, logistica: siempre usar el contexto (como materiales)
   const herramientas = apuActual.herramientas || [];
   const mano_obra = apuActual.mano_obra || [];
   const logistica = apuActual.logistica || [];
-  
+
   console.log("📊 apuActual.herramientas:", apuActual.herramientas);
 
   // 🧩 Tomar presupuesto_base del body del APU
@@ -87,10 +84,13 @@ const TotalesPanel = ({
     adminYGastos,
     subTotal,
     utilidad,
-    herramientasPorRendimiento
+    herramientasPorRendimiento,
   } = useMemo(() => {
     const eppTotal = calcularSubtotal(epps);
-    const materialesTotal = calcularSubtotal([...stock_almacen, ...consumibles]);
+    const materialesTotal = calcularSubtotal([
+      ...stock_almacen,
+      ...consumibles,
+    ]);
     const herramientasTotal = calcularSubtotal(herramientas, "herramienta");
     const herramientasPorRendimiento = herramientasTotal / rendimiento;
 
@@ -102,17 +102,21 @@ const TotalesPanel = ({
     // Total días trabajados (solo mano de obra)
     const totalDiasTrabajados = mano_obra.reduce(
       (acc, item) => acc + Number(item.cantidad || 0),
-      0
+      0,
     );
-    
+
     // Bono alimenticio: $15 × días trabajados
     const bonoAlimentacion = totalDiasTrabajados * 15;
-    
+
     // ✅ Prestaciones: 200% del (manoObraBaseTotal + bonoAlimenticio)
-    const prestacionesSociales = (manoObraBaseTotal ) * 2;
-    
+    const prestacionesSociales = (manoObraBaseTotal + logisticaTotal) * 2;
+
     // ✅ Total mano de obra (como sistema viejo): base + bono + prestaciones + logística
-    const manoObraTotal = manoObraBaseTotal + bonoAlimentacion + prestacionesSociales + logisticaTotal;
+    const manoObraTotal =
+      manoObraBaseTotal +
+      bonoAlimentacion +
+      prestacionesSociales +
+      logisticaTotal;
 
     // ✅ Costo por unidad = manoObraTotal / rendimiento (sin logística)
     const costoPorUnidad = rendimiento
@@ -142,7 +146,7 @@ const TotalesPanel = ({
       adminYGastos,
       subTotal,
       utilidad,
-      herramientasPorRendimiento
+      herramientasPorRendimiento,
     };
   }, [
     epps,
@@ -176,18 +180,22 @@ const TotalesPanel = ({
 
   // Filtrar items con cantidad > 0
   const herramientasFiltradas = herramientas.filter(
-    (item) => Number(item.cantidad) > 0
+    (item) => Number(item.cantidad) > 0,
   );
   const manoObraFiltrada = mano_obra.filter(
-    (item) => Number(item.cantidad) > 0
+    (item) => Number(item.cantidad) > 0,
   );
   const logisticaFiltrada = logistica.filter(
-    (item) => Number(item.cantidad) > 0
+    (item) => Number(item.cantidad) > 0,
   );
 
   return (
     <div className="relative bg-white shadow-md rounded-lg p-5 pt-10 flex flex-col h-full min-h-[calc(65vh-8rem)]">
-      <TableHeader icon={<FaFileInvoiceDollar />} titulo="Resumen de Costos" etapa={apuIndex} />
+      <TableHeader
+        icon={<FaFileInvoiceDollar />}
+        titulo="Resumen de Costos"
+        etapa={apuIndex}
+      />
 
       <div className="mt-4 flex flex-col md:flex-row gap-4">
         {/* === Totales finales (IZQUIERDA) === */}
