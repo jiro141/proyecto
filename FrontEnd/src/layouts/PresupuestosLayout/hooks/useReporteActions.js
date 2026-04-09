@@ -36,8 +36,12 @@ export const useReporteActions = () => {
       let notaData = { titulo: "Nota", notas: "", notaId: null };
       try {
         const notas = await getNotasByReporte(reporte.id);
-        if (notas && notas.length > 0) {
-          const primeraNota = notas[0];
+        
+        // La respuesta tiene .results (paginação)
+        const notasArray = notas?.results || notas;
+        
+        if (notasArray && notasArray.length > 0) {
+          const primeraNota = notasArray[0];
           notaData = {
             titulo: primeraNota.titulo || "Nota",
             notas: primeraNota.descripcion || "",
@@ -50,6 +54,8 @@ export const useReporteActions = () => {
 
       const adaptedData = {
         id: reporte.id,
+        n_presupuesto: reporte.n_presupuesto, // ← Guardar número de presupuesto
+        orden_servicio: reporte.orden_servicio || "", // ← Orden de servicio
         cliente: {
           id: reporte.cliente,
           nombre: reporte.cliente_nombre,
@@ -194,7 +200,27 @@ export const useReporteActions = () => {
   };
 
   // Preparar datos para PDF
-  const preparePDFData = (detalle) => {
+  const preparePDFData = async (detalle) => {
+    // Cargar notas del reporte
+    let notaData = { titulo: "Nota", notas: "" };
+    try {
+      const notas = await getNotasByReporte(detalle.id);
+      console.log("Notas response:", notas);
+      
+      // La respuesta tiene .results (paginação)
+      const notasArray = notas?.results || notas;
+      
+      if (notasArray && notasArray.length > 0) {
+        const primeraNota = notasArray[0];
+        notaData = {
+          titulo: primeraNota.titulo || "Nota",
+          notas: primeraNota.descripcion || "",
+        };
+      }
+    } catch (error) {
+      console.error("Error al cargar notas para PDF:", error);
+    }
+
     return {
       descripcion: detalle.descripcion,
       presupuesto_estimado: Number(detalle.total_reporte),
@@ -209,6 +235,9 @@ export const useReporteActions = () => {
           presupuesto_base: Number(apu.presupuesto_base),
         },
       })),
+      titulo: notaData.titulo,
+      notas: notaData.notas,
+      orden_servicio: detalle.orden_servicio || "",
     };
   };
 

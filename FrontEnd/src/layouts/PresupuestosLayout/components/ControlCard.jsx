@@ -2,17 +2,30 @@ import { useState, useEffect } from "react";
 import { FaHashtag, FaSave, FaSyncAlt } from "react-icons/fa";
 import { getControlConfig, createControlConfig } from "../../../api/controllers/ControlConfig";
 import { toast } from "react-toastify";
+import { usePresupuesto } from "../../../context/PresupuestoContext";
 
 export default function ControlCard() {
+  const { formData } = usePresupuesto();
   const [puntoInicio, setPuntoInicio] = useState("");
   const [siguienteNumero, setSiguienteNumero] = useState("");
   const [loading, setLoading] = useState(true);
   const [editando, setEditando] = useState(false);
 
+  // Si hay n_presupuesto en el formData (edición), usarlo; si no, usar el siguiente número
+  const numeroMostrado = formData?.n_presupuesto || siguienteNumero;
+
   /** ========================
    * Cargar número de control
    * ======================== */
   useEffect(() => {
+    // Si ya tenemos n_presupuesto (edición), no cargar el siguiente número
+    if (formData?.n_presupuesto) {
+      setSiguienteNumero(formData.n_presupuesto);
+      setPuntoInicio(formData.n_presupuesto); // Mostrar el número del presupuesto como referencia
+      setLoading(false);
+      return;
+    }
+
     const fetchControl = async () => {
       try {
         const data = await getControlConfig();
@@ -30,7 +43,7 @@ export default function ControlCard() {
       }
     };
     fetchControl();
-  }, []);
+  }, [formData?.n_presupuesto]); // ← Se ejecuta cuando cambia n_presupuesto (edición)
 
   /** ========================
    * Guardar número de control
@@ -81,12 +94,12 @@ export default function ControlCard() {
           <p className="text-gray-500 text-sm">Cargando...</p>
         ) : (
           <div className="flex flex-col gap-4">
-            {/* Campo editable - muestra el siguiente número */}
+            {/* Campo editable - muestra el número de presupuesto si existe, o el siguiente número */}
             <div className="flex items-center gap-2">
               <input
                 type="number"
-                disabled={!editando}
-                value={siguienteNumero}
+                disabled={!editando || formData?.n_presupuesto}
+                value={numeroMostrado}
                 onChange={(e) => setSiguienteNumero(e.target.value)}
                 className={`border rounded-lg px-3 py-2 w-full text-lg font-semibold text-gray-800 ${
                   editando
@@ -94,7 +107,7 @@ export default function ControlCard() {
                     : "bg-gray-100 cursor-not-allowed"
                 }`}
               />
-              {editando ? (
+              {editando && !formData?.n_presupuesto ? (
                 <button
                   onClick={handleGuardar}
                   className="bg-[#FC3B3C] text-white px-3 py-2 rounded-lg flex items-center gap-2"

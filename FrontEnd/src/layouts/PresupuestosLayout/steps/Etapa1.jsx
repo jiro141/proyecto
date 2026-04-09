@@ -5,6 +5,7 @@ import DescripcionCard from "../components/DescripcionCard";
 import CalendarioCard from "../components/CalendarioCard";
 import ControlCard from "../components/ControlCard";
 import NotaCard from "../components/NotaCard";
+import OrdenServicioCard from "../components/OrdenServicioCard";
 
 export default function Etapa1() {
   const { formData, updatePresupuestoField } = usePresupuesto();
@@ -67,7 +68,9 @@ export default function Etapa1() {
         <ControlCard />
       </div>
 
-      <div className="col-start-3 row-start-2" />
+      <div className="col-start-3 row-start-2">
+        <OrdenServicioCard />
+      </div>
     </div>
   );
 }

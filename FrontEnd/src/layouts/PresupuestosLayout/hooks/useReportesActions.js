@@ -30,15 +30,19 @@ export default function useReportesActions() {
                 // =========================
                 // 🧾 1. CREAR REPORTE
                 // =========================
+                const reportePayload = {
+                    cliente: formData.cliente.id,
+                    descripcion: formData.descripcion || "Nuevo presupuesto",
+                };
+                
+                // Agregar orden_servicio si existe (es opcional)
+                if (formData.orden_servicio) {
+                    reportePayload.orden_servicio = formData.orden_servicio;
+                }
+
                 const reporte = esEdicion
-                    ? await updateReporte(formData.id, {
-                        cliente: formData.cliente.id,
-                        descripcion: formData.descripcion,
-                    })
-                    : await createReporte({
-                        cliente: formData.cliente.id,
-                        descripcion: formData.descripcion || "Nuevo presupuesto",
-                    });
+                    ? await updateReporte(formData.id, reportePayload)
+                    : await createReporte(reportePayload);
 
                 if (!reporte?.id) throw new Error("Error en reporte");
 

@@ -30,6 +30,8 @@ const initialAPU = () => ({
 
 const initialPresupuesto = () => ({
   cliente: null,
+  n_presupuesto: null, // Para edición - guardar número de presupuesto
+  orden_servicio: "", // Orden de servicio (opcional)
   titulo: "Nota",
   notas: "",
   descripcion: "",

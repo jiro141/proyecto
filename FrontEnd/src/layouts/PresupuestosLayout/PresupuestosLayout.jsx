@@ -81,7 +81,7 @@ export default function ReportesLayout({ clienteSeleccionado }) {
       const detalle = row;
       
       if (action === "pdf") {
-        const pdfData = preparePDFData(detalle);
+        const pdfData = await preparePDFData(detalle);
         generarPDF(pdfData, detalle.n_presupuesto);
         return;
       }

@@ -74,6 +74,32 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: "#888",
   },
+  notaBox: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 5,
+    borderLeft: "3pt solid #0B2C4D",
+    textAlign: "left",
+  },
+  notaTitulo: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#0B2C4D",
+    marginBottom: 4,
+  },
+  notaDescripcion: {
+    fontSize: 10,
+    color: "#555",
+    lineHeight: 14,
+  },
+  disclaimer: {
+    marginTop: 15,
+    fontSize: 9,
+    color: "#666",
+    textAlign: "left",
+    lineHeight: 13,
+  },
 });
 
 // 🧾 Componente principal
@@ -85,7 +111,12 @@ export default function PresupuestoPDF({ formData, resumen, logoSrc }) {
     epps,
     stock_almacen,
     consumibles,
+    titulo,
+    notas,
   } = formData;
+
+  // Verificar si hay nota para mostrar
+  const tieneNota = (titulo && titulo !== "Nota") || notas;
 
   const renderTable = (titulo, data) => (
     <View style={styles.section}>
@@ -174,6 +205,21 @@ export default function PresupuestoPDF({ formData, resumen, logoSrc }) {
             Total Final: ${resumen.totalConProductividad.toFixed(2)}
           </Text>
         </View>
+
+        {/* DISCLAIMER */}
+        <Text style={styles.disclaimer}>
+          LOS PRECIOS NO INCLUYEN IVA. LO QUE NO SE ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.
+        </Text>
+
+        {/* NOTA (si existe) */}
+        {tieneNota && (
+          <View style={styles.notaBox}>
+            {titulo && titulo !== "Nota" && (
+              <Text style={styles.notaTitulo}>{titulo}</Text>
+            )}
+            {notas && <Text style={styles.notaDescripcion}>{notas}</Text>}
+          </View>
+        )}
 
         {/* FOOTER */}
         <Text style={styles.footer}>
