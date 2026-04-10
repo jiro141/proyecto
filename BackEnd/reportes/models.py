@@ -27,12 +27,51 @@ class Cliente(models.Model):
 # CONFIGURACIÓN DE REPORTES
 # ==========================
 class EstadoChoices(models.TextChoices):
-    EN_ESPERA = 'ESPERA', 'En espera'
-    RECHAZADO = 'RECHAZADO', 'Rechazado'
-    APROBADO_ESPERA = 'APROBADO_ESPERA', 'Aprobado a espera de ejecución'
+    EN_ESPERA = 'EN_ESPERA', 'En espera'
+    APROBADO_ESPERA = 'APROBADO_ESPERA', 'Aprobado en espera de ejecución'
     EJECUTADO = 'EJECUTADO', 'Ejecutado'
-    EJECUTADO_POR_PAGAR = 'EJECUTADO_POR_PAGAR', 'Ejecutado Por pagar'
-    EJECUTADO_PAGADO = 'EJECUTADO_PAGADO', 'Ejecutado Pagado'
+    PAGADO = 'PAGADO', 'Pagado'
+    CANCELADO = 'CANCELADO', 'Cancelado'
+
+
+class HistorialEstadoReporte(models.Model):
+    """
+    Historial de cambios de estado del reporte.
+    """
+    reporte = models.ForeignKey(
+        "Reporte",
+        on_delete=models.CASCADE,
+        related_name="historial_estados"
+    )
+    estado_anterior = models.CharField(
+        max_length=30,
+        choices=EstadoChoices.choices,
+        null=True,
+        blank=True,
+        verbose_name="Estado anterior"
+    )
+    estado_nuevo = models.CharField(
+        max_length=30,
+        choices=EstadoChoices.choices,
+        verbose_name="Estado nuevo"
+    )
+    fecha_cambio = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha del cambio"
+    )
+    observaciones = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Observaciones"
+    )
+
+    class Meta:
+        verbose_name = "Historial de Estado"
+        verbose_name_plural = "Historial de Estados"
+        ordering = ["-fecha_cambio"]
+
+    def __str__(self):
+        return f"{self.reporte.n_presupuesto}: {self.estado_anterior} → {self.estado_nuevo} ({self.fecha_cambio})"
 
 class ReporteConfig(models.Model):
     """
@@ -147,7 +186,21 @@ class Reporte(models.Model):
     def save(self, *args, **kwargs):
         """
         Genera n_presupuesto autoincremental usando ReporteConfig.
+        Registra cambio de estado en historial.
         """
+        # Verificar si es un registro nuevo o si cambió el estado
+        es_nuevo = self._state.adding
+        estado_anterior = None
+        
+        if not es_nuevo:
+            # Obtener el estado anterior de la base de datos
+            try:
+                reporte_old = Reporte.objects.get(pk=self.pk)
+                estado_anterior = reporte_old.estado
+            except Reporte.DoesNotExist:
+                pass
+        
+        # Generar n_presupuesto si es nuevo
         if not self.n_presupuesto:
             config = ReporteConfig.objects.first()
             punto_inicio = config.punto_inicio if config and config.punto_inicio else 1
@@ -161,7 +214,17 @@ class Reporte(models.Model):
             else:
                 self.n_presupuesto = str(punto_inicio)
 
+        # Guardar el reporte primero
         super().save(*args, **kwargs)
+        
+        # Registrar cambio de estado en historial
+        if not es_nuevo and estado_anterior and estado_anterior != self.estado:
+            HistorialEstadoReporte.objects.create(
+                reporte=self,
+                estado_anterior=estado_anterior,
+                estado_nuevo=self.estado,
+                observaciones=f"Cambio de estado automático"
+            )
 
     def recalcular_total(self):
         """
@@ -174,14 +237,25 @@ class Reporte(models.Model):
         
         # 2. Lista de campos a actualizar
         campos_a_actualizar = ["total_reporte"]
-
-        # 3. Lógica automática de pago: Si el saldo es 0 o menor, y ya estaba aprobado
+        
+        # 3. Lógica automática de pago: Si el saldo es 0 o menor, y ya estaba ejecutado
+        estado_anterior = self.estado
         if self.total_reporte > 0 and self.saldo_pendiente <= 0:
-            if self.estado in [EstadoChoices.APROBADO_ESPERA, EstadoChoices.EJECUTADO, EstadoChoices.EJECUTADO_POR_PAGAR]:
-                self.estado = EstadoChoices.EJECUTADO_PAGADO
+            if self.estado == EstadoChoices.EJECUTADO:
+                self.estado = EstadoChoices.PAGADO
                 campos_a_actualizar.append("estado")
 
         self.save(update_fields=campos_a_actualizar)
+        
+        # Registrar cambio de estado en historial si hubo cambio
+        if "estado" in campos_a_actualizar and estado_anterior != self.estado:
+            HistorialEstadoReporte.objects.create(
+                reporte=self,
+                estado_anterior=estado_anterior,
+                estado_nuevo=self.estado,
+                observaciones="Cambio de estado por pago total"
+            )
+        
         return self.total_reporte
 
     def __str__(self):
@@ -222,14 +296,6 @@ class APU(models.Model):
         blank=True,
         null=True,
     )
-    
-    estado = models.CharField(
-        max_length=30,
-        choices=EstadoChoices.choices,
-        default=EstadoChoices.EN_ESPERA,
-        help_text="Estado actual de aprobación del APU"
-    )
-
 
     unidad = models.CharField(max_length=50, blank=True, null=True)
 

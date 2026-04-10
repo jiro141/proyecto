@@ -1,17 +1,25 @@
-import React, { useState } from "react";
-import { FaHistory, FaCheck, FaClock, FaTimes, FaPlay, FaMoneyBill, FaCheckCircle } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import { FaHistory, FaCheck, FaClock, FaTimes, FaPlay, FaCheckCircle, FaBan } from "react-icons/fa";
 import { updateReporteEstado } from "../../../api/controllers/Presupuesto";
 import { toast } from "react-toastify";
 import { BounceLoader } from "react-spinners";
 
 const ESTADOS = [
-  { key: "ESPERA", label: "En espera", icon: FaClock, color: "gray" },
-  { key: "RECHAZADO", label: "Rechazado", icon: FaTimes, color: "red" },
-  { key: "APROBADO_ESPERA", label: "Aprobado - Espera", icon: FaCheck, color: "yellow" },
+  { key: "EN_ESPERA", label: "En espera", icon: FaClock, color: "gray" },
+  { key: "APROBADO_ESPERA", label: "Aprobado en espera de ejecución", icon: FaCheck, color: "yellow" },
   { key: "EJECUTADO", label: "Ejecutado", icon: FaPlay, color: "blue" },
-  { key: "EJECUTADO_POR_PAGAR", label: "Por pagar", icon: FaMoneyBill, color: "orange" },
-  { key: "EJECUTADO_PAGADO", label: "Pagado", icon: FaCheckCircle, color: "green" },
+  { key: "PAGADO", label: "Pagado", icon: FaCheckCircle, color: "green" },
+  { key: "CANCELADO", label: "Cancelado", icon: FaBan, color: "red" },
 ];
+
+const colorMap = {
+  gray: { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-300" },
+  red: { bg: "bg-red-100", text: "text-red-600", border: "border-red-300" },
+  yellow: { bg: "bg-yellow-100", text: "text-yellow-600", border: "border-yellow-300" },
+  blue: { bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-300" },
+  orange: { bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-300" },
+  green: { bg: "bg-green-100", text: "text-green-600", border: "border-green-300" },
+};
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
@@ -25,27 +33,44 @@ const formatDate = (dateString) => {
   });
 };
 
-const colorMap = {
-  gray: { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-300" },
-  red: { bg: "bg-red-100", text: "text-red-600", border: "border-red-300" },
-  yellow: { bg: "bg-yellow-100", text: "text-yellow-600", border: "border-yellow-300" },
-  blue: { bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-300" },
-  orange: { bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-300" },
-  green: { bg: "bg-green-100", text: "text-green-600", border: "border-green-300" },
-};
-
 export default function EstadoHistorial({ reporte, onEstadoActualizado }) {
-  const [historial, setHistorial] = useState([{
-    estado: reporte.estado,
-    estado_display: reporte.estado_display,
-    fecha: reporte.fecha_creacion,
-    comentario: "Estado inicial del presupuesto",
-  }]);
+  // Usar historial del backend si está disponible, si no usar el inicial
+  const historialInicial = reporte.historial_estados && reporte.historial_estados.length > 0
+    ? reporte.historial_estados.map(h => ({
+        estado: h.estado_nuevo,
+        estado_display: h.estado_nuevo_display || h.estado_nuevo,
+        fecha: h.fecha_cambio,
+        comentario: h.observaciones || `Cambio a: ${h.estado_nuevo_display || h.estado_nuevo}`,
+        estado_anterior: h.estado_anterior,
+      }))
+    : [{
+        estado: reporte.estado,
+        estado_display: reporte.estado_display,
+        fecha: reporte.fecha_creacion,
+        comentario: "Estado inicial del presupuesto",
+        estado_anterior: null,
+      }];
+
+  const [historial, setHistorial] = useState(historialInicial);
   const [loading, setLoading] = useState(false);
   const [showSelector, setShowSelector] = useState(false);
 
+  // Actualizar historial cuando cambie el reporte
+  useEffect(() => {
+    if (reporte.historial_estados && reporte.historial_estados.length > 0) {
+      const nuevoHistorial = reporte.historial_estados.map(h => ({
+        estado: h.estado_nuevo,
+        estado_display: h.estado_nuevo_display || h.estado_nuevo,
+        fecha: h.fecha_cambio,
+        comentario: h.observaciones || `Cambio a: ${h.estado_nuevo_display || h.estado_nuevo}`,
+        estado_anterior: h.estado_anterior,
+      }));
+      setHistorial(nuevoHistorial);
+    }
+  }, [reporte.historial_estados]);
+
   const getEstadoInfo = (estadoKey) => {
-    return ESTADOS.find((e) => e.key === estadoKey) || ESTADOS[0];
+    return ESTADOS.find((e) => e.key === estadoKey) || { key: estadoKey, label: estadoKey, icon: FaClock, color: "gray" };
   };
 
   const handleCambiarEstado = async (nuevoEstado) => {
@@ -63,6 +88,7 @@ export default function EstadoHistorial({ reporte, onEstadoActualizado }) {
         estado_display: updated.estado_display,
         fecha: new Date().toISOString(),
         comentario: `Cambiado a: ${getEstadoInfo(updated.estado).label}`,
+        estado_anterior: reporte.estado,
       };
 
       setHistorial((prev) => [nuevoRegistro, ...prev]);

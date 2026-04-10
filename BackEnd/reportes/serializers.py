@@ -8,7 +8,8 @@ from .models import (
     APUHerramienta,
     APUManoObra,
     APULogistica,
-    NotaReporte
+    NotaReporte,
+    HistorialEstadoReporte
 )
 from inventario.models import Stock, Consumible
 from inventario.serializers import StockSerializer, ConsumibleSerializer
@@ -196,6 +197,7 @@ class ReporteSerializer(serializers.ModelSerializer):
     saldo_pendiente = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
     total_abonado = serializers.SerializerMethodField()
     estado_display = serializers.CharField(source="get_estado_display", read_only=True)
+    historial_estados = serializers.SerializerMethodField()
 
     class Meta:
         model = Reporte
@@ -213,6 +215,7 @@ class ReporteSerializer(serializers.ModelSerializer):
             "estado",
             "estado_display",
             "apus",
+            "historial_estados",
         ]
         read_only_fields = ["n_presupuesto", "fecha_creacion"]
 
@@ -220,6 +223,11 @@ class ReporteSerializer(serializers.ModelSerializer):
         from django.db.models import Sum
         total = obj.abonos.aggregate(total=Sum('monto'))['total']
         return total or 0
+
+    def get_historial_estados(self, obj):
+        """Retorna el historial de estados del reporte."""
+        historial = obj.historial_estados.all()
+        return HistorialEstadoSerializer(historial, many=True).data
 
 
 # ============================================================
@@ -271,6 +279,27 @@ class NotaReporteSerializer(serializers.ModelSerializer):
             "actualizado_en",
         ]
         read_only_fields = ["creado_en", "actualizado_en"]
+
+
+# ============================================================
+# 📋 HISTORIAL DE ESTADOS
+# ============================================================
+
+class HistorialEstadoSerializer(serializers.ModelSerializer):
+    estado_anterior_display = serializers.CharField(source="get_estado_anterior_display", read_only=True)
+    estado_nuevo_display = serializers.CharField(source="get_estado_nuevo_display", read_only=True)
+
+    class Meta:
+        model = HistorialEstadoReporte
+        fields = [
+            "id",
+            "estado_anterior",
+            "estado_anterior_display",
+            "estado_nuevo",
+            "estado_nuevo_display",
+            "fecha_cambio",
+            "observaciones",
+        ]
 
 
 # ============================================================

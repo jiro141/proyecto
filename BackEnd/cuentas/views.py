@@ -13,11 +13,7 @@ class AbonoViewSet(viewsets.ModelViewSet):
     serializer_class = AbonoSerializer
 
     def get_queryset(self):
-        # Solo mostrar abonos de reportes en estado EJECUTADO, EJECUTADO_POR_PAGAR o EJECUTADO_PAGADO
+        # Solo mostrar abonos de reportes en estado EJECUTADO
         return Abono.objects.filter(
-            reporte__estado__in=[
-                EstadoChoices.EJECUTADO,
-                EstadoChoices.EJECUTADO_POR_PAGAR,
-                EstadoChoices.EJECUTADO_PAGADO,
-            ]
+            reporte__estado=EstadoChoices.EJECUTADO
         ).select_related('reporte', 'reporte__cliente')

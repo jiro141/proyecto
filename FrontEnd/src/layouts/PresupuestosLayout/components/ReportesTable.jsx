@@ -16,12 +16,11 @@ const formatDate = (value) => {
 
 const getEstadoBadge = (estado) => {
   const badges = {
-    ESPERA: { bg: "bg-gray-500", text: "text-white", label: "En espera" },
-    RECHAZADO: { bg: "bg-red-600", text: "text-white", label: "Rechazado" },
-    APROBADO_ESPERA: { bg: "bg-yellow-500", text: "text-white", label: "Aprobado - Espera" },
+    EN_ESPERA: { bg: "bg-gray-500", text: "text-white", label: "En espera" },
+    APROBADO_ESPERA: { bg: "bg-yellow-500", text: "text-white", label: "Aprobado en espera" },
     EJECUTADO: { bg: "bg-blue-600", text: "text-white", label: "Ejecutado" },
-    EJECUTADO_POR_PAGAR: { bg: "bg-orange-500", text: "text-white", label: "Por pagar" },
-    EJECUTADO_PAGADO: { bg: "bg-green-600", text: "text-white", label: "Pagado" },
+    PAGADO: { bg: "bg-green-600", text: "text-white", label: "Pagado" },
+    CANCELADO: { bg: "bg-red-600", text: "text-white", label: "Cancelado" },
   };
 
   const badge = badges[estado] || { bg: "bg-gray-400", text: "text-white", label: estado };

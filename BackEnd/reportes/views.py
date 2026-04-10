@@ -336,17 +336,28 @@ class NotaReporteDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class CuentasPorCobrarView(generics.ListAPIView):
     """
-    Lista todos los reportes con estado EJECUTADO, EJECUTADO_POR_PAGAR o EJECUTADO_PAGADO.
+    Lista todos los reportes con estado EJECUTADO y saldo pendiente > 0.
     """
     serializer_class = ReporteListaSerializer
 
     def get_queryset(self):
+        from django.db.models import Sum, F, Value
+        from django.db.models.functions import Coalesce
+        
+        # Subquery para calcular el total abonado
+        from cuentas.models import Abono
+        abonos_subquery = Abono.objects.filter(
+            reporte_id=models.OuterRef('id')
+        ).values('reporte_id').annotate(
+            total=Sum('monto')
+        ).values('total')
+
         return Reporte.objects.select_related("cliente").filter(
-            estado__in=[
-                EstadoChoices.EJECUTADO,
-                EstadoChoices.EJECUTADO_POR_PAGAR,
-                EstadoChoices.EJECUTADO_PAGADO,
-            ]
+            estado=EstadoChoices.EJECUTADO
+        ).annotate(
+            total_abonado=Coalesce(abonos_subquery, Value(0))
+        ).exclude(
+            total_reporte__lte=F('total_abonado')  # Excluir los que ya están pagados
         ).order_by("-fecha_creacion")
 
 
@@ -361,11 +372,7 @@ class ReporteAbonosView(APIView):
         # Verificar que el reporte esté en estado ejecutado
         reporte = get_object_or_404(
             Reporte.objects.filter(
-                estado__in=[
-                    EstadoChoices.EJECUTADO,
-                    EstadoChoices.EJECUTADO_POR_PAGAR,
-                    EstadoChoices.EJECUTADO_PAGADO,
-                ]
+                estado=EstadoChoices.EJECUTADO
             ),
             pk=reporte_id
         )
