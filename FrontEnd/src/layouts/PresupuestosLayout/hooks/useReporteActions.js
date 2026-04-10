@@ -64,7 +64,10 @@ export const useReporteActions = () => {
         descripcion: reporte.descripcion,
         notas: notaData.notas,
         notaId: notaData.notaId,
-        fechaCulminacion: new Date(),
+        // ✅ Usar fecha_estimacion_culminacion del backend, o la actual si no existe
+        fechaCulminacion: reporte.fecha_estimacion_culminacion 
+          ? new Date(reporte.fecha_estimacion_culminacion) 
+          : new Date(),
         presupuesto_base: Number(reporte.total_reporte),
         presupuesto_estimado: Number(reporte.total_reporte),
         porcentaje_productividad: 1,
@@ -247,6 +250,10 @@ export const useReporteActions = () => {
       titulo: notaData.titulo,
       notas: notaData.notas,
       orden_servicio: detalle.orden_servicio || "",
+      // ✅ Agregar fecha de culminación del backend
+      fechaCulminacion: detalle.fecha_estimacion_culminacion 
+        ? new Date(detalle.fecha_estimacion_culminacion) 
+        : new Date(),
     };
   };
 

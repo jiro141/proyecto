@@ -155,6 +155,13 @@ class Reporte(models.Model):
         verbose_name="Fecha de creación",
     )
 
+    fecha_estimacion_culminacion = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de culminación",
+        help_text="Fecha estimada de culminación del proyecto"
+    )
+
     estado = models.CharField(
         max_length=300,
         choices=EstadoChoices.choices,

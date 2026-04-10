@@ -44,6 +44,11 @@ export default function useReportesActions() {
                 if (formData.orden_servicio) {
                     reportePayload.orden_servicio = formData.orden_servicio;
                 }
+                
+                // ✅ Agregar fecha de culminación
+                if (formData.fechaCulminacion) {
+                    reportePayload.fecha_estimacion_culminacion = formData.fechaCulminacion;
+                }
 
                 const reporte = esEdicion
                     ? await updateReporte(formData.id, reportePayload)

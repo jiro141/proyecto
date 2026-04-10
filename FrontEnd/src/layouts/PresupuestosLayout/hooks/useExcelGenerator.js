@@ -34,6 +34,11 @@ export default function useExcelGenerator() {
     const clienteTexto = `${clienteNombre}${clienteRif}`;
     const descripcion = formData?.descripcion?.toUpperCase() || "—";
     const total = formData?.presupuesto_estimado || 0;
+    
+    // ✅ Fecha de culminación
+    const fechaCulminacion = formData?.fechaCulminacion
+      ? new Date(formData.fechaCulminacion).toLocaleDateString("es-VE")
+      : "—";
 
     // Encabezado empresa
     XLSX.utils.sheet_add_aoa(
@@ -59,6 +64,7 @@ export default function useExcelGenerator() {
         [],
         [descripcion],
         [],
+        ["FECHA DE CULMINACIÓN:", fechaCulminacion],
       ],
       { origin: "A1" },
     );
