@@ -117,6 +117,28 @@ export const createAPU = async (reporteId, data) => {
   }
 };
 
+// Eliminar un APU y todos sus relacionados (materiales, herramientas, etc.)
+export const deleteAPU = async (apuId) => {
+  try {
+    const response = await AuthApi.delete(`/reportes/apus/${apuId}/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al eliminar APU:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// Obtener todos los APUs de un reporte
+export const getAPUsByReporte = async (reporteId) => {
+  try {
+    const response = await AuthApi.get(`/reportes/${reporteId}/apus/`);
+    return response.data.results || response.data;
+  } catch (error) {
+    console.error("Error al obtener APUs:", error.response?.data || error);
+    throw error;
+  }
+};
+
 // Crear material dentro de un APU
 export const createAPUMaterial = async (apuId, data) => {
   try {

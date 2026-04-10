@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useEtapa2Logic } from "../hooks/useEtapa2Logic";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 import TotalesPanel from "../components/TotalesPanel";
@@ -7,6 +7,44 @@ import Etapa2ActionButtons from "../components/Etapa2ActionButtons";
 import Etapa2Modals from "../components/Etapa2Modals";
 
 export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
+  // 🧩 Hook del contexto Presupuesto - debe ir primero
+  const {
+    formData,
+    currentAPUIndex,
+    setCurrentAPUIndex,
+    addAPU,
+    updateAPUSection,
+  } = usePresupuesto();
+
+  // 💰 Estado local de presupuesto - fuente de verdad para esta etapa
+  const [presupuestoData, setPresupuestoData] = useState({
+    herramientas: [],
+    mano_obra: [],
+    logistica: [],
+  });
+  const [totales, setTotales] = useState({ grandTotal: 0 });
+  const isInitialLoadRef = useRef(true); // Ref en lugar de state para evitar re-renders
+
+  // 🔄 Callback para sincronizar cambios al contexto del APU
+  const handlePresupuestoChange = useCallback((updater) => {
+    setPresupuestoData((prev) => {
+      const newData = typeof updater === "function" ? updater(prev) : updater;
+      
+      // Sincronizar cada sección al contexto del APU
+      if (newData.herramientas) {
+        updateAPUSection("herramientas", newData.herramientas);
+      }
+      if (newData.mano_obra) {
+        updateAPUSection("mano_obra", newData.mano_obra);
+      }
+      if (newData.logistica) {
+        updateAPUSection("logistica", newData.logistica);
+      }
+      
+      return newData;
+    });
+  }, [updateAPUSection]);
+
   // 🧠 Hook con toda la lógica de inventario, búsqueda y modales
   const {
     searchStock,
@@ -34,51 +72,34 @@ export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
     refetchLogistica,
   } = useEtapa2Logic();
 
-  // 🧩 Hook del contexto Presupuesto
-  const {
-    formData,
-    currentAPUIndex,
-    setCurrentAPUIndex,
-    addAPU,
-  } = usePresupuesto();
-
-  // 💰 Estado local de presupuesto (solo para materiales)
-  const [presupuestoData, setPresupuestoData] = useState({
-    herramientas: [],
-    mano_obra: [],
-    logistica: [],
-  });
-  const [totales, setTotales] = useState({ grandTotal: 0 });
-
-  // 🔄 Sincronizar herramientas/manoObra/logistica desde el hook al estado local
+  // 🔄 Sincronizar datos del APU al estado local solo en carga inicial
   useEffect(() => {
-    setPresupuestoData((prev) => ({
-      ...prev,
-      herramientas: herramientas,
-      mano_obra: manoObra,
-      logistica: logistica,
-    }));
-  }, [herramientas, manoObra, logistica]);
-
-  // 🔄 Cuando se edita un presupuesto, sincronizar presupuestoData con los datos del APU
-  useEffect(() => {
+    if (!isInitialLoadRef.current) return;
+    
+    // Solo sincronizar si hay datos reales del APU
     const apuActual = formData.apus?.[currentAPUIndex];
-    if (!apuActual) return;
+    if (!apuActual) {
+      // Si es un APU vacío nuevo, marcar como cargado
+      isInitialLoadRef.current = false;
+      return;
+    }
 
-    // Solo sincronizar si hay datos reales (no vacíos) del APU
     const tieneHerramientas = (apuActual.herramientas || []).some(h => Number(h.cantidad) > 0);
     const tieneManoObra = (apuActual.mano_obra || []).some(mo => Number(mo.cantidad) > 0);
     const tieneLogistica = (apuActual.logistica || []).some(l => Number(l.cantidad) > 0);
 
     if (tieneHerramientas || tieneManoObra || tieneLogistica) {
-      setPresupuestoData((prev) => ({
-        ...prev,
+      // Cargar datos existentes del APU
+      setPresupuestoData({
         herramientas: apuActual.herramientas || [],
         mano_obra: apuActual.mano_obra || [],
         logistica: apuActual.logistica || [],
-      }));
+      });
     }
-  }, [formData.id, currentAPUIndex]);
+    
+    // Marcar carga inicial como completada
+    isInitialLoadRef.current = false;
+  }, [formData.apus, currentAPUIndex]);
 
   // 🔄 Recalcular total general al cambiar datos
   useEffect(() => {
@@ -166,7 +187,7 @@ export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
         refetchCons={refetchCons}
         onStockInsuficiente={onStockInsuficiente}
         presupuestoData={presupuestoData}
-        setPresupuestoData={setPresupuestoData}
+        setPresupuestoData={handlePresupuestoChange}
         herramientas={herramientas}
         manoObra={manoObra}
         logistica={logistica}

@@ -63,20 +63,8 @@ export default function Etapa2Modals({
         formFields,
         onRefetch,
     }) => {
-        // ✅ Obtener los items ya seleccionados del APU actual
-        const selectedData = apuActual[tipo] || [];
-
-        // ✅ Callback que sincroniza datos como stock/consumibles
-        const handlePresupuestoChangeLocal = (updatedItems) => {
-            // Actualizar presupuestoData local
-            setPresupuestoData((prev) => ({
-                ...prev,
-                [tipo]: updatedItems,
-            }));
-
-            // También actualizar el contexto del APU
-            updateAPUSection(tipo, updatedItems);
-        };
+        // ✅ Callback que sincroniza datos - pasar directo sin wrappers
+        // El setPresupuestoData ya viene con la lógica de sincronización desde Etapa2
 
         if (loading)
             return (
@@ -99,7 +87,7 @@ export default function Etapa2Modals({
                     logistica: apuActual.logistica || [],
                 }}
                 loading={loading}
-                setPresupuestoData={handlePresupuestoChangeLocal}
+                setPresupuestoData={setPresupuestoData}
                 formFields={formFields}
                 onRefetch={onRefetch}
             />

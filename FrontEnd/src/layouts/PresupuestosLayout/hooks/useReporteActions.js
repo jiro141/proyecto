@@ -97,6 +97,7 @@ export const useReporteActions = () => {
                 descripcion: m.descripcion,
                 cantidad: Number(m.cantidad),
                 costo: Number(m.precio_unitario),
+                desp: Number(m.desperdicio), // ✅ Agregar desperdicio para consumibles
               })),
             epps: [],
           },

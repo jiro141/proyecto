@@ -165,13 +165,14 @@ const TotalesPanel = ({
     cantidad,
   ]);
 
-  // 🔁 Sincroniza el presupuesto_base con el totalUnitario calculado (sin multiplicar por cantidad)
+  // 🔁 Sincroniza el presupuesto_base con el totalUnitario × cantidad
   useEffect(() => {
     if (!formData?.apus?.[effectiveIndex]) return;
 
     const apuActual = formData.apus[effectiveIndex];
-    // ✅ Solo el totalUnitario, sin multiplicar por cantidad
-    const nuevoPresupuesto = Number(totalUnitario.toFixed(2));
+    // ✅ Multiplicar totalUnitario por cantidad del APU
+    const cantidad = Number(apuActual.body?.cantidad || 1);
+    const nuevoPresupuesto = Number((totalUnitario * cantidad).toFixed(2));
 
     if (apuActual.body?.presupuesto_base !== nuevoPresupuesto) {
       updateAPU(effectiveIndex, {

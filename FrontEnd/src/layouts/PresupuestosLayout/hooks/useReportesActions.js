@@ -4,11 +4,16 @@ import {
     updateReporte,
     createAPU,
     updateAPU,
+    deleteAPU,
+    getAPUsByReporte,
     createAPUMaterial,
     updateAPUMaterial,
     createAPUHerramienta,
+    updateAPUHerramienta,
     createAPUManoObra,
+    updateAPUManoObra,
     createAPULogistica,
+    updateAPULogistica,
     createNotaReporte,
     updateNotaReporte,
 } from "../../../api/controllers/Presupuesto";
@@ -78,43 +83,38 @@ export default function useReportesActions() {
                 }
 
                 // =========================
-                // 🧮 3. CREAR APUs (después de nota)
+                // 🧮 3. ELIMINAR APUs EXISTENTES (si es edición)
+                // =========================
+                if (esEdicion) {
+                    console.log("🗑️ Eliminando APUs existentes para recrearlos...");
+                    const apusActuales = await getAPUsByReporte(reporte.id);
+                    for (const apu of apusActuales) {
+                        await deleteAPU(apu.id);
+                    }
+                    console.log("✅ APUs eliminados, se crearán los nuevos");
+                }
+
+                // =========================
+                // 🧮 4. CREAR APUs NUEVOS
                 // =========================
                 for (const apu of formData.apus || []) {
 
-                    // 🔴 Si estamos editando y el APU no tiene id → ES NUEVO
-                    const esNuevoAPU = esEdicion && !apu.id;
-
-                    // 🔵 Si estamos editando y tiene id → SOLO UPDATE
-                    const esAPUExistente = esEdicion && apu.id;
-
                     let apuResponse;
 
-                    if (esAPUExistente) {
-                        apuResponse = await updateAPU(apu.id, {
-                            ...apu.body,
-                            reporte: reporte.id,
-                        });
-                    }
-                    else if (esNuevoAPU) {
-                        apuResponse = await createAPU(reporte.id, {
-                            ...apu.body,
-                            reporte: reporte.id,
-                        });
-                    }
-                    else {
-                        // 🆕 creación normal (cuando el reporte es nuevo)
-                        apuResponse = await createAPU(reporte.id, {
-                            ...apu.body,
-                            reporte: reporte.id,
-                        });
-                    }
+                    // Siempre crear nuevo APU ( tanto para creación como edición )
+                    apuResponse = await createAPU(reporte.id, {
+                        ...apu.body,
+                        reporte: reporte.id,
+                    });
 
                     // =========================
                     // 📦 4. CREAR MATERIALES (después del APU)
                     // =========================
                     const materiales = apu.materiales || {};
-                    const { stock_almacen = [], consumibles = [], epps = [] } = materiales;
+                    const materialesObj = typeof materiales === 'object' && materiales !== null 
+                        ? materiales 
+                        : {};
+                    const { stock_almacen = [], consumibles = [], epps = [] } = materialesObj;
 
                     // Stock almacen
                     // El backend toma el precio_unitario desde el inventario automáticamente
@@ -143,62 +143,65 @@ export default function useReportesActions() {
                     }
 
                     // =========================
-                    // 🔧 5. CREAR HERRAMIENTAS
+                    // 🔧 5. HERRAMIENTAS (SOLO CREATE - nunca UPDATE porque se borraron al eliminar APUs)
                     // =========================
-                    for (const herramienta of apu.herramientas || []) {
+                    const herramientasArr = Array.isArray(apu.herramientas) ? apu.herramientas : [];
+                    for (const herramienta of herramientasArr) {
                         // Solo enviar si tiene descripción válida Y cantidad > 0
                         if (!herramienta.descripcion || herramienta.descripcion.trim() === "") continue;
                         if (Number(herramienta.cantidad) <= 0) continue;
                         
-                        // ✅ Usar depreciacion_bs_hora como precio_unitario para que se sume
                         const precio = Number(herramienta.depreciacion_bs_hora) || 0;
                         
+                        // Siempre crear nuevo registro (los IDs antiguos ya no existen)
                         await createAPUHerramienta(apuResponse.id, {
                             apu: apuResponse.id,
                             descripcion: herramienta.descripcion,
                             cantidad: Number(herramienta.cantidad) || 1,
-                            // El backend espera "depreciacion_hora" y también "precio_unitario"
                             depreciacion_hora: precio,
-                            precio_unitario: precio,  // ✅ Agregar precio_unitario igual a depreciacion
+                            precio_unitario: precio,
                             unidad: herramienta.unidad || "UND",
                         });
                     }
 
                     // =========================
-                    // 👷 6. CREAR MANO DE OBRA
+                    // 👷 6. MANO DE OBRA (SOLO CREATE)
                     // =========================
-                    for (const mo of apu.mano_obra || []) {
+                    const manoObraArr = Array.isArray(apu.mano_obra) ? apu.mano_obra : [];
+                    for (const mo of manoObraArr) {
                         // Solo enviar si tiene descripción válida Y cantidad > 0
                         if (!mo.descripcion || mo.descripcion.trim() === "") continue;
                         if (Number(mo.cantidad) <= 0) continue;
+                        
+                        // Siempre crear nuevo registro
                         await createAPUManoObra(apuResponse.id, {
                             apu: apuResponse.id,
                             descripcion: mo.descripcion,
                             cantidad: Number(mo.cantidad) || 1,
-                            // ✅ Usar precio_unitario para mano de obra
                             precio_unitario: Number(mo.precio_unitario) || 0,
                             unidad: mo.unidad || "DIA",
                         });
                     }
 
                     // =========================
-                    // 🚚 7. CREAR LOGÍSTICA
+                    // 🚚 7. LOGÍSTICA (SOLO CREATE)
                     // =========================
-                    for (const log of apu.logistica || []) {
+                    const logisticaArr = Array.isArray(apu.logistica) ? apu.logistica : [];
+                    for (const log of logisticaArr) {
                         // Solo enviar si tiene descripción válida Y cantidad > 0
                         if (!log.descripcion || log.descripcion.trim() === "") continue;
                         if (Number(log.cantidad) <= 0) continue;
+                        
+                        // Siempre crear nuevo registro
                         await createAPULogistica(apuResponse.id, {
                             apu: apuResponse.id,
                             descripcion: log.descripcion,
                             cantidad: Number(log.cantidad) || 1,
-                            // ✅ Usar precio_unitario para logística
                             precio_unitario: Number(log.precio_unitario) || 0,
                             unidad: log.unidad || "UND",
                         });
                     }
                 }
-
 
                 refetchReportes?.();
 

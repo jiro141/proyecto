@@ -67,10 +67,8 @@ class ReporteListCreateView(generics.ListCreateAPIView):
         "descripcion",
     ]
 
-    # ya no necesitamos calcular_totales aquí
-    # def perform_create(self, serializer):
-    #     serializer.save()
-    # (el modelo se encarga de asignar n_presupuesto)
+    def get_queryset(self):
+        return super().get_queryset()
 
 
 class ReporteDetailView(generics.RetrieveUpdateDestroyAPIView):

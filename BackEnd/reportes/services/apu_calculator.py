@@ -103,8 +103,9 @@ def recalculate_apu_totals(apu: "APU") -> None:
     apu.utilidad_15 = utilidad_15.quantize(Decimal("0.01"))
     apu.total_apu = total_apu.quantize(Decimal("0.01"))
     
-    # El presupuesto_base y precio_unitario reciben el total_apu
-    apu.presupuesto_base = total_apu.quantize(Decimal("0.01"))
+    # El presupuesto_base recibe total_apu × cantidad
+    cantidad = apu.cantidad or 1
+    apu.presupuesto_base = (total_apu * cantidad).quantize(Decimal("0.01"))
     apu.precio_unitario = total_apu.quantize(Decimal("0.01"))
     apu.total_base = total_apu.quantize(Decimal("0.01"))
     

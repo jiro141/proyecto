@@ -69,7 +69,7 @@ export const useEtapa2Logic = () => {
         });
 
         setStock(merged);
-    }, [stockRaw, currentAPUIndex]);
+    }, [stockRaw, currentAPUIndex, materiales.stock_almacen]);
 
     useEffect(() => {
         if (!consRaw) {
@@ -85,7 +85,7 @@ export const useEtapa2Logic = () => {
         });
 
         setConsumibles(merged);
-    }, [consRaw, currentAPUIndex]);
+    }, [consRaw, currentAPUIndex, materiales.consumibles]);
 
     useEffect(() => {
         if (!herramientasRaw) {
@@ -100,7 +100,7 @@ export const useEtapa2Logic = () => {
                 : { ...item, cantidad: Number(item.cantidad) || 0 };
         });
         setHerramientas(merged);
-    }, [herramientasRaw, currentAPUIndex]);
+    }, [herramientasRaw, currentAPUIndex, apuActual.herramientas]);
 
     useEffect(() => {
         if (!empleadosRaw) {
@@ -115,7 +115,7 @@ export const useEtapa2Logic = () => {
                 : { ...item, cantidad: Number(item.cantidad) || 0 };
         });
         setManoObra(merged);
-    }, [empleadosRaw, currentAPUIndex]);
+    }, [empleadosRaw, currentAPUIndex, apuActual.mano_obra]);
 
     useEffect(() => {
         if (!logisticaRaw) {
@@ -130,7 +130,7 @@ export const useEtapa2Logic = () => {
                 : { ...item, cantidad: Number(item.cantidad) || 0 };
         });
         setLogistica(merged);
-    }, [logisticaRaw, currentAPUIndex]);
+    }, [logisticaRaw, currentAPUIndex, apuActual.logistica]);
 
 
     return {
