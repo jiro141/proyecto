@@ -341,13 +341,13 @@ class CuentasPorCobrarView(generics.ListAPIView):
     serializer_class = ReporteListaSerializer
 
     def get_queryset(self):
-        from django.db.models import Sum, F, Value
+        from django.db.models import Sum, F, Value, OuterRef, Subquery
         from django.db.models.functions import Coalesce
+        from cuentas.models import Abono
         
         # Subquery para calcular el total abonado
-        from cuentas.models import Abono
         abonos_subquery = Abono.objects.filter(
-            reporte_id=models.OuterRef('id')
+            reporte_id=OuterRef('id')
         ).values('reporte_id').annotate(
             total=Sum('monto')
         ).values('total')
