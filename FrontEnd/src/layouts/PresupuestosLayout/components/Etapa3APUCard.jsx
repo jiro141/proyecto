@@ -92,7 +92,7 @@ export const Etapa3APUCard = ({
           <input
             type="text"
             readOnly
-            value={formatoMoneda((apu.body?.presupuesto_base || 0) * (apu.body?.cantidad || 1))}
+            value={formatoMoneda((apu.body?.presupuesto_base || 0))}
             className="border rounded-md px-2 py-1 text-xs mt-1 bg-gray-100 cursor-not-allowed"
           />
         </label>

@@ -165,11 +165,11 @@ class Reporte(models.Model):
 
     def recalcular_total(self):
         """
-        Suma el total_apu de todos los APUs relacionados, actualiza el total 
+        Suma el presupuesto_base de todos los APUs relacionados, actualiza el total 
         y verifica si el estado debe pasar a Pagado.
         """
-        # 1. Sumar APUs (Usa 'total_apu' o el campo que guarde el precio final del APU)
-        total_apus = self.apus.aggregate(total=Sum("total_apu"))["total"] or Decimal("0.00")
+        # 1. Sumar APUs usando presupuesto_base (ya incluye cantidad)
+        total_apus = self.apus.aggregate(total=Sum("presupuesto_base"))["total"] or Decimal("0.00")
         self.total_reporte = total_apus.quantize(Decimal("0.01"))
         
         # 2. Lista de campos a actualizar
