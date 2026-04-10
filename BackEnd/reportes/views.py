@@ -341,21 +341,22 @@ class CuentasPorCobrarView(generics.ListAPIView):
     serializer_class = ReporteListaSerializer
 
     def get_queryset(self):
-        from django.db.models import Sum, F, Value, OuterRef, Subquery
+        from django.db.models import Sum, F, Value, OuterRef
         from django.db.models.functions import Coalesce
+        from django.db import models
         from cuentas.models import Abono
         
-        # Subquery para calcular el total abonado
+        # Subquery para calcular el total abonado (especificar output_field como Decimal)
         abonos_subquery = Abono.objects.filter(
             reporte_id=OuterRef('id')
         ).values('reporte_id').annotate(
-            total=Sum('monto')
+            total=Sum('monto', output_field=models.DecimalField(max_digits=14, decimal_places=2))
         ).values('total')
 
         return Reporte.objects.select_related("cliente").filter(
             estado=EstadoChoices.EJECUTADO
         ).annotate(
-            total_abonado=Coalesce(abonos_subquery, Value(0))
+            total_abonado=Coalesce(abonos_subquery, Value(0, output_field=models.DecimalField(max_digits=14, decimal_places=2)))
         ).exclude(
             total_reporte__lte=F('total_abonado')  # Excluir los que ya están pagados
         ).order_by("-fecha_creacion")
