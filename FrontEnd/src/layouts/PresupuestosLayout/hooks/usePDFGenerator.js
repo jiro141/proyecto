@@ -6,7 +6,6 @@ import sello from "../../../assets/img/sello.png";
 export default function usePDFGenerator() {
   const generarPDF = (formData, nPresupuesto) => {
     const doc = new jsPDF("p", "mm", "a4");
-    console.log(formData);
 
     /* =========================
            ENCABEZADO

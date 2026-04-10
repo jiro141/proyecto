@@ -34,9 +34,10 @@ export default function Etapa3() {
 
   // Obtener el primer APU (ya que cada APU tiene su propio presupuesto_base)
   const primerAPU = apus[0];
-  const presupuestoEstimadoMostrado = primerAPU 
-    ? Number(primerAPU.body?.presupuesto_base || 0) 
-    : 0;
+  const presupuestoEstimadoMostrado = (apus || []).reduce(
+    (total, apu) => total + Number(apu.body?.presupuesto_base || 0),
+    0,
+  );
 
   // Mantener internamente la suma para compatibilidad pero mostrar solo el primero
   useEffect(() => {
@@ -125,8 +126,8 @@ export default function Etapa3() {
       </h2>
 
       {/* === Información del Cliente === */}
-      <ClienteInfo 
-        formData={formData} 
+      <ClienteInfo
+        formData={formData}
         presupuestoEstimado={presupuestoEstimadoMostrado}
       />
 
@@ -162,7 +163,9 @@ export default function Etapa3() {
           onClick={handleGuardar}
           disabled={isSending}
           className={`px-6 py-3 rounded-lg text-white font-semibold transition-all ${
-            isSending ? "bg-gray-400 cursor-not-allowed" : "bg-[#0B2C4D] hover:bg-[#15395A]"
+            isSending
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-[#0B2C4D] hover:bg-[#15395A]"
           }`}
         >
           {isSending ? "Enviando..." : "Crear"}

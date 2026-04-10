@@ -45,9 +45,26 @@ export default function useReportesActions() {
                     reportePayload.orden_servicio = formData.orden_servicio;
                 }
                 
-                // ✅ Agregar fecha de culminación
+                // ✅ Agregar fecha de culminación (formato YYYY-MM-DD)
                 if (formData.fechaCulminacion) {
-                    reportePayload.fecha_estimacion_culminacion = formData.fechaCulminacion;
+                    let fechaCulminacion;
+                    const fecha = formData.fechaCulminacion;
+                    
+                    if (fecha instanceof Date) {
+                        // Formato manual para evitar problemas de zona horaria
+                        const year = fecha.getFullYear();
+                        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+                        const day = String(fecha.getDate()).padStart(2, '0');
+                        fechaCulminacion = `${year}-${month}-${day}`;
+                    } else if (typeof fecha === 'string') {
+                        // Si es string, asegurar formato YYYY-MM-DD
+                        fechaCulminacion = fecha.split('T')[0];
+                    } else {
+                        // Cualquier otro caso, convertir a string seguro
+                        fechaCulminacion = String(fecha).split('T')[0];
+                    }
+                    
+                    reportePayload.fecha_estimacion_culminacion = fechaCulminacion;
                 }
 
                 const reporte = esEdicion

@@ -3,6 +3,13 @@ import * as XLSX from "xlsx-js-style";
 import { excelStyles, columnWidths } from "./useExcelStyles";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 
+// Función para limpiar caracteres inválidos de nombres de hojas en Excel
+const cleanSheetName = (name) => {
+  if (!name) return "APU";
+  // Caracteres inválidos: \ / ? * [ ] :
+  return name.replace(/[\\\/:*?[\]]/g, "").substring(0, 31).trim() || "APU";
+};
+
 export default function useExcelGenerator() {
   const { formData } = usePresupuesto();
 
@@ -186,8 +193,9 @@ export default function useExcelGenerator() {
         ========================= */
     formData.apus.forEach((apu, index) => {
       const ws = XLSX.utils.aoa_to_sheet([]);
-      const hojaNombre =
-        apu.body?.descripcion?.substring(0, 28) || `APU_${index + 1}`;
+      const hojaNombre = cleanSheetName(
+        apu.body?.descripcion?.substring(0, 28) || `APU_${index + 1}`
+      );
 
       XLSX.utils.sheet_add_aoa(
         ws,
@@ -423,7 +431,7 @@ export default function useExcelGenerator() {
 
     XLSX.writeFile(
       wb,
-      `${nPresupuesto}_${formData?.descripcion}_${formData?.cliente?.nombre || ""}_${
+      `${nPresupuesto}_${cleanSheetName(formData?.descripcion)}_${cleanSheetName(formData?.cliente?.nombre)}_${
         new Date().toISOString().split("T")[0]
       }.xlsx`,
     );
