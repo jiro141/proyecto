@@ -333,7 +333,7 @@ export default function ClientesCuentas() {
                   <td className="px-6 py-4">
                     {reporte.cliente_nombre || "-"}
                   </td>
-                  <td className="px-6 py-4 max-w-xs truncate">
+                  <td className="px-6 py-4">
                     {reporte.descripcion || "-"}
                   </td>
                   <td className="px-6 py-4">
@@ -470,7 +470,7 @@ export default function ClientesCuentas() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-300">Descripción:</span>
-                <span className="font-medium text-right max-w-xs">{selectedReporte.descripcion || "-"}</span>
+                <span className="font-medium text-right">{selectedReporte.descripcion || "-"}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-300">Fecha:</span>

@@ -28,9 +28,7 @@ export default function TableRow({
         className="py-2.5 px-2 text-sm font-medium text-gray-700 cursor-pointer hover:text-[#0B2C4D]"
         onClick={onDescripcionClick}
       >
-        {item.descripcion?.length > 25
-          ? item.descripcion.slice(0, 25) + "..."
-          : item.descripcion ?? "—"}
+        {item.descripcion ?? "—"}
       </td>
 
       {/* Unidad */}
