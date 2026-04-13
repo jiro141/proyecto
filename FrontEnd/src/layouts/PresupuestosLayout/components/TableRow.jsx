@@ -56,7 +56,7 @@ export default function TableRow({
             onChange={(e) =>
               handleCantidadInputChange(
                 item.id,
-                parseFloat(e.target.value || 0) - cantidad
+                parseFloat(e.target.value || 0)
               )
             }
             className="w-12 text-center text-sm font-medium border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0B2C4D] no-spin"
