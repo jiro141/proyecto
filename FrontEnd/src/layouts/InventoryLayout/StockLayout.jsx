@@ -5,9 +5,9 @@ import StepForm from "../../components/StepForm";
 import useInventario from "../../hooks/useInvetario";
 import useDepartamentos from "../../hooks/useDepartamentos";
 import useProveedores from "../../hooks/useProveedores";
-import { createItem } from "../../api/controllers/Inventario";
-import { updateItem } from "../../api/controllers/Inventario";
+import { createItem, updateItem, getItemById } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
+
 const columns = [
   { key: "codigo", label: "Codigo" },
   { key: "descripcion", label: "Descripcion" },
@@ -71,8 +71,31 @@ export default function StockLayout() {
       toast.error("Error al crear proveedor");
     }
   };
-  const handleAddOrEdit = (item = null) => {
-    setEditItem(item); // null para nuevo, objeto para editar
+  const handleAddOrEdit = async (item = null) => {
+    if (item) {
+      try {
+        const freshItem = await getItemById("stock", item.id);
+        const normalizedItem = { ...freshItem };
+        if (normalizedItem.proveedor && typeof normalizedItem.proveedor === 'object') {
+          normalizedItem.proveedor = normalizedItem.proveedor.id || normalizedItem.proveedor.name || normalizedItem.proveedor;
+        }
+        if (normalizedItem.departamento && typeof normalizedItem.departamento === 'object') {
+          normalizedItem.departamento = normalizedItem.departamento.id || normalizedItem.departamento.nombre || normalizedItem.departamento;
+        }
+        if (normalizedItem.ubicacion && typeof normalizedItem.ubicacion === 'object') {
+          normalizedItem.ubicacion = normalizedItem.ubicacion.id || normalizedItem.ubicacion.nombre || normalizedItem.ubicacion;
+        }
+        if (normalizedItem.consumo && typeof normalizedItem.consumo === 'object') {
+          normalizedItem.consumo = normalizedItem.consumo.id || normalizedItem.consumo.nombre || normalizedItem.consumo;
+        }
+        setEditItem(normalizedItem);
+      } catch (err) {
+        console.error("Error al cargar item:", err);
+        setEditItem(null);
+      }
+    } else {
+      setEditItem(null);
+    }
     setModalOpen(true);
   };
   const stockFormStep = [

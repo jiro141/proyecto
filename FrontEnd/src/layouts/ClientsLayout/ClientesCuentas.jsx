@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { BounceLoader } from "react-spinners";
-import { FaSearch, FaMoneyBillWave, FaPlus, FaHistory } from "react-icons/fa";
+import { FaSearch, FaMoneyBillWave, FaPlus, FaHistory, FaFileExcel } from "react-icons/fa";
 import { FaRegTrashCan, FaChevronLeft, FaChevronRight } from "react-icons/fa6";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Modal from "../../components/Modal";
 import Select from "react-select";
 import useCuentas from "../../hooks/useCuentas";
-import { createAbono, deleteAbono, getReportes, getReporteAbonos } from "../../api/controllers/Cuentas";
+import { createAbono, deleteAbono, getReportes, getReporteAbonos, getResumenCuentas } from "../../api/controllers/Cuentas";
+import useCuentasExcelGenerator from "../PresupuestosLayout/hooks/useCuentasExcelGenerator";
 
 const formatCurrency = (value) => {
   const num = parseFloat(value);
@@ -47,6 +48,40 @@ export default function ClientesCuentas() {
   const [loadingReportes, setLoadingReportes] = useState(false);
   const [searchReportes, setSearchReportes] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Estados paraExportar Excel
+  const [isExportModalOpen, setExportModalOpen] = useState(false);
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
+  const [loadingExport, setLoadingExport] = useState(false);
+
+  // Hook para generar Excel
+  const { generarExcelCuentas } = useCuentasExcelGenerator();
+
+  const handleOpenExportModal = () => {
+    setFechaDesde("");
+    setFechaHasta("");
+    setExportModalOpen(true);
+  };
+
+  const handleExportExcel = async () => {
+    setLoadingExport(true);
+    try {
+      const result = await getResumenCuentas(fechaDesde || null, fechaHasta || null);
+      if (result?.detalle?.length > 0) {
+        generarExcelCuentas(result.detalle, result.totales, fechaDesde, fechaHasta);
+        toast.success("Excel generado exitosamente");
+        setExportModalOpen(false);
+      } else {
+        toast.warning("No hay datos paraexportar en el período seleccionado");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al generar el Excel");
+    } finally {
+      setLoadingExport(false);
+    }
+  };
 
   useEffect(() => {
     if (isModalOpen && !formData.reporte) {
@@ -227,9 +262,17 @@ export default function ClientesCuentas() {
 
       {/* Tabla de reportes */}
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg bg-white">
-        <div className="px-6 py-4 bg-[#0b2c4d] border-b flex justify-between items-center">
+        <div className="px-6 py-4 bg-[#0b2c4d] border-b flex flex-wrap justify-between items-center gap-3">
           <h2 className="text-lg font-semibold text-white">Cuentas por Cobrar - Presupuestos</h2>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Botón para abrir modal de exportar */}
+            <button
+              onClick={handleOpenExportModal}
+              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded flex items-center gap-2 transition"
+            >
+              <FaFileExcel size={14} />
+              Exportar Excel
+            </button>
             <div className="relative">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
               <input
@@ -604,6 +647,68 @@ export default function ClientesCuentas() {
               className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded"
             >
               Eliminar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Exportar Excel */}
+      <Modal
+        isOpen={isExportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        title="Exportar Cuentas a Excel"
+        width="max-w-md"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Seleccione el rango de fechas paraexportar los registros de-abonos.
+          </p>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha Inicial
+            </label>
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => setFechaDesde(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0b2c4d] text-black"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha Final
+            </label>
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => setFechaHasta(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0b2c4d] text-black"
+            />
+          </div>
+
+          <div className="bg-gray-50 p-3 rounded-lg text-sm">
+            <p className="text-gray-600">
+              <strong>Nota:</strong> Si deja las fechas vacías, se-exportarán todos los registros.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              type="button"
+              onClick={() => setExportModalOpen(false)}
+              className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded transition"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleExportExcel}
+              disabled={loadingExport}
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded transition disabled:opacity-50 flex items-center gap-2"
+            >
+              <FaFileExcel size={14} />
+              {loadingExport ? "Generando..." : "Exportar Excel"}
             </button>
           </div>
         </div>

@@ -4,10 +4,11 @@ import Modal from "../../../components/Modal";
 import StepForm from "../../../components/StepForm";
 import BounceLoader from "react-spinners/BounceLoader";
 import { useInventarioTableContainer } from "../hooks/useInventarioTableContainer";
+import { getItemById } from "../../../api/controllers/Inventario";
 
 export default function InventarioTable(props) {
+  const tipo = props.tipo;
   const {
-    tipo,
     logic,
     sortedData,
     tituloMap,
@@ -72,9 +73,30 @@ export default function InventarioTable(props) {
                         onCantidadChange={logic.handleCantidadChange}
                         handleCantidadInputChange={logic.handleCantidadInputChange}
                         onDepreciacionChange={logic.handleDepreciacionChange}
-                        onDescripcionClick={() => {
-                          setEditItem(item);
-                          setModalOpen(true);
+                        onDescripcionClick={async () => {
+                          // Cargar datos frescos del backend por ID
+                          console.log("Editando item:", item.id, "tipo:", tipo);
+                          try {
+                            const freshItem = await getItemById(tipo, item.id);
+                            // Normalizar campos relacionados
+                            const normalizedItem = { ...freshItem };
+                            if (normalizedItem.proveedor && typeof normalizedItem.proveedor === 'object') {
+                              normalizedItem.proveedor = normalizedItem.proveedor.id || normalizedItem.proveedor.name || normalizedItem.proveedor;
+                            }
+                            if (normalizedItem.departamento && typeof normalizedItem.departamento === 'object') {
+                              normalizedItem.departamento = normalizedItem.departamento.id || normalizedItem.departamento.nombre || normalizedItem.departamento;
+                            }
+                            if (normalizedItem.ubicacion && typeof normalizedItem.ubicacion === 'object') {
+                              normalizedItem.ubicacion = normalizedItem.ubicacion.id || normalizedItem.ubicacion.nombre || normalizedItem.ubicacion;
+                            }
+                            if (normalizedItem.consumo && typeof normalizedItem.consumo === 'object') {
+                              normalizedItem.consumo = normalizedItem.consumo.id || normalizedItem.consumo.nombre || normalizedItem.consumo;
+                            }
+                            setEditItem(normalizedItem);
+                            setModalOpen(true);
+                          } catch (err) {
+                            console.error("Error al cargar item:", err);
+                          }
                         }}
                       />
                     );

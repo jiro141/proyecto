@@ -15,8 +15,21 @@ export const getReporteAbonos = async (reporteId) => {
   return response.data;
 };
 
-export const getAbonos = async () => {
-  const response = await AuthApi.get("/cuentas/abonos/");
+export const getAbonos = async (fecha_desde = null, fecha_hasta = null) => {
+  const params = new URLSearchParams();
+  if (fecha_desde) params.append("fecha_desde", fecha_desde);
+  if (fecha_hasta) params.append("fecha_hasta", fecha_hasta);
+  const query = params.toString();
+  const response = await AuthApi.get(`/cuentas/abonos/${query ? `?${query}` : ""}`);
+  return response.data;
+};
+
+export const getResumenCuentas = async (fecha_desde = null, fecha_hasta = null) => {
+  const params = new URLSearchParams();
+  if (fecha_desde) params.append("fecha_desde", fecha_desde);
+  if (fecha_hasta) params.append("fecha_hasta", fecha_hasta);
+  const query = params.toString();
+  const response = await AuthApi.get(`/cuentas/abonos/resumen/${query ? `?${query}` : ""}`);
   return response.data;
 };
 
