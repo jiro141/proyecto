@@ -34,11 +34,24 @@ export function useInventarioTableContainer(props) {
     const [isModalOpen, setModalOpen] = useState(false);
     const [isDeptModalOpen, setDeptModalOpen] = useState(false);
     const [isProvModalOpen, setProvModalOpen] = useState(false);
+    // Guardar si el modal principal estaba abierto antes de abrir proveedor/departamento
+    const [mainModalWasOpen, setMainModalWasOpen] = useState(false);
 
     const tituloMap = {
         stock: "Ferretería",
         EPP: "E.P.P.",
         consumibles: "Consumible",
+    };
+
+    // Funciones para abrir modales manteniendo el principal abierto
+    const openDeptModal = () => {
+        setMainModalWasOpen(isModalOpen);
+        setDeptModalOpen(true);
+    };
+
+    const openProvModal = () => {
+        setMainModalWasOpen(isModalOpen);
+        setProvModalOpen(true);
     };
 
     // === FORMULARIOS ===
@@ -83,16 +96,16 @@ export function useInventarioTableContainer(props) {
                         { name: "mts_ml_m2", label: "MTS ML M2", disabled: true },
                     ],
                     actions: [
-                        { label: "Nuevo Departamento", onClick: () => setDeptModalOpen(true) },
-                        { label: "Nuevo Proveedor", onClick: () => setProvModalOpen(true) },
+                        { label: "Nuevo Departamento", onClick: openDeptModal },
+                        { label: "Nuevo Proveedor", onClick: openProvModal },
                     ],
                 },
             ]
             : [
                 {
                     actions: [
-                        { label: "Nuevo Departamento", onClick: () => setDeptModalOpen(true) },
-                        { label: "Nuevo Proveedor", onClick: () => setProvModalOpen(true) },
+                        { label: "Nuevo Departamento", onClick: openDeptModal },
+                        { label: "Nuevo Proveedor", onClick: openProvModal },
                     ],
                     fields: [
                         { name: "codigo", label: "Código", required: true },
@@ -174,6 +187,11 @@ export function useInventarioTableContainer(props) {
         toast.success("Departamento creado");
         refetchDepartamentos();
         setDeptModalOpen(false);
+        // Re-abrir el modal principal si estaba abierto
+        if (mainModalWasOpen) {
+            setModalOpen(true);
+            setMainModalWasOpen(false);
+        }
     };
 
     const handleNewProveedor = async (formData) => {
@@ -181,6 +199,11 @@ export function useInventarioTableContainer(props) {
         toast.success("Proveedor creado");
         refetchProveedores();
         setProvModalOpen(false);
+        // Re-abrir el modal principal si estaba abierto
+        if (mainModalWasOpen) {
+            setModalOpen(true);
+            setMainModalWasOpen(false);
+        }
     };
 
     return {

@@ -7,7 +7,12 @@ import { usePresupuesto } from "../../../context/PresupuestoContext";
 const cleanSheetName = (name) => {
   if (!name) return "APU";
   // Caracteres inválidos: \ / ? * [ ] :
-  return name.replace(/[\\\/:*?[\]]/g, "").substring(0, 31).trim() || "APU";
+  return (
+    name
+      .replace(/[\\\/:*?[\]]/g, "")
+      .substring(0, 31)
+      .trim() || "APU"
+  );
 };
 
 export default function useExcelGenerator() {
@@ -19,10 +24,34 @@ export default function useExcelGenerator() {
       if (value === null || value === undefined || value === "")
         return fallback;
 
-      const normalized =
-        typeof value === "string"
-          ? Number(value.replace(/\./g, "").replace(",", ".").trim())
-          : Number(value);
+      const toNumber = (value, fallback = 0) => {
+        if (value === null || value === undefined || value === "")
+          return fallback;
+
+        const normalized =
+          typeof value === "string"
+            ? (() => {
+                let str = value.trim();
+
+                const hasComma = str.includes(",");
+                const hasDot = str.includes(".");
+
+                if (hasComma && hasDot) {
+                  if (str.lastIndexOf(",") > str.lastIndexOf(".")) {
+                    str = str.replace(/\./g, "").replace(",", ".");
+                  } else {
+                    str = str.replace(/,/g, "");
+                  }
+                } else if (hasComma) {
+                  str = str.replace(",", ".");
+                }
+
+                return Number(str);
+              })()
+            : Number(value);
+
+        return Number.isFinite(normalized) ? normalized : fallback;
+      };
 
       return Number.isFinite(normalized) ? normalized : fallback;
     };
@@ -41,7 +70,7 @@ export default function useExcelGenerator() {
     const clienteTexto = `${clienteNombre}${clienteRif}`;
     const descripcion = formData?.descripcion?.toUpperCase() || "—";
     const total = formData?.presupuesto_estimado || 0;
-    
+
     // ✅ Fecha de culminación
     const fechaCulminacion = formData?.fechaCulminacion
       ? new Date(formData.fechaCulminacion).toLocaleDateString("es-VE")
@@ -53,7 +82,7 @@ export default function useExcelGenerator() {
       [
         ["Cesar Augusto Becerra Ramírez"],
         ["S.T.I. HERMABE"],
-        ["RIF: V-14368837-3"],
+        ["RIF: V-14368387-3"],
         ["Carrera 7 N° 12-81, San Vicente, San Cristóbal, Edo. Táchira"],
         ["Telfs: 0277-2912496 / 0424-7189106"],
         [],
@@ -194,7 +223,7 @@ export default function useExcelGenerator() {
     formData.apus.forEach((apu, index) => {
       const ws = XLSX.utils.aoa_to_sheet([]);
       const hojaNombre = cleanSheetName(
-        apu.body?.descripcion?.substring(0, 28) || `APU_${index + 1}`
+        apu.body?.descripcion?.substring(0, 28) || `APU_${index + 1}`,
       );
 
       XLSX.utils.sheet_add_aoa(

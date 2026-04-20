@@ -263,10 +263,10 @@ export default function PresupuestoTable({
                                     </div>
                                 </td>
                                 <td className="text-center">
-                                    ${Number(getPrecio(item)).toFixed(2)}
+                                    ${Number(getPrecio(item)).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
                                 <td className="text-center">
-                                    ${(item.cantidad * Number(getPrecio(item))).toFixed(2)}
+                                    ${Number(item.cantidad * Number(getPrecio(item))).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
                             </tr>
                         ))}

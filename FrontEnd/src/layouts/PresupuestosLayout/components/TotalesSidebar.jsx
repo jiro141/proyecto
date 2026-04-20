@@ -2,12 +2,11 @@ import React from "react";
 
 const formatoMoneda = (valor) => {
   const numero = Number(valor ?? 0);
-  if (isNaN(numero)) return "$0.00";
-  return numero.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
+  if (isNaN(numero)) return "$0,00";
+  return `$${numero.toLocaleString("es-VE", {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
+  })}`;
 };
 
 export const TotalesSidebar = ({

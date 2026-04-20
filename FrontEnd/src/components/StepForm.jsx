@@ -148,7 +148,10 @@ const StepForm = ({ steps, onSubmit, initialValues = {} }) => {
           <button
             key={index}
             type="button"
-            onClick={action.onClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              action.onClick();
+            }}
             className="bg-[#0b2c4d] hover:bg-[#143d65] text-white font-semibold px-6 py-2 rounded transition duration-200"
           >
             {action.label}

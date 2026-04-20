@@ -85,13 +85,13 @@ export default function TableRow({
       {/* Precio Unitario */}
       {tipo !== "EPP" && (
         <td className="py-2.5 px-2 text-sm text-gray-700 text-center">
-          ${precioUnitario}
+          ${Number(precioUnitario || 0).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </td>
       )}
 
       {/* Total */}
       <td className="py-2.5 px-2 text-sm font-semibold text-gray-800 text-center">
-        ${isNaN(total) ? "0.00" : total.toFixed(2)}
+        ${isNaN(total) ? "0,00" : Number(total).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </td>
     </tr>
   );

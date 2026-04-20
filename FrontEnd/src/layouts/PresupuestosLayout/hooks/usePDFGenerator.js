@@ -15,7 +15,7 @@ export default function usePDFGenerator() {
     doc.text("Cesar Augusto Becerra Ramírez", 50, 15);
     doc.text("S.T.I. HERMABE", 50, 21);
     doc.setFontSize(10);
-    doc.text("RIF: V-14368837-3", 50, 26);
+    doc.text("RIF: V-14368387-3", 50, 26);
     doc.text(
       "Carrera 7 N° 12-81, San Vicente, San Cristóbal, Edo. Táchira",
       50,
