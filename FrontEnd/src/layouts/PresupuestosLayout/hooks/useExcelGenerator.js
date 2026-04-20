@@ -24,34 +24,27 @@ export default function useExcelGenerator() {
       if (value === null || value === undefined || value === "")
         return fallback;
 
-      const toNumber = (value, fallback = 0) => {
-        if (value === null || value === undefined || value === "")
-          return fallback;
+      const normalized =
+        typeof value === "string"
+          ? (() => {
+              let str = value.trim();
 
-        const normalized =
-          typeof value === "string"
-            ? (() => {
-                let str = value.trim();
+              const hasComma = str.includes(",");
+              const hasDot = str.includes(".");
 
-                const hasComma = str.includes(",");
-                const hasDot = str.includes(".");
-
-                if (hasComma && hasDot) {
-                  if (str.lastIndexOf(",") > str.lastIndexOf(".")) {
-                    str = str.replace(/\./g, "").replace(",", ".");
-                  } else {
-                    str = str.replace(/,/g, "");
-                  }
-                } else if (hasComma) {
-                  str = str.replace(",", ".");
+              if (hasComma && hasDot) {
+                if (str.lastIndexOf(",") > str.lastIndexOf(".")) {
+                  str = str.replace(/\./g, "").replace(",", ".");
+                } else {
+                  str = str.replace(/,/g, "");
                 }
+              } else if (hasComma) {
+                str = str.replace(",", ".");
+              }
 
-                return Number(str);
-              })()
-            : Number(value);
-
-        return Number.isFinite(normalized) ? normalized : fallback;
-      };
+              return Number(str);
+            })()
+          : Number(value);
 
       return Number.isFinite(normalized) ? normalized : fallback;
     };
