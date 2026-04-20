@@ -20,6 +20,8 @@ export default function useExcelGenerator() {
 
   const generarExcelAPUs = (otro, nPresupuesto) => {
     if (!formData?.apus?.length) return;
+
+    // ✅ función helpers - definida primero para usarla en todo el scope
     const toNumber = (value, fallback = 0) => {
       if (value === null || value === undefined || value === "")
         return fallback;
@@ -49,6 +51,12 @@ export default function useExcelGenerator() {
       return Number.isFinite(normalized) ? normalized : fallback;
     };
 
+    // ✅ Calcular total real sumando los presupuesto_base de cada APU
+    const apus = formData?.apus || [];
+    const total = apus.reduce((acc, apu) => {
+      return acc + toNumber(apu.body?.presupuesto_base || 0);
+    }, 0);
+
     const wb = XLSX.utils.book_new();
 
     /* =========================
@@ -62,7 +70,6 @@ export default function useExcelGenerator() {
       : "";
     const clienteTexto = `${clienteNombre}${clienteRif}`;
     const descripcion = formData?.descripcion?.toUpperCase() || "—";
-    const total = formData?.presupuesto_estimado || 0;
 
     // ✅ Fecha de culminación
     const fechaCulminacion = formData?.fechaCulminacion
