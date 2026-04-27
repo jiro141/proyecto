@@ -9,7 +9,7 @@ const ESTADOS = [
   { key: "APROBADO_ESPERA", label: "Aprobado en espera de ejecución", icon: FaCheck, color: "yellow" },
   { key: "EJECUTADO", label: "Ejecutado", icon: FaPlay, color: "blue" },
   { key: "PAGADO", label: "Pagado", icon: FaCheckCircle, color: "green" },
-  { key: "CANCELADO", label: "Cancelado", icon: FaBan, color: "red" },
+  { key: "CANCELADO", label: "No aprobado", icon: FaBan, color: "red" },
 ];
 
 const colorMap = {

@@ -20,7 +20,7 @@ const getEstadoBadge = (estado) => {
     APROBADO_ESPERA: { bg: "bg-yellow-500", text: "text-white", label: "Aprobado en espera" },
     EJECUTADO: { bg: "bg-blue-600", text: "text-white", label: "Ejecutado" },
     PAGADO: { bg: "bg-green-600", text: "text-white", label: "Pagado" },
-    CANCELADO: { bg: "bg-red-600", text: "text-white", label: "Cancelado" },
+    CANCELADO: { bg: "bg-red-600", text: "text-white", label: "No aprobado" },
   };
 
   const badge = badges[estado] || { bg: "bg-gray-400", text: "text-white", label: estado };
