@@ -4,15 +4,27 @@ import { excelStyles, columnWidths } from "./useExcelStyles";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 
 // Función para limpiar caracteres inválidos de nombres de hojas en Excel
-const cleanSheetName = (name) => {
+const cleanSheetName = (name, usedNames = new Set()) => {
   if (!name) return "APU";
   // Caracteres inválidos: \ / ? * [ ] :
-  return (
+  let cleanName = (
     name
       .replace(/[\\\/:*?[\]]/g, "")
       .substring(0, 31)
       .trim() || "APU"
   );
+
+  // Si ya existe, agregar sufijo numérico
+  if (usedNames.has(cleanName)) {
+    let counter = 1;
+    while (usedNames.has(`${cleanName}_${counter}`)) {
+      counter++;
+    }
+    cleanName = `${cleanName}_${counter}`;
+  }
+
+  usedNames.add(cleanName);
+  return cleanName;
 };
 
 export default function useExcelGenerator() {
@@ -220,10 +232,12 @@ export default function useExcelGenerator() {
     /* =========================
            HOJAS APU
         ========================= */
+    const usedSheetNames = new Set();
     formData.apus.forEach((apu, index) => {
       const ws = XLSX.utils.aoa_to_sheet([]);
       const hojaNombre = cleanSheetName(
         apu.body?.descripcion?.substring(0, 28) || `APU_${index + 1}`,
+        usedSheetNames
       );
 
       XLSX.utils.sheet_add_aoa(
