@@ -9,6 +9,8 @@ from .models import (
     APUManoObra,
     APULogistica,
     NotaReporte,  # 📝 nuevo
+    NotaEntrega,
+    NotaEntregaItem,
 )
 
 # ==========================
@@ -160,3 +162,24 @@ class ReporteAdmin(admin.ModelAdmin):
 class ReporteConfigAdmin(admin.ModelAdmin):
     list_display = ("punto_inicio",)
     search_fields = ("punto_inicio",)
+
+
+# ==========================
+# 📦 NOTAS DE ENTREGA
+# ==========================
+
+
+class NotaEntregaItemInline(admin.TabularInline):
+    model = NotaEntregaItem
+    extra = 1
+    readonly_fields = ("apu_descripcion", "cantidad_total", "cantidad_entregada", "precio_unitario")
+
+
+@admin.register(NotaEntrega)
+class NotaEntregaAdmin(admin.ModelAdmin):
+    list_display = ("n_nota", "cliente_nombre", "fecha_entrega", "estado", "reporte")
+    list_filter = ("estado", "fecha_entrega")
+    search_fields = ("n_nota", "cliente_nombre", "reporte__n_presupuesto")
+    readonly_fields = ("n_nota", "created_at", "updated_at")
+    inlines = [NotaEntregaItemInline]
+    ordering = ("-created_at",)

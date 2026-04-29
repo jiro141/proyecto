@@ -701,7 +701,7 @@ class NotaEntrega(models.Model):
             else:
                 num = 1
 
-            self.n_nota = f"NE-{año}-{str(num).padStart(4, '0')}"
+            self.n_nota = f"NE-{año}-{str(num).zfill(4)}"
 
         # Guardar nombre del cliente desde el reporte si no está
         if not self.cliente_nombre and self.reporte:
