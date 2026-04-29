@@ -378,7 +378,6 @@ class NotaEntregaSerializer(serializers.ModelSerializer):
             "cliente_nombre",
             "fecha_entrega",
             "estado",
-            "estado_display",
             "observaciones",
             "items",
             "created_at",
