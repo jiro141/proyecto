@@ -382,6 +382,7 @@ class NotaEntregaSerializer(serializers.ModelSerializer):
             "fecha_entrega",
             "estado",
             "observaciones",
+            "con_monto",
             "items",
             "created_at",
             "updated_at",

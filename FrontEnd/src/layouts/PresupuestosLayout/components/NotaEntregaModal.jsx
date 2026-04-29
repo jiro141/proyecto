@@ -72,6 +72,9 @@ const [loading, setLoading] = useState(true);
   
   // Estado para modal de eliminación
   const [deleteNotaId, setDeleteNotaId] = useState(null);
+  
+  // Estado para switch de monto
+  const [conMonto, setConMonto] = useState(true);
 
   // Cargar datos cuando se abre el modal
   useEffect(() => {
@@ -119,6 +122,14 @@ const [loading, setLoading] = useState(true);
       await loadData();
     }
     setItems(initItemsFromApus(reporteDetalle?.apus || [], entregasAcumuladas));
+    
+    // Calcular correlativo NE-1100, NE-1101, etc.
+    const ultimoCodigo = notasEntrega.reduce((max, nota) => {
+      const num = parseInt(nota.codigo?.replace('NE-', '') || '1099', 10);
+      return num > max ? num : max;
+    }, 1099);
+    setCodigo(`NE-${ultimoCodigo + 1}`);
+    
     setShowForm(true);
   };
 
@@ -138,7 +149,11 @@ const [loading, setLoading] = useState(true);
   };
 
   const handleSave = async () => {
-    const itemsValidos = items.filter((item) => item.cantidad_entregada > 0);
+    const itemsValidos = items.filter((item) => item.cantidad_entregada > 0).map((item) => ({
+      ...item,
+      precio_unitario: conMonto ? item.precio_unitario : 0,
+    }));
+    
     if (itemsValidos.length === 0) {
       toast.error("Debe agregar al menos un item con cantidad");
       return;
@@ -154,6 +169,7 @@ const [loading, setLoading] = useState(true);
         orden_compra: ordenCompra,
         fecha_entrega: fechaEntrega,
         observaciones: observaciones,
+        con_monto: conMonto,
         items: itemsValidos,
       });
 
@@ -163,6 +179,7 @@ const [loading, setLoading] = useState(true);
       setOrdenCompra("");
       setFechaEntrega(new Date().toISOString().split("T")[0]);
       setObservaciones("");
+      setConMonto(true);
       loadData();
     } catch (error) {
       console.error("Error completo:", error);
@@ -344,6 +361,22 @@ const [loading, setLoading] = useState(true);
                 </div>
               </div>
 
+              {/* Switch para indicar si lleva monto */}
+              <div className="flex items-center gap-3">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={conMonto}
+                    onChange={(e) => setConMonto(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                  <span className="ml-3 text-sm font-medium text-gray-700">
+                    {conMonto ? "Con monto" : "Sin monto"}
+                  </span>
+                </label>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
                 <textarea
@@ -363,8 +396,12 @@ const [loading, setLoading] = useState(true);
                       <th className="px-2 py-2 text-center">Total</th>
                       <th className="px-2 py-2 text-center">Pendiente</th>
                       <th className="px-2 py-2 text-center">Entregar</th>
-                      <th className="px-2 py-2 text-center">P.Unit</th>
-                      <th className="px-2 py-2 text-center">Subtotal</th>
+                      {conMonto && (
+                        <>
+                          <th className="px-2 py-2 text-center">P.Unit</th>
+                          <th className="px-2 py-2 text-center">Subtotal</th>
+                        </>
+                      )}
                       <th className="px-2 py-2"></th>
                     </tr>
                   </thead>
@@ -393,10 +430,14 @@ const [loading, setLoading] = useState(true);
                             className="w-full border rounded px-2 py-1 text-center"
                           />
                         </td>
-                        <td className="px-2 py-2 text-center">${formatNumber(item.precio_unitario)}</td>
-                        <td className="px-2 py-2 text-center font-medium">
-                          ${formatNumber(item.cantidad_entregada * item.precio_unitario)}
-                        </td>
+                        {conMonto && (
+                          <>
+                            <td className="px-2 py-2 text-center">${formatNumber(item.precio_unitario)}</td>
+                            <td className="px-2 py-2 text-center font-medium">
+                              ${formatNumber(item.cantidad_entregada * item.precio_unitario)}
+                            </td>
+                          </>
+                        )}
                         <td className="px-2 py-2 text-center">
                           <button onClick={() => handleRemoveItem(index)} className="text-red-500 hover:text-red-700">
                             <FaTrash size={14} />
