@@ -41,7 +41,7 @@ const initItemsFromApus = (apus, entregasAcumuladas = {}) => {
 const calcularEntregasAcumuladas = (notasEntrega) => {
   const acumuladas = {};
   notasEntrega
-    .filter((n) => n.estado === "EMITIDA")
+    .filter((n) => n.estado === "BORRADOR" || n.estado === "EMITIDA")
     .forEach((nota) => {
       (nota.items || []).forEach((item) => {
         const desc = item.apu_descripcion;
@@ -93,7 +93,7 @@ const [loading, setLoading] = useState(true);
         // Calcular entregas acumuladas
         const acumuladas = {};
         (notas || [])
-          .filter((n) => n.estado === "EMITIDA")
+          .filter((n) => n.estado === "BORRADOR" || n.estado === "EMITIDA")
           .forEach((nota) => {
             (nota.items || []).forEach((item) => {
               const desc = item.apu_descripcion;
