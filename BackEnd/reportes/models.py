@@ -661,11 +661,18 @@ class NotaEntrega(models.Model):
         verbose_name="Número de nota de entrega",
     )
 
-    codigo_alfa = models.CharField(
+    orden_compra = models.CharField(
         max_length=50,
         blank=True,
         null=True,
-        verbose_name="Código alfa",
+        verbose_name="Orden de Compra",
+    )
+
+    codigo = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Código de Nota",
     )
 
     cliente_nombre = models.CharField(
@@ -700,20 +707,20 @@ class NotaEntrega(models.Model):
         verbose_name_plural = "Notas de Entrega"
 
     def save(self, *args, **kwargs):
-        # Generar n_nota si es nuevo
+        # Generar n_nota si es nuevo (formato: NE-1100, NE-1101, ...)
         if not self.n_nota:
-            año = timezone.now().year
-            ultimo = NotaEntrega.objects.filter(n_nota__startswith=f"NE-{año}-").order_by("-n_nota").first()
+            ultimo = NotaEntrega.objects.filter(n_nota__startswith="NE-").order_by("-n_nota").first()
 
             if ultimo:
                 try:
+                    # Extraer número después de "NE-"
                     num = int(ultimo.n_nota.split("-")[-1]) + 1
                 except (ValueError, IndexError):
-                    num = 1
+                    num = 1100
             else:
-                num = 1
+                num = 1100
 
-            self.n_nota = f"NE-{año}-{str(num).zfill(4)}"
+            self.n_nota = f"NE-{num}"
 
         # Guardar nombre del cliente desde el reporte si no está
         if not self.cliente_nombre and self.reporte:
