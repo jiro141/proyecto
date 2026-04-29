@@ -230,3 +230,62 @@ export const deleteNotaReporte = async (notaId) => {
     throw error;
   }
 };
+
+// =========================
+// 📦 NOTAS DE ENTREGA
+// =========================
+
+// Obtener notas de entrega de un reporte
+export const getNotasEntregaByReporte = async (reporteId) => {
+  try {
+    const response = await AuthApi.get(`/reportes/${reporteId}/notas-entrega/`);
+    return response.data.results || response.data;
+  } catch (error) {
+    console.error("Error al obtener notas de entrega:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// Obtener resumen de entregas por reporte
+export const getEntregasResumen = async (reporteId) => {
+  try {
+    const response = await AuthApi.get(`/reportes/${reporteId}/entregas-resumen/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener resumen de entregas:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// Crear nota de entrega
+export const createNotaEntrega = async (data) => {
+  try {
+    const response = await AuthApi.post(`/reportes/notas-entrega/`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error al crear nota de entrega:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// Actualizar nota de entrega
+export const updateNotaEntrega = async (id, data) => {
+  try {
+    const response = await AuthApi.put(`/reportes/notas-entrega/${id}/`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error al actualizar nota de entrega:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// Anular/eliminar nota de entrega
+export const deleteNotaEntrega = async (id) => {
+  try {
+    const response = await AuthApi.delete(`/reportes/notas-entrega/${id}/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al eliminar nota de entrega:", error.response?.data || error);
+    throw error;
+  }
+};

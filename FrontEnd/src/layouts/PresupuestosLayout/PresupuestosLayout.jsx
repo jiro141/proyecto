@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ReportesTable from "./components/ReportesTable";
-import { FaFilePdf, FaFileExcel, FaEdit } from "react-icons/fa";
+import { FaFilePdf, FaFileExcel, FaEdit, FaTruck } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useReportes from "../../hooks/useReportes";
 import useExcelGenerator from "./hooks/useExcelGenerator";
@@ -9,6 +9,7 @@ import { usePresupuesto } from "../../context/PresupuestoContext";
 
 // Componentes importados
 import ReporteDetalleModal from "./components/ReporteDetalleModal";
+import NotaEntregaModal from "./components/NotaEntregaModal";
 import useReporteActions from "./hooks/useReporteActions";
 
 export const columns = [
@@ -41,12 +42,21 @@ export const columns = [
     action: "edit",
     hoverColor: "hover:text-[#0b2c4d]",
   },
+  {
+    key: "notas_entrega",
+    label: "Entrega",
+    type: "action",
+    icon: FaTruck,
+    action: "notas_entrega",
+    hoverColor: "hover:text-orange-600",
+  },
 ];
 
 export default function ReportesLayout({ clienteSeleccionado }) {
   const [search, setSearch] = useState("");
   const { reportes, loading, error, refetch } = useReportes(search, clienteSeleccionado?.id);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isEntregaModalOpen, setEntregaModalOpen] = useState(false);
 
   const { generarExcelAPUs } = useExcelGenerator();
   const { generarPDF } = usePDFGenerator();
@@ -99,6 +109,12 @@ export default function ReportesLayout({ clienteSeleccionado }) {
         await prepareEditData(detalle);
         return;
       }
+
+      if (action === "notas_entrega") {
+        setSelectedReporte(detalle);
+        setEntregaModalOpen(true);
+        return;
+      }
     } catch (err) {
       console.error(err);
       toast.error("Error generando documento");
@@ -126,6 +142,12 @@ export default function ReportesLayout({ clienteSeleccionado }) {
         }}
         reporte={selectedReporte}
         loading={loadingDetalle}
+      />
+
+      <NotaEntregaModal
+        isOpen={isEntregaModalOpen}
+        onClose={() => setEntregaModalOpen(false)}
+        reporte={selectedReporte}
       />
     </div>
   );
