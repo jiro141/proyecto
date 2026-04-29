@@ -139,19 +139,19 @@ export default function usePDFNotaEntrega() {
     const filteredRows = conMonto ? rows : rows.map(row => [row[0], row[1]]);
     
     const tableHead = conMonto 
-      ? [["CANTIDAD", "DESCRIPCIÓN", "PRECIO UNITARIO", "MONTO"]]
+      ? [["CANTIDAD", "DESCRIPCIÓN", "PRECIO UNIT.", "MONTO"]]
       : [["CANTIDAD", "DESCRIPCIÓN"]];
     
     const tableColumns = conMonto
       ? {
-          0: { halign: "center", cellWidth: 20 },
-          1: { halign: "left", cellWidth: 120 },
-          2: { halign: "right", cellWidth: 28 },
-          3: { halign: "right", cellWidth: 28 },
+          0: { halign: "center", cellWidth: 18 },
+          1: { halign: "left", cellWidth: 85 },
+          2: { halign: "right", cellWidth: 22 },
+          3: { halign: "right", cellWidth: 22 },
         }
       : {
           0: { halign: "center", cellWidth: 20 },
-          1: { halign: "left", cellWidth: 150 },
+          1: { halign: "left", cellWidth: 140 },
         };
 
     autoTable(doc, {
@@ -174,7 +174,7 @@ export default function usePDFNotaEntrega() {
         lineColor: [150, 150, 150],
       },
       columnStyles: tableColumns,
-      margin: { left: 28, right: 25 },
+      margin: { left: 28, right: 18 },
     });
 
     // ===========================
