@@ -129,8 +129,16 @@ const [loading, setLoading] = useState(true);
       return num > max ? num : max;
     }, 1099);
     setCodigo(`NE-${ultimoCodigo + 1}`);
+    setConMonto(true);
     
     setShowForm(true);
+  };
+
+  // Función para ver detalle de nota
+  const handleVerDetalle = (nota) => {
+    setNotaDetalle(nota);
+    // Por defecto asumimos con monto (ya que no se guarda en backend)
+    // El usuario puede togglearlo al ver el detalle
   };
 
   const handleItemChange = (index, field, value) => {
@@ -149,10 +157,7 @@ const [loading, setLoading] = useState(true);
   };
 
   const handleSave = async () => {
-    const itemsValidos = items.filter((item) => item.cantidad_entregada > 0).map((item) => ({
-      ...item,
-      precio_unitario: conMonto ? item.precio_unitario : 0,
-    }));
+    const itemsValidos = items.filter((item) => item.cantidad_entregada > 0);
     
     if (itemsValidos.length === 0) {
       toast.error("Debe agregar al menos un item con cantidad");
@@ -169,7 +174,6 @@ const [loading, setLoading] = useState(true);
         orden_compra: ordenCompra,
         fecha_entrega: fechaEntrega,
         observaciones: observaciones,
-        con_monto: conMonto,
         items: itemsValidos,
       });
 
@@ -179,7 +183,6 @@ const [loading, setLoading] = useState(true);
       setOrdenCompra("");
       setFechaEntrega(new Date().toISOString().split("T")[0]);
       setObservaciones("");
-      setConMonto(true);
       loadData();
     } catch (error) {
       console.error("Error completo:", error);
@@ -468,7 +471,7 @@ const [loading, setLoading] = useState(true);
                     {notasEntrega.map((nota) => (
                       <div key={nota.id} className="flex justify-between items-center bg-gray-50 p-2 rounded">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => setNotaDetalle(nota)} className="text-blue-600 hover:text-blue-800 font-medium" title="Ver detalle">
+                          <button onClick={() => handleVerDetalle(nota)} className="text-blue-600 hover:text-blue-800 font-medium" title="Ver detalle">
                             {nota.n_nota}
                           </button>
                           {nota.orden_compra && <span className="ml-2 text-gray-500 text-sm">({nota.orden_compra})</span>}

@@ -698,11 +698,6 @@ class NotaEntrega(models.Model):
         verbose_name="Observaciones",
     )
 
-    con_monto = models.BooleanField(
-        default=True,
-        verbose_name="¿Lleva monto?",
-    )
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
