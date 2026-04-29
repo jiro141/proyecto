@@ -376,7 +376,6 @@ class NotaEntregaSerializer(serializers.ModelSerializer):
             "n_nota",
             "codigo_alfa",
             "cliente_nombre",
-            "cliente_rif",
             "fecha_entrega",
             "estado",
             "estado_display",
