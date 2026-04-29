@@ -73,8 +73,9 @@ const [loading, setLoading] = useState(true);
   // Estado para modal de eliminación
   const [deleteNotaId, setDeleteNotaId] = useState(null);
   
-  // Estado para switch de monto
+  // Estado para switch de monto (solo para el PDF)
   const [conMonto, setConMonto] = useState(true);
+  const [pdfConMonto, setPdfConMonto] = useState(true); // Para el modal de detalle
 
   // Cargar datos cuando se abre el modal
   useEffect(() => {
@@ -137,8 +138,7 @@ const [loading, setLoading] = useState(true);
   // Función para ver detalle de nota
   const handleVerDetalle = (nota) => {
     setNotaDetalle(nota);
-    // Por defecto asumimos con monto (ya que no se guarda en backend)
-    // El usuario puede togglearlo al ver el detalle
+    setPdfConMonto(true); // Por defecto asumimos con monto
   };
 
   const handleItemChange = (index, field, value) => {
@@ -295,9 +295,25 @@ const [loading, setLoading] = useState(true);
               </div>
             )}
 
+            {/* Switch para indicar si el PDF lleva monto */}
+            <div className="flex items-center gap-3 mb-4">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={pdfConMonto}
+                  onChange={(e) => setPdfConMonto(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                <span className="ml-3 text-sm font-medium text-gray-700">
+                  {pdfConMonto ? "Con monto" : "Sin monto"}
+                </span>
+              </label>
+            </div>
+
             <div className="flex justify-end gap-2 mt-4">
               <button
-                onClick={() => generarPDF(notaDetalle, { ...reporteDetalle, cliente: { ...reporteDetalle?.cliente, rif: notaDetalle?.cliente_rif } }, notaDetalle.items || [])}
+                onClick={() => generarPDF(notaDetalle, { ...reporteDetalle, cliente: { ...reporteDetalle?.cliente, rif: notaDetalle?.cliente_rif } }, notaDetalle.items || [], pdfConMonto)}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2"
               >
                 <FaFilePdf size={16} />

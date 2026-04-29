@@ -4,7 +4,7 @@ import logo from "../../../assets/img/Logotipo.png";
 import sello from "../../../assets/img/sello.png";
 
 export default function usePDFNotaEntrega() {
-  const generarPDF = (notaEntrega, reporte, items) => {
+  const generarPDF = (notaEntrega, reporte, items, conMonto = true) => {
     const doc = new jsPDF("p", "mm", "letter");
 
     const nNota = notaEntrega?.n_nota || "1100";
@@ -135,10 +135,29 @@ export default function usePDFNotaEntrega() {
       return sum + cantidad * precio;
     }, 0);
 
+    // Filtrar items según conMonto
+    const filteredRows = conMonto ? rows : rows.map(row => [row[0], row[1]]);
+    
+    const tableHead = conMonto 
+      ? [["CANTIDAD", "DESCRIPCIÓN", "PRECIO UNITARIO", "MONTO"]]
+      : [["CANTIDAD", "DESCRIPCIÓN"]];
+    
+    const tableColumns = conMonto
+      ? {
+          0: { halign: "center", cellWidth: 20 },
+          1: { halign: "left", cellWidth: 120 },
+          2: { halign: "right", cellWidth: 28 },
+          3: { halign: "right", cellWidth: 28 },
+        }
+      : {
+          0: { halign: "center", cellWidth: 20 },
+          1: { halign: "left", cellWidth: 150 },
+        };
+
     autoTable(doc, {
       startY: 90,
-      head: [["CANTIDAD", "DESCRIPCIÓN", "PRECIO UNITARIO", "MONTO"]],
-      body: rows,
+      head: tableHead,
+      body: filteredRows,
       theme: "grid",
       styles: {
         fontSize: 9,
@@ -154,12 +173,7 @@ export default function usePDFNotaEntrega() {
         lineWidth: 0.2,
         lineColor: [150, 150, 150],
       },
-      columnStyles: {
-        0: { halign: "center", cellWidth: 20 },
-        1: { halign: "left", cellWidth: 90 },
-        2: { halign: "right", cellWidth: 28 },
-        3: { halign: "right", cellWidth: 28 },
-      },
+      columnStyles: tableColumns,
       margin: { left: 28, right: 25 },
     });
 
@@ -168,11 +182,14 @@ export default function usePDFNotaEntrega() {
     // ===========================
     let finalY = doc.lastAutoTable.finalY + 8;
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(...rojo);
-    doc.text(`VALOR TOTAL: $${total.toFixed(2)}`, 170, finalY, { align: "right" });
-    doc.setTextColor(0, 0, 0);
+    // Solo mostrar total si conMonto es true
+    if (conMonto) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...rojo);
+      doc.text(`VALOR TOTAL: $${total.toFixed(2)}`, 170, finalY, { align: "right" });
+      doc.setTextColor(0, 0, 0);
+    }
 
     // Sello
     doc.addImage(sello, "PNG", 47, finalY - 5, 32.2, 11.2);
