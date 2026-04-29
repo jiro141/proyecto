@@ -404,7 +404,7 @@ class NotaEntregaSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        from .models import NotaEntregaItem, NotaEntrega
+        from .models import NotaEntregaItem, NotaEntrega, APU
 
         reporte_id = validated_data.pop("reporte", None)
         items_data = self.context.get("items_data", [])
@@ -419,8 +419,14 @@ class NotaEntregaSerializer(serializers.ModelSerializer):
 
         # Crear los items
         for item_data in items_data:
+            apu_id = item_data.get("apu_id")
+            apu = None
+            if apu_id:
+                apu = APU.objects.filter(id=apu_id).first()
+
             NotaEntregaItem.objects.create(
                 nota_entrega=nota,
+                apu=apu,
                 apu_descripcion=item_data.get("apu_descripcion", ""),
                 cantidad_total=item_data.get("cantidad_total", 0),
                 cantidad_entregada=item_data.get("cantidad_entregada", 0),

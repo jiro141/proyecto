@@ -421,6 +421,18 @@ class APU(models.Model):
         """
         recalculate_apu_totals(self)
 
+    @property
+    def cantidad_entregada(self):
+        """Calcula la cantidad total entregada sumada de todas las notas de entrega."""
+        from django.db.models import Sum
+        total = self.entregas.aggregate(total=Sum('cantidad_entregada'))['total']
+        return total or Decimal("0.00")
+
+    @property
+    def cantidad_pendiente(self):
+        """Cantidad pendiente por entregar."""
+        return self.cantidad - self.cantidad_entregada
+
     def __str__(self):
         return f"APU {self.numero} - {self.descripcion} (Presupuesto {self.reporte.n_presupuesto})"
 
@@ -722,6 +734,15 @@ class NotaEntregaItem(models.Model):
         NotaEntrega,
         on_delete=models.CASCADE,
         related_name="items"
+    )
+
+    apu = models.ForeignKey(
+        "APU",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="entregas",
+        verbose_name="APU",
     )
 
     apu_descripcion = models.TextField(
