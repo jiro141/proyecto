@@ -27,6 +27,10 @@ from .views import (
     # Notas de reporte 
     NotaReporteListCreateView,
     NotaReporteDetailView,
+    # Notas de entrega
+    NotaEntregaListCreateView,
+    NotaEntregaDetailView,
+    NotaEntregaPorReporteView,
 )
 
 urlpatterns = [
@@ -122,5 +126,28 @@ urlpatterns = [
         "notas/<int:pk>/",
         NotaReporteDetailView.as_view(),
         name="nota-reporte-detail",
+    ),
+    # ===============================
+    # 📦 NOTAS DE ENTREGA
+    # ===============================
+    path(
+        "notas-entrega/",
+        NotaEntregaListCreateView.as_view(),
+        name="nota-entrega-list",
+    ),
+    path(
+        "notas-entrega/<int:pk>/",
+        NotaEntregaDetailView.as_view(),
+        name="nota-entrega-detail",
+    ),
+    path(
+        "<int:reporte_id>/notas-entrega/",
+        NotaEntregaListCreateView.as_view(),
+        name="nota-entrega-por-reporte",
+    ),
+    path(
+        "<int:reporte_id>/entregas-resumen/",
+        NotaEntregaPorReporteView.as_view(),
+        name="entregas-resumen",
     ),
 ]

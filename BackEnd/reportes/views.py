@@ -14,6 +14,8 @@ from .models import (
     APULogistica,
     NotaReporte,
     EstadoChoices,
+    NotaEntrega,
+    NotaEntregaItem,
 )
 from .serializers import (
     ClienteSerializer,
@@ -26,6 +28,8 @@ from .serializers import (
     APUManoObraSerializer,
     APULogisticaSerializer,
     NotaReporteSerializer,
+    NotaEntregaSerializer,
+    NotaEntregaItemSerializer,
 )
 
 
@@ -381,3 +385,171 @@ class ReporteAbonosView(APIView):
         abonos = Abono.objects.filter(reporte_id=reporte_id).order_by("-fecha_abono")
         serializer = AbonoSerializer(abonos, many=True)
         return Response(serializer.data)
+
+
+# ============================================================
+# 📦 NOTAS DE ENTREGA
+# ============================================================
+
+
+class NotaEntregaListCreateView(generics.ListCreateAPIView):
+    """
+    Lista y crea notas de entrega.
+    Si viene reporte_id en la URL, filtra por ese reporte.
+    """
+
+    serializer_class = NotaEntregaSerializer
+
+    def get_queryset(self):
+        reporte_id = self.kwargs.get("reporte_id")
+        qs = NotaEntrega.objects.all()
+        if reporte_id is not None:
+            qs = qs.filter(reporte_id=reporte_id)
+        return qs.prefetch_related("items").order_by("-created_at")
+
+    def create(self, request, *args, **kwargs):
+        # Extraer los items del request
+        items_data = request.data.pop("items", [])
+        reporte_id = request.data.get("reporte")
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Guardar items_data en el contexto para el serializer
+        serializer.context["items_data"] = items_data
+
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+
+class NotaEntregaDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Ver / actualizar / eliminar una nota de entrega específica.
+    Solo se puede editar si está en estado BORRADOR.
+    """
+
+    queryset = NotaEntrega.objects.prefetch_related("items")
+    serializer_class = NotaEntregaSerializer
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+
+        # Solo permitir edición si está en borrador
+        if instance.estado != EstadoNotaEntrega.BORRADOR:
+            return Response(
+                {"detail": "Solo se puede editar notas en estado Borrador"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Extraer los items del request
+        items_data = request.data.pop("items", [])
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        # Si hay items nuevos, actualizar
+        if items_data and instance.estado == EstadoNotaEntrega.BORRADOR:
+            # Eliminar items existentes y crear nuevos
+            instance.items.all().delete()
+            for item_data in items_data:
+                NotaEntregaItem.objects.create(
+                    nota_entrega=instance,
+                    apu_descripcion=item_data.get("apu_descripcion", ""),
+                    cantidad_total=item_data.get("cantidad_total", 0),
+                    cantidad_entregada=item_data.get("cantidad_entregada", 0),
+                    precio_unitario=item_data.get("precio_unitario", 0),
+                )
+
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        """Anular nota de entrega (cambiar estado a ANULADA)."""
+        instance = self.get_object()
+
+        if instance.estado == EstadoNotaEntrega.EMITIDA:
+            instance.estado = EstadoNotaEntrega.ANULADA
+            instance.save(update_fields=["estado"])
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # Si es borrador, eliminar
+        if instance.estado == EstadoNotaEntrega.BORRADOR:
+            return super().destroy(request, *args, **kwargs)
+
+        return Response(
+            {"detail": "No se puede eliminar notas emitidas"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+class NotaEntregaPorReporteView(APIView):
+    """
+    Obtiene el resumen de entregas por APU de un reporte.
+    Muestra cantidad_total, cantidad_entregada y pendiente por cada APU.
+    Incluye el correlativo y código alfa de cada nota.
+    """
+
+    def get(self, request, reporte_id):
+        from django.db.models import Sum
+
+        reporte = get_object_or_404(Reporte, id=reporte_id)
+
+        # Obtener notas emitidas del reporte
+        notas_emitidas = NotaEntrega.objects.filter(
+            reporte_id=reporte_id,
+            estado=EstadoNotaEntrega.EMITIDA
+        ).prefetch_related("items")
+
+        # Obtener todos los items de notas emitidas
+        items_agrupados = {}
+
+        for nota in notas_emitidas:
+            for item in nota.items.all():
+                desc = item.apu_descripcion
+                if desc not in items_agrupados:
+                    items_agrupados[desc] = {
+                        "apu_descripcion": desc,
+                        "cantidad_total": float(item.cantidad_total),
+                        "cantidad_entregada": 0,
+                        "precio_unitario": float(item.precio_unitario),
+                        "notas": [],
+                    }
+                items_agrupados[desc]["cantidad_entregada"] += float(item.cantidad_entregada)
+                # Agregar referencia a la nota
+                items_agrupados[desc]["notas"].append({
+                    "n_nota": nota.n_nota,
+                    "codigo_alfa": nota.codigo_alfa,
+                })
+
+        # Calcular pendiente
+        resultado = []
+        for desc, data in items_agrupados.items():
+            resultado.append({
+                "apu_descripcion": data["apu_descripcion"],
+                "cantidad_total": data["cantidad_total"],
+                "cantidad_entregada": data["cantidad_entregada"],
+                "cantidad_pendiente": data["cantidad_total"] - data["cantidad_entregada"],
+                "precio_unitario": data["precio_unitario"],
+                "notas": data["notas"],
+            })
+
+        # Obtener lista de notas Emitidas para el resumen general
+        notas_list = []
+        for nota in notas_emitidas:
+            notas_list.append({
+                "n_nota": nota.n_nota,
+                "codigo_alfa": nota.codigo_alfa,
+                "fecha_entrega": nota.fecha_entrega.isoformat() if nota.fecha_entrega else None,
+            })
+
+        return Response({
+            "reporte_id": reporte_id,
+            "n_presupuesto": reporte.n_presupuesto,
+            "cliente_nombre": reporte.cliente.nombre,
+            "notas_emitidas": notas_list,
+            "entregas": resultado
+        })

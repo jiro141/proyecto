@@ -9,7 +9,9 @@ from .models import (
     APUManoObra,
     APULogistica,
     NotaReporte,
-    HistorialEstadoReporte
+    HistorialEstadoReporte,
+    NotaEntrega,
+    NotaEntregaItem,
 )
 from inventario.models import Stock, Consumible
 from inventario.serializers import StockSerializer, ConsumibleSerializer
@@ -336,3 +338,95 @@ class ReporteListaSerializer(serializers.ModelSerializer):
         from django.db.models import Sum
         total = obj.abonos.aggregate(total=Sum('monto'))['total']
         return float(total) if total else 0
+
+
+# ============================================================
+# 📦 NOTAS DE ENTREGA
+# ============================================================
+
+
+class NotaEntregaItemSerializer(serializers.ModelSerializer):
+    cantidad_pendiente = serializers.DecimalField(
+        max_digits=10, decimal_places=2, read_only=True
+    )
+
+    class Meta:
+        model = NotaEntregaItem
+        fields = [
+            "id",
+            "apu_descripcion",
+            "cantidad_total",
+            "cantidad_entregada",
+            "cantidad_pendiente",
+            "precio_unitario",
+        ]
+
+
+class NotaEntregaSerializer(serializers.ModelSerializer):
+    items = NotaEntregaItemSerializer(many=True, read_only=True)
+
+    # Campos de escritura
+    reporte = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+
+    class Meta:
+        model = NotaEntrega
+        fields = [
+            "id",
+            "reporte",
+            "n_nota",
+            "codigo_alfa",
+            "cliente_nombre",
+            "cliente_rif",
+            "fecha_entrega",
+            "estado",
+            "estado_display",
+            "observaciones",
+            "items",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "n_nota",
+            "cliente_nombre",
+            "estado",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_estado_display(self, obj):
+        return obj.get_estado_display()
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Agregar rif del cliente desde el reporte
+        if instance.reporte and instance.reporte.cliente:
+            data["cliente_rif"] = instance.reporte.cliente.rif
+        else:
+            data["cliente_rif"] = None
+        return data
+
+    def create(self, validated_data):
+        from .models import NotaEntregaItem, NotaEntrega
+
+        reporte_id = validated_data.pop("reporte", None)
+        items_data = self.context.get("items_data", [])
+
+        # Buscar el reporte si se pasó el ID
+        reporte = None
+        if reporte_id:
+            reporte = Reporte.objects.get(id=reporte_id)
+
+        # Crear la nota
+        nota = NotaEntrega.objects.create(reporte=reporte, **validated_data)
+
+        # Crear los items
+        for item_data in items_data:
+            NotaEntregaItem.objects.create(
+                nota_entrega=nota,
+                apu_descripcion=item_data.get("apu_descripcion", ""),
+                cantidad_total=item_data.get("cantidad_total", 0),
+                cantidad_entregada=item_data.get("cantidad_entregada", 0),
+                precio_unitario=item_data.get("precio_unitario", 0),
+            )
+
+        return nota

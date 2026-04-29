@@ -618,3 +618,147 @@ class APULogistica(models.Model):
 
     def __str__(self):
         return f"Logística {self.descripcion} (APU {self.apu.numero})"
+
+
+# ==========================
+# NOTAS DE ENTREGA
+# ==========================
+
+
+class EstadoNotaEntrega(models.TextChoices):
+    BORRADOR = 'BORRADOR', 'Borrador'
+    EMITIDA = 'EMITIDA', 'Emitida'
+    ANULADA = 'ANULADA', 'Anulada'
+
+
+class NotaEntrega(models.Model):
+    """
+    Nota de entrega asociada a un Reporte.
+    """
+
+    reporte = models.ForeignKey(
+        Reporte,
+        on_delete=models.CASCADE,
+        related_name="notas_entrega"
+    )
+
+    n_nota = models.CharField(
+        max_length=20,
+        unique=True,
+        editable=False,
+        verbose_name="Número de nota de entrega",
+    )
+
+    codigo_alfa = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Código alfa",
+    )
+
+    cliente_nombre = models.CharField(
+        max_length=255,
+        verbose_name="Nombre del cliente",
+    )
+
+    fecha_entrega = models.DateField(
+        default=timezone.now,
+        verbose_name="Fecha de entrega",
+    )
+
+    estado = models.CharField(
+        max_length=20,
+        choices=EstadoNotaEntrega.choices,
+        default=EstadoNotaEntrega.BORRADOR,
+        verbose_name="Estado",
+    )
+
+    observaciones = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Observaciones",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Nota de Entrega"
+        verbose_name_plural = "Notas de Entrega"
+
+    def save(self, *args, **kwargs):
+        # Generar n_nota si es nuevo
+        if not self.n_nota:
+            año = timezone.now().year
+            ultimo = NotaEntrega.objects.filter(n_nota__startswith=f"NE-{año}-").order_by("-n_nota").first()
+
+            if ultimo:
+                try:
+                    num = int(ultimo.n_nota.split("-")[-1]) + 1
+                except (ValueError, IndexError):
+                    num = 1
+            else:
+                num = 1
+
+            self.n_nota = f"NE-{año}-{str(num).padStart(4, '0')}"
+
+        # Guardar nombre del cliente desde el reporte si no está
+        if not self.cliente_nombre and self.reporte:
+            self.cliente_nombre = self.reporte.cliente.nombre
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.n_nota} - {self.cliente_nombre}"
+
+
+class NotaEntregaItem(models.Model):
+    """
+    Item de una Nota de Entrega (por cada APU).
+    """
+
+    nota_entrega = models.ForeignKey(
+        NotaEntrega,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
+
+    apu_descripcion = models.TextField(
+        verbose_name="Descripción del APU",
+    )
+
+    cantidad_total = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Cantidad total del APU",
+    )
+
+    cantidad_entregada = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Cantidad entregada",
+    )
+
+    precio_unitario = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Precio unitario",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Item de Nota de Entrega"
+        verbose_name_plural = "Items de Notas de Entrega"
+
+    @property
+    def cantidad_pendiente(self):
+        """Cantidad pendiente por entregar."""
+        return self.cantidad_total - self.cantidad_entregada
+
+    def __str__(self):
+        return f"{self.apu_descripcion[:30]}... - {self.cantidad_entregada}/{self.cantidad_total}"
