@@ -122,8 +122,9 @@ urlpatterns = [
         NotaReporteListCreateView.as_view(),
         name="nota-reporte-list",
     ),
+    # Nota por reporte (get or create automático)
     path(
-        "notas/<int:pk>/",
+        "reporte/<int:pk>/nota/",
         NotaReporteDetailView.as_view(),
         name="nota-reporte-detail",
     ),

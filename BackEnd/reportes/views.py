@@ -327,11 +327,29 @@ class NotaReporteListCreateView(generics.ListCreateAPIView):
 
 class NotaReporteDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    Ver / actualizar / eliminar una nota específica.
+    Ver / actualizar / eliminar una nota de un reporte específico.
+    Si no existe una nota para ese reporte, la crea automáticamente.
     """
-    queryset = NotaReporte.objects.all()
     serializer_class = NotaReporteSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        reporte_id = self.kwargs.get("pk")
+        
+        # Buscar nota existente para ese reporte
+        nota, created = NotaReporte.objects.get_or_create(
+            reporte_id=reporte_id,
+            defaults={
+                "titulo": "",
+                "descripcion": "",
+            },
+        )
+        
+        # Si se acaba de crear, guardar para que tenga ID
+        if created:
+            nota.save()
+        
+        return nota
 
 
 # ============================================================
