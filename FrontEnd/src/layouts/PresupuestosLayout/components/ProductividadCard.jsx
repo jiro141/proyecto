@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaBolt } from "react-icons/fa";
 
 export default function ProductividadCard({
@@ -7,6 +7,11 @@ export default function ProductividadCard({
   label = "Rendimiento",
 }) {
   const [valor, setValor] = useState(defaultValue);
+
+  // ✅ Actualizar el valor cuando cambia el defaultValue (al cambiar de APU)
+  useEffect(() => {
+    setValor(defaultValue);
+  }, [defaultValue]);
 
   const handleChange = (e) => {
     const value = e.target.value;
