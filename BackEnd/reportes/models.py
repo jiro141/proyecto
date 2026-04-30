@@ -297,8 +297,7 @@ class APU(models.Model):
         help_text="Valor de rendimiento (sin límite de rango)",
     )
 
-    descripcion = models.CharField(
-        max_length=255,
+    descripcion = models.TextField(
         default="Sin descripción",
         blank=True,
         null=True,
