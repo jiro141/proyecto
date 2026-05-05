@@ -84,6 +84,22 @@ const [loading, setLoading] = useState(true);
     }
   }, [isOpen, reporte?.id]);
 
+  // 🔹 LIMPIAR CAMPOS cuando se cierra el modal
+  useEffect(() => {
+    if (!isOpen) {
+      // Resetear todos los campos del formulario
+      setShowForm(false);
+      setCodigo("");
+      setOrdenCompra("");
+      setFechaEntrega(new Date().toISOString().split("T")[0]);
+      setObservaciones("");
+      setItems([]);
+      setConMonto(true);
+      setNotaDetalle(null);
+      setDeleteNotaId(null);
+    }
+  }, [isOpen]);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -133,6 +149,17 @@ const [loading, setLoading] = useState(true);
     setConMonto(true);
     
     setShowForm(true);
+  };
+
+  // Función para cancelar el formulario y limpar campos
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setCodigo("");
+    setOrdenCompra("");
+    setFechaEntrega(new Date().toISOString().split("T")[0]);
+    setObservaciones("");
+    setItems([]);
+    setConMonto(true);
   };
 
   // Función para ver detalle de nota
@@ -469,7 +496,7 @@ const [loading, setLoading] = useState(true);
               </div>
 
               <div className="flex justify-end gap-2">
-                <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                <button onClick={handleCancelForm} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
                   Cancelar
                 </button>
                 <button onClick={handleSave} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2">
