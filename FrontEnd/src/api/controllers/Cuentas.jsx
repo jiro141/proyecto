@@ -25,43 +25,14 @@ export const getAbonos = async (fecha_desde = null, fecha_hasta = null) => {
 };
 
 export const getResumenCuentas = async (fecha_desde = null, fecha_hasta = null) => {
-  // Usar endpoint existente y agrupar en frontend
-  const abonos = await getAbonos(fecha_desde, fecha_hasta);
-  const abonosList = abonos.results || abonos;
+  // Usar el endpoint /cuentas/abonos/resumen-cuentas/ que devuelve TODOS los reportes ejecutados
+  const params = new URLSearchParams();
+  if (fecha_desde) params.append("fecha_desde", fecha_desde);
+  if (fecha_hasta) params.append("fecha_hasta", fecha_hasta);
+  const query = params.toString();
   
-  // Agrupar por reporte
-  const agrupado = {};
-  let totalAbonado = 0;
-  
-  abonosList.forEach((abono) => {
-    const reporteId = abono.reporte;
-    if (!agrupado[reporteId]) {
-      agrupado[reporteId] = {
-        reporte__id: reporteId,
-        reporte__n_presupuesto: abono.n_presupuesto,
-        reporte__descripcion: abono.descripcion_reporte,
-        reporte__cliente__nombre: abono.cliente_nombre || "—",
-        reporte__total_reporte: abono.monto_total_reporte,
-        total_abonado: 0,
-        cantidad_abonos: 0,
-      };
-    }
-    agrupado[reporteId].total_abonado += parseFloat(abono.monto || 0);
-    agrupado[reporteId].cantidad_abonos += 1;
-    totalAbonado += parseFloat(abono.monto || 0);
-  });
-  
-  const detalle = Object.values(agrupado);
-  const totalFacturado = detalle.reduce((sum, r) => sum + parseFloat(r.reporte__total_reporte || 0), 0);
-  
-  return {
-    detalle,
-    totales: {
-      total_facturado: totalFacturado,
-      total_abonado: totalAbonado,
-      total_pendiente: totalFacturado - totalAbonado,
-    }
-  };
+  const response = await AuthApi.get(`/cuentas/abonos/resumen-cuentas/${query ? `?${query}` : ""}`);
+  return response.data;
 };
 
 export const createAbono = async (payload) => {
@@ -76,5 +47,17 @@ export const updateAbono = async (id, payload) => {
 
 export const deleteAbono = async (id) => {
   const response = await AuthApi.delete(`/cuentas/abonos/${id}/`);
+  return response.data;
+};
+
+// Obtener cuentas por cobrar agrupadas por cliente
+export const getCuentasPorCliente = async () => {
+  const response = await AuthApi.get("/cuentas/abonos/por_cliente/");
+  return response.data;
+};
+
+// Obtener detalle de un cliente específico
+export const getClienteDetalle = async (clienteId) => {
+  const response = await AuthApi.get(`/cuentas/abonos/cliente_detail/?cliente_id=${clienteId}`);
   return response.data;
 };

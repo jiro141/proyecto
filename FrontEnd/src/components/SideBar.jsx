@@ -13,7 +13,8 @@ import {
   FaHammer,
   FaFileInvoiceDollar,
   FaPlusCircle,
-  FaUsers 
+  FaUsers,
+  FaBuilding
 } from "react-icons/fa";
 import { FaMoneyBillWave } from "react-icons/fa6";
 import { FaHelmetSafety } from "react-icons/fa6";
@@ -109,6 +110,10 @@ const SideBar = () => {
             <NavLink to="/clientes/Cuentas" className="sidebar-sublink">
               <FaMoneyBillWave />
               <span>Cuentas por cobrar</span>
+            </NavLink>
+            <NavLink to="/clientes/CuentasPorCliente" className="sidebar-sublink">
+              <FaBuilding />
+              <span>Resumen por Cliente</span>
             </NavLink>
           </div>
         )}

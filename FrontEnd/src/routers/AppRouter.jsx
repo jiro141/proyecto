@@ -18,6 +18,7 @@ import CrearPresupuestoLayout from "../layouts/PresupuestosLayout/CrearPresupues
 import ProveedoresHome from "../pages/ProveedoresHome";
 import ClientesHome from "../layouts/ClientsLayout/ClientesHome";
 import ClientesCuentas from "../layouts/ClientsLayout/ClientesCuentas";
+import ClientesCuentasPorCliente from "../layouts/ClientsLayout/ClientesCuentasPorCliente";
 
 const AppRouter = () => {
   return (
@@ -45,6 +46,7 @@ const AppRouter = () => {
             <Route index />
             <Route path="Lista" element={<ClientesHome />} />
             <Route path="Cuentas" element={<ClientesCuentas />} />
+            <Route path="CuentasPorCliente" element={<ClientesCuentasPorCliente />} />
           </Route>
           <Route path="Informes">
             <Route index />

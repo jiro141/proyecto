@@ -380,8 +380,6 @@ class CuentasPorCobrarView(generics.ListAPIView):
             estado=EstadoChoices.EJECUTADO
         ).annotate(
             total_abonado=Coalesce(abonos_subquery, Value(0, output_field=models.DecimalField(max_digits=14, decimal_places=2)))
-        ).exclude(
-            total_reporte__lte=F('total_abonado')  # Excluir los que ya están pagados
         ).order_by("-fecha_creacion")
 
 
