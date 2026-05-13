@@ -42,7 +42,11 @@ export default function ClientesCuentasPorCliente() {
   
   // Estados para registrar abono
   const [isModalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ monto: "", referencia_pago: "" });
+  const [formData, setFormData] = useState({ 
+    monto: "", 
+    referencia_pago: "",
+    fecha_abono: new Date().toISOString().split('T')[0],
+  });
   
   // Estados para exportar Excel
   const [isExportModalOpen, setExportModalOpen] = useState(false);
@@ -101,10 +105,15 @@ export default function ClientesCuentasPorCliente() {
         reporte: selectedReporte.id,
         monto: parseFloat(formData.monto),
         referencia_pago: formData.referencia_pago || "",
+        fecha_abono: formData.fecha_abono || new Date().toISOString(),
       });
       toast.success("Abono registrado exitosamente");
       setModalOpen(false);
-      setFormData({ monto: "", referencia_pago: "" });
+      setFormData({ 
+        monto: "", 
+        referencia_pago: "",
+        fecha_abono: new Date().toISOString().split('T')[0],
+      });
       // Recargar abonos
       const result = await getReporteAbonos(selectedReporte.id);
       setAbonosReporte(result);
@@ -424,7 +433,11 @@ export default function ClientesCuentasPorCliente() {
             <div className="flex gap-3">
               <button
                 onClick={() => {
-                  setFormData({ monto: "", referencia_pago: "" });
+                  setFormData({ 
+                    monto: "", 
+                    referencia_pago: "",
+                    fecha_abono: new Date().toISOString().split('T')[0],
+                  });
                   setModalOpen(true);
                 }}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg flex items-center justify-center gap-2 transition font-medium"
@@ -528,7 +541,11 @@ export default function ClientesCuentasPorCliente() {
         isOpen={isModalOpen}
         onClose={() => {
           setModalOpen(false);
-          setFormData({ monto: "", referencia_pago: "" });
+          setFormData({ 
+            monto: "", 
+            referencia_pago: "",
+            fecha_abono: new Date().toISOString().split('T')[0],
+          });
         }}
         title="Registrar Abono"
         width="max-w-md"
@@ -577,11 +594,27 @@ export default function ClientesCuentasPorCliente() {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha del Abono
+            </label>
+            <input
+              type="date"
+              value={formData.fecha_abono}
+              onChange={(e) => setFormData({ ...formData, fecha_abono: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0b2c4d] text-black"
+            />
+          </div>
+
           <div className="flex justify-end gap-2 mt-4">
             <button
               onClick={() => {
                 setModalOpen(false);
-                setFormData({ monto: "", referencia_pago: "" });
+                setFormData({ 
+                  monto: "", 
+                  referencia_pago: "",
+                  fecha_abono: new Date().toISOString().split('T')[0],
+                });
               }}
               className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded transition"
             >

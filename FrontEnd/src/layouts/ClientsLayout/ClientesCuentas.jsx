@@ -43,6 +43,7 @@ export default function ClientesCuentas() {
     reporte: null,
     monto: "",
     referencia_pago: "",
+    fecha_abono: new Date().toISOString().split('T')[0],
   });
   const [reportesOptions, setReportesOptions] = useState([]);
   const [loadingReportes, setLoadingReportes] = useState(false);
@@ -158,10 +159,16 @@ export default function ClientesCuentas() {
         reporte: formData.reporte.value,
         monto: parseFloat(formData.monto),
         referencia_pago: formData.referencia_pago || "",
+        fecha_abono: formData.fecha_abono || new Date().toISOString(),
       });
       toast.success("Abono registrado exitosamente");
       setModalOpen(false);
-      setFormData({ reporte: null, monto: "", referencia_pago: "" });
+      setFormData({ 
+        reporte: null, 
+        monto: "", 
+        referencia_pago: "",
+        fecha_abono: new Date().toISOString().split('T')[0],
+      });
       refetch();
     } catch (err) {
       toast.error("Error al registrar el abono");
@@ -361,7 +368,12 @@ export default function ClientesCuentas() {
         onClose={() => {
           setModalOpen(false);
           if (!selectedReporte) {
-            setFormData({ reporte: null, monto: "", referencia_pago: "" });
+            setFormData({ 
+              reporte: null, 
+              monto: "", 
+              referencia_pago: "",
+              fecha_abono: new Date().toISOString().split('T')[0],
+            });
             setSearchReportes("");
           }
         }}
@@ -425,13 +437,29 @@ export default function ClientesCuentas() {
               placeholder="N° de transferencia o cheque"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha del Abono
+            </label>
+            <input
+              type="date"
+              value={formData.fecha_abono}
+              onChange={(e) => setFormData({ ...formData, fecha_abono: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0b2c4d] text-black"
+            />
+          </div>
           <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"
               onClick={() => {
                 setModalOpen(false);
                 if (!selectedReporte) {
-                  setFormData({ reporte: null, monto: "", referencia_pago: "" });
+                  setFormData({ 
+                    reporte: null, 
+                    monto: "", 
+                    referencia_pago: "",
+                    fecha_abono: new Date().toISOString().split('T')[0],
+                  });
                   setSearchReportes("");
                 }
               }}
