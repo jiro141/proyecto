@@ -3,7 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 // Base URL de tu backend Django
-const BASE_URL = "http://2.24.94.171:8000/api";
+const BASE_URL = "https://hermabe.cloud/api";
 
 // Mensajes de error en español
 const getErrorMessage = (error) => {
