@@ -84,9 +84,9 @@ export default function useReportesActions() {
                 // Solo guardar nota si hay descripción (no vacía)
                 if (descripcion && descripcion.trim() !== "") {
                     if (formData.notaId) {
-                        // Actualizar nota existente
-                        console.log("🔄 Actualizando nota existente:", formData.notaId);
-                        await updateNotaReporte(formData.notaId, {
+                        // Actualizar nota existente (usar reporteId, no notaId)
+                        console.log("🔄 Actualizando nota existente para reporte:", formData.id);
+                        await updateNotaReporte(formData.id, {
                             titulo: titulo,
                             descripcion: descripcion,
                         });

@@ -209,10 +209,10 @@ export const createNotaReporte = async (reporteId, data) => {
   }
 };
 
-// Actualizar una nota
-export const updateNotaReporte = async (notaId, data) => {
+// Actualizar una nota (usando reporteId - el backend hace get_or_create por reporte)
+export const updateNotaReporte = async (reporteId, data) => {
   try {
-    const response = await AuthApi.put(`/reportes/notas/${notaId}/`, data);
+    const response = await AuthApi.put(`/reportes/reporte/${reporteId}/nota/`, data);
     return response.data;
   } catch (error) {
     console.error("Error al actualizar nota:", error.response?.data || error);
