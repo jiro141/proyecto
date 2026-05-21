@@ -40,7 +40,7 @@ export default function ReportesTable({
   onAction, 
 }) {
   return (
-    <div className="relative flex flex-col h-full -m-7">
+    <div className="relative flex flex-col h-full -mx-7 -mb-7 mt-4">
       {loading ? (
         <div className="flex justify-center items-center h-[30vh]">
           <BounceLoader color="#0b2c4d" size={70} />

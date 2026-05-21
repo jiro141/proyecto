@@ -127,8 +127,8 @@ export default function ReportesLayout({ clienteSeleccionado }) {
   return (
     <div className="p-4 flex flex-col gap-4">
       {/* Buscador de Presupuestos */}
-      <div className="flex justify-start items-center">
-        <div className="relative w-full max-w-md">
+      <div className="w-full">
+        <div className="relative w-full">
           <FaSearch
             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
             size={15}
@@ -138,7 +138,7 @@ export default function ReportesLayout({ clienteSeleccionado }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por n° presupuesto o descripción..."
-            className="w-full pl-9 pr-4 py-1.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0b2c4d] text-sm text-gray-800 bg-gray-50/50"
+            className="w-full pl-9 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0b2c4d] text-sm text-gray-800 bg-gray-50/50 shadow-sm"
           />
         </div>
       </div>
