@@ -20,6 +20,7 @@ export const useReporteActions = () => {
     setModalOpen(true);
     try {
       const detalle = await getReporteDetalle(row.id);
+      
       setSelectedReporte(detalle);
     } catch (err) {
       console.error(err);

@@ -46,7 +46,7 @@ export default function ReportesTable({
           <BounceLoader color="#0b2c4d" size={70} />
         </div>
       ) : (
-        <div className="overflow-y-auto max-h-[40vh] border rounded-lg">
+        <div className="overflow-y-auto max-h-[500px] border rounded-lg">
           <table className="w-full text-left min-w-[520px]">
             {/* HEADER */}
             <thead className="sticky top-0 bg-white z-10">

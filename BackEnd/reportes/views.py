@@ -73,7 +73,11 @@ class ReporteListCreateView(generics.ListCreateAPIView):
     ]
 
     def get_queryset(self):
-        return super().get_queryset()
+        queryset = super().get_queryset()
+        cliente_id = self.request.query_params.get("cliente") or self.request.query_params.get("cliente_id")
+        if cliente_id:
+            queryset = queryset.filter(cliente_id=cliente_id)
+        return queryset
 
 
 class ReporteDetailView(generics.RetrieveUpdateDestroyAPIView):
