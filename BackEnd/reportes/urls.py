@@ -7,6 +7,7 @@ from .views import (
     ReporteListCreateView,
     ReporteDetailView,
     ReporteConfigView,
+    DuplicarReporteView,
     CuentasPorCobrarView,
     ReporteAbonosView,
     # APUs
@@ -44,6 +45,14 @@ urlpatterns = [
     # ===============================
     path("", ReporteListCreateView.as_view(), name="reporte-list"),
     path("<int:pk>/", ReporteDetailView.as_view(), name="reporte-detail"),
+    # ===============================
+    # 📋 DUPLICAR PRESUPUESTO
+    # ===============================
+    path(
+        "<int:pk>/duplicar/",
+        DuplicarReporteView.as_view(),
+        name="reporte-duplicar",
+    ),
     # ===============================
     # 💰 CUENTAS POR COBRAR
     # ===============================

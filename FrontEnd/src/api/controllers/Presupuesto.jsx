@@ -46,6 +46,14 @@ export const updateReporteEstado = async (id, estado) => {
 };
 
 /**
+ * Duplicar un reporte existente con todos sus APUs
+ */
+export const duplicarReporte = async (id) => {
+  const response = await AuthApi.post(`/reportes/${id}/duplicar/`);
+  return response.data;
+};
+
+/**
  * Eliminar un reporte
  */
 export const deleteReporte = async (id) => {

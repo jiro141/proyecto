@@ -2,6 +2,7 @@ from rest_framework import generics, filters, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 
 from .models import (
     Cliente,
@@ -134,6 +135,129 @@ class ReporteConfigView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ============================================================
+# 📋 DUPLICAR PRESUPUESTO
+# ============================================================
+
+
+class DuplicarReporteView(APIView):
+    """
+    POST /api/reportes/<pk>/duplicar/
+    Duplica un presupuesto existente con todo su arbol de APUs,
+    materiales, herramientas, mano de obra, logistica y nota.
+    El nuevo presupuesto obtiene un n_presupuesto auto-generado
+    y se crea en estado EN_ESPERA.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        reporte_original = get_object_or_404(
+            Reporte.objects.prefetch_related(
+                "apus__materiales", "apus__herramientas",
+                "apus__manos_obra", "apus__logisticas", "notas"
+            ),
+            pk=pk
+        )
+
+        with transaction.atomic():
+            # 1. Crear nuevo reporte (n_presupuesto se auto-genera en save)
+            nuevo_reporte = Reporte.objects.create(
+                cliente=reporte_original.cliente,
+                orden_servicio=reporte_original.orden_servicio,
+                descripcion=reporte_original.descripcion,
+                fecha_estimacion_culminacion=reporte_original.fecha_estimacion_culminacion,
+            )
+
+            # 2. Copiar APUs con todos sus sub-recursos
+            for apu in reporte_original.apus.all():
+                nuevo_apu = APU.objects.create(
+                    reporte=nuevo_reporte,
+                    rendimiento=apu.rendimiento,
+                    descripcion=apu.descripcion,
+                    unidad=apu.unidad,
+                    cantidad=apu.cantidad,
+                    depreciacion=apu.depreciacion,
+                    presupuesto_base=apu.presupuesto_base,
+                    presupuesto_con_desp=apu.presupuesto_con_desp,
+                )
+
+                # Copiar materiales
+                if apu.materiales.exists():
+                    APUMaterial.objects.bulk_create([
+                        APUMaterial(
+                            apu=nuevo_apu,
+                            stock_id=m.stock_id,
+                            consumible_id=m.consumible_id,
+                            descripcion=m.descripcion,
+                            unidad=m.unidad,
+                            cantidad=m.cantidad,
+                            desperdicio=m.desperdicio,
+                            precio_unitario=m.precio_unitario,
+                            total_material=m.total_material,
+                        )
+                        for m in apu.materiales.all()
+                    ])
+
+                # Copiar herramientas
+                if apu.herramientas.exists():
+                    APUHerramienta.objects.bulk_create([
+                        APUHerramienta(
+                            apu=nuevo_apu,
+                            descripcion=h.descripcion,
+                            unidad=h.unidad,
+                            cantidad=h.cantidad,
+                            depreciacion_hora=h.depreciacion_hora,
+                            precio_unitario=h.precio_unitario,
+                            total_herramienta=h.total_herramienta,
+                        )
+                        for h in apu.herramientas.all()
+                    ])
+
+                # Copiar mano de obra
+                if apu.manos_obra.exists():
+                    APUManoObra.objects.bulk_create([
+                        APUManoObra(
+                            apu=nuevo_apu,
+                            descripcion=mo.descripcion,
+                            unidad=mo.unidad,
+                            cantidad=mo.cantidad,
+                            precio_unitario=mo.precio_unitario,
+                            total_mano_obra=mo.total_mano_obra,
+                        )
+                        for mo in apu.manos_obra.all()
+                    ])
+
+                # Copiar logistica
+                if apu.logisticas.exists():
+                    APULogistica.objects.bulk_create([
+                        APULogistica(
+                            apu=nuevo_apu,
+                            descripcion=l.descripcion,
+                            unidad=l.unidad,
+                            cantidad=l.cantidad,
+                            precio_unitario=l.precio_unitario,
+                            total_logistica=l.total_logistica,
+                        )
+                        for l in apu.logisticas.all()
+                    ])
+
+                # Recalcular totales del APU (actualiza campos calculados)
+                nuevo_apu.recalcular_totales()
+
+            # 3. Copiar NotaReporte si existe
+            nota_original = reporte_original.notas.first()
+            if nota_original:
+                NotaReporte.objects.create(
+                    reporte=nuevo_reporte,
+                    titulo=nota_original.titulo,
+                    descripcion=nota_original.descripcion,
+                )
+
+        serializer = ReporteSerializer(nuevo_reporte, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 # ============================================================

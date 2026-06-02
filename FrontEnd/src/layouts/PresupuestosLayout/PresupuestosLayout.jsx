@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import ReportesTable from "./components/ReportesTable";
-import { FaFilePdf, FaFileExcel, FaEdit, FaTruck, FaSearch } from "react-icons/fa";
+import { FaFilePdf, FaFileExcel, FaEdit, FaTruck, FaSearch, FaCopy } from "react-icons/fa";
 import { toast } from "react-toastify";
 import useReportes from "../../hooks/useReportes";
 import useExcelGenerator from "./hooks/useExcelGenerator";
 import usePDFGenerator from "./hooks/usePDFGenerator";
 import { usePresupuesto } from "../../context/PresupuestoContext";
+import { duplicarReporte } from "../../api/controllers/Presupuesto";
 
 // Componentes importados
 import ReporteDetalleModal from "./components/ReporteDetalleModal";
@@ -49,6 +50,14 @@ export const columns = [
     icon: FaTruck,
     action: "notas_entrega",
     hoverColor: "hover:text-orange-600",
+  },
+  {
+    key: "duplicar",
+    label: "Duplicar",
+    type: "action",
+    icon: FaCopy,
+    action: "duplicate",
+    hoverColor: "hover:text-purple-600",
   },
 ];
 
@@ -115,9 +124,16 @@ export default function ReportesLayout({ clienteSeleccionado }) {
         setEntregaModalOpen(true);
         return;
       }
+
+      if (action === "duplicate") {
+        const nuevoReporte = await duplicarReporte(detalle.id);
+        toast.success(`Presupuesto #${nuevoReporte.n_presupuesto} duplicado correctamente`);
+        refetch();
+        return;
+      }
     } catch (err) {
       console.error(err);
-      toast.error("Error generando documento");
+      toast.error("Error al duplicar presupuesto");
     }
   };
 
