@@ -267,7 +267,7 @@ const Tables = ({
         onClose={() => setIsReportesModalOpen(false)}
         title={`Presupuestos de ${clienteSeleccionado?.nombre || ""
           }`}
-          width={"max-w-6xl"}
+          width={"max-w-7xl"}
           height={"h-[80vh]"}
       >
         <div className="py-6 text-center text-gray-600">

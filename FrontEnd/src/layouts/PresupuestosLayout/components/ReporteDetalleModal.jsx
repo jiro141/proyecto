@@ -14,7 +14,7 @@ export const ReporteDetalleModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title={reporte ? `Presupuesto ${reporte.n_presupuesto}` : "Cargando..."}
-      width="max-w-2xl"
+      width="max-w-4xl"
     >
       {loading ? (
         <div className="flex justify-center items-center py-12">

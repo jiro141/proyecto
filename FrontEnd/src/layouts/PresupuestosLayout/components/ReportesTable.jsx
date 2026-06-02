@@ -52,7 +52,7 @@ export default function ReportesTable({
             <thead className="sticky top-0 bg-white z-10">
               <tr className="text-xs text-gray-600 border-b font-bold">
                 {columns.map((col) => (
-                  <th key={col.key} className="pb-2 px-3 font-medium text-center">
+                  <th key={col.key} className={`pb-2 px-3 font-medium text-center ${col.type === "action" ? "w-[1%] whitespace-nowrap" : ""}`}>
                     {col.label}
                   </th>
                 ))}
@@ -72,7 +72,7 @@ export default function ReportesTable({
                         return (
                           <td
                             key={col.key}
-                            className="px-3 py-3 text-center"
+                            className="px-3 py-3 text-center whitespace-nowrap"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <button
@@ -101,7 +101,7 @@ export default function ReportesTable({
                           className={`px-3 py-3 text-sm ${index === 0
                               ? "font-medium text-gray-900"
                               : "text-gray-700"
-                            }`}
+                            } ${col.key === "descripcion" ? "whitespace-normal break-words max-w-[300px]" : ""}`}
                         >
                           {isEstadoColumn ? getEstadoBadge(row.estado) : display}
                         </td>

@@ -9,6 +9,7 @@ import { usePresupuesto } from "../../context/PresupuestoContext";
 import { duplicarReporte } from "../../api/controllers/Presupuesto";
 
 // Componentes importados
+import Modal from "../../components/Modal";
 import ReporteDetalleModal from "./components/ReporteDetalleModal";
 import NotaEntregaModal from "./components/NotaEntregaModal";
 import useReporteActions from "./hooks/useReporteActions";
@@ -66,6 +67,8 @@ export default function ReportesLayout({ clienteSeleccionado }) {
   const { reportes, loading, error, refetch } = useReportes(search, clienteSeleccionado?.id);
   const [isModalOpen, setModalOpen] = useState(false);
   const [isEntregaModalOpen, setEntregaModalOpen] = useState(false);
+  const [isConfirmOpen, setConfirmOpen] = useState(false);
+  const [pendingReporte, setPendingReporte] = useState(null);
 
   const { generarExcelAPUs } = useExcelGenerator();
   const { generarPDF } = usePDFGenerator();
@@ -126,15 +129,34 @@ export default function ReportesLayout({ clienteSeleccionado }) {
       }
 
       if (action === "duplicate") {
-        const nuevoReporte = await duplicarReporte(detalle.id);
-        toast.success(`Presupuesto #${nuevoReporte.n_presupuesto} duplicado correctamente`);
-        refetch();
+        setPendingReporte({ id: detalle.id, n_presupuesto: detalle.n_presupuesto });
+        setConfirmOpen(true);
         return;
       }
     } catch (err) {
       console.error(err);
       toast.error("Error al duplicar presupuesto");
     }
+  };
+
+  const handleConfirmDuplicate = async () => {
+    if (!pendingReporte) return;
+    try {
+      const nuevoReporte = await duplicarReporte(pendingReporte.id);
+      toast.success(`Presupuesto #${nuevoReporte.n_presupuesto} duplicado correctamente`);
+      refetch();
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al duplicar presupuesto");
+    } finally {
+      setConfirmOpen(false);
+      setPendingReporte(null);
+    }
+  };
+
+  const handleCancelDuplicate = () => {
+    setConfirmOpen(false);
+    setPendingReporte(null);
   };
 
   if (error)
@@ -182,6 +204,37 @@ export default function ReportesLayout({ clienteSeleccionado }) {
         onClose={() => setEntregaModalOpen(false)}
         reporte={selectedReporte}
       />
+
+      {/* MODAL CONFIRMACIÓN DUPLICAR */}
+      <Modal
+        isOpen={isConfirmOpen}
+        onClose={handleCancelDuplicate}
+        title="Duplicar presupuesto"
+      >
+        <div className="space-y-4">
+          <p>
+            ¿Estás seguro de que querés duplicar el presupuesto{" "}
+            <span className="font-bold text-purple-700">
+              #{pendingReporte?.n_presupuesto}
+            </span>
+            ?
+          </p>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={handleCancelDuplicate}
+              className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleConfirmDuplicate}
+              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded"
+            >
+              Sí, duplicar
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

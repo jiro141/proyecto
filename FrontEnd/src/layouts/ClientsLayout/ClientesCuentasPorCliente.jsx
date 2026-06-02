@@ -398,7 +398,7 @@ export default function ClientesCuentasPorCliente() {
           setAbonosReporte([]);
         }}
         title={`Presupuesto ${selectedReporte?.n_presupuesto || ""}`}
-        width="max-w-xl"
+        width="max-w-3xl"
       >
         {selectedReporte && (
           <div className="space-y-4">
