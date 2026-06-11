@@ -136,24 +136,24 @@ export default function usePDFGenerator() {
     doc.setFont("helvetica", "normal");
     doc.text(new Date().toLocaleDateString(), 25, finalY + 7);
 
-    doc.setFont("helvetica", "bold");
-    doc.text("VALIDEZ DE LA OFERTA:", 10, finalY + 14);
-    doc.setFont("helvetica", "normal");
-    doc.text("5 DÍAS", 50, finalY + 14);
+    // doc.setFont("helvetica", "bold");
+    // doc.text("VALIDEZ DE LA OFERTA:", 10, finalY + 14);
+    // doc.setFont("helvetica", "normal");
+    // doc.text("5 DÍAS", 50, finalY + 14);
 
-    doc.setFont("helvetica", "bold");
-    doc.text("FORMA DE PAGO:", 10, finalY + 21);
-    doc.setFont("helvetica", "normal");
-    doc.text("60% ANTICIPO  40% A SU ENTREGA", 40, finalY + 21);
+    // doc.setFont("helvetica", "bold");
+    // doc.text("FORMA DE PAGO:", 10, finalY + 21);
+    // doc.setFont("helvetica", "normal");
+    // doc.text("60% ANTICIPO  40% A SU ENTREGA", 40, finalY + 21);
 
-    finalY += 35;
-    doc.setFont("helvetica", "normal");
-    doc.text(
-      "LOS PRECIOS NO INCLUYEN IVA; LO QUE NO ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.",
-      10,
-      finalY,
-      { maxWidth: 190, align: "justify" },
-    );
+    // finalY += 35;
+    // doc.setFont("helvetica", "normal");
+    // doc.text(
+    //   "LOS PRECIOS NO INCLUYEN IVA; LO QUE NO ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.",
+    //   10,
+    //   finalY,
+    //   { maxWidth: 190, align: "justify" },
+    // );
     // NOTA ESPECIAL PARA SAN SIMON
     const nombreCliente =
       formData?.cliente?.nombre?.trim()?.toUpperCase() || "";
