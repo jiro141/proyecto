@@ -113,6 +113,7 @@ export default function PresupuestoPDF({ formData, resumen, logoSrc }) {
     consumibles,
     titulo,
     notas,
+    terminos_condiciones,
   } = formData;
 
   // Verificar si hay nota para mostrar
@@ -208,7 +209,7 @@ export default function PresupuestoPDF({ formData, resumen, logoSrc }) {
 
         {/* DISCLAIMER */}
         <Text style={styles.disclaimer}>
-          LOS PRECIOS NO INCLUYEN IVA. LO QUE NO SE ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.
+          {terminos_condiciones || "LOS PRECIOS NO INCLUYEN IVA. LO QUE NO SE ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE."}
         </Text>
 
         {/* NOTA (si existe) */}

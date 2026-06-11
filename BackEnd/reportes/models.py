@@ -176,6 +176,29 @@ class Reporte(models.Model):
         help_text="Suma de total_apu de todos los APUs vinculados",
     )
 
+    validez_oferta = models.CharField(
+        max_length=100,
+        default="5 DÍAS",
+        blank=True,
+        null=True,
+        verbose_name="Validez de la oferta",
+    )
+
+    forma_pago = models.CharField(
+        max_length=200,
+        default="60% ANTICIPO  40% A SU ENTREGA",
+        blank=True,
+        null=True,
+        verbose_name="Forma de pago",
+    )
+
+    terminos_condiciones = models.TextField(
+        default="LOS PRECIOS NO INCLUYEN IVA; LO QUE NO ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.",
+        blank=True,
+        null=True,
+        verbose_name="Términos y condiciones",
+    )
+
     class Meta:
         ordering = ["-fecha_creacion", "-id"]
         verbose_name = "Reporte"

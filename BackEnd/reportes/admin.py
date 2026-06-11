@@ -152,6 +152,16 @@ class ReporteAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        (
+            "Términos del Presupuesto",
+            {
+                "fields": (
+                    "validez_oferta",
+                    "forma_pago",
+                    "terminos_condiciones",
+                )
+            },
+        ),
     )
 
 

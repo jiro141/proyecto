@@ -7,7 +7,7 @@ export const ReporteDetalleModal = ({
   isOpen,
   onClose,
   reporte,
-  loading
+  loading,
 }) => {
   return (
     <Modal

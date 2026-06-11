@@ -72,6 +72,9 @@ export const useReporteActions = () => {
         presupuesto_base: Number(reporte.total_reporte),
         presupuesto_estimado: Number(reporte.total_reporte),
         porcentaje_productividad: 1,
+        validez_oferta: reporte.validez_oferta || "5 DÍAS",
+        forma_pago: reporte.forma_pago || "60% ANTICIPO  40% A SU ENTREGA",
+        terminos_condiciones: reporte.terminos_condiciones || "LOS PRECIOS NO INCLUYEN IVA; LO QUE NO ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.",
         apus: (reporte.apus || []).map((apu) => ({
           id: apu.id,
           body: {
@@ -159,6 +162,9 @@ export const useReporteActions = () => {
         nombre: detalle.cliente_nombre,
       },
       descripcion: detalle.descripcion,
+      validez_oferta: detalle.validez_oferta || "5 DÍAS",
+      forma_pago: detalle.forma_pago || "60% ANTICIPO  40% A SU ENTREGA",
+      terminos_condiciones: detalle.terminos_condiciones || "LOS PRECIOS NO INCLUYEN IVA; LO QUE NO ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.",
       apus: (detalle.apus || []).map((apu) => ({
         id: apu.id,
         body: {
@@ -255,6 +261,9 @@ export const useReporteActions = () => {
       fechaCulminacion: detalle.fecha_estimacion_culminacion 
         ? new Date(detalle.fecha_estimacion_culminacion) 
         : new Date(),
+      validez_oferta: detalle.validez_oferta || "5 DÍAS",
+      forma_pago: detalle.forma_pago || "60% ANTICIPO  40% A SU ENTREGA",
+      terminos_condiciones: detalle.terminos_condiciones || "LOS PRECIOS NO INCLUYEN IVA; LO QUE NO ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.",
     };
   };
 
