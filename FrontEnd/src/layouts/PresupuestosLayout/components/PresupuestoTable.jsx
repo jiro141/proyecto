@@ -35,11 +35,12 @@ export default function PresupuestoTable({
         });
     }
 
-    // 👥 Para logística: separar días visuales de la cantidad efectiva (empleados × días)
+    // 👥 Para logística: días y empleados editables por item
     const esLogisticaConMO = tipo === "logistica" && Number(totalEmpleadosMO) > 0;
     const [diasLogistica, setDiasLogistica] = useState({});
+    const [empleadosLogistica, setEmpleadosLogistica] = useState({});
 
-    // Inicializar días visuales desde la cantidad guardada en el contexto
+    // Inicializar días y empleados desde la cantidad guardada en el contexto
     useEffect(() => {
         if (esLogisticaConMO) {
             const mo = Number(totalEmpleadosMO);
@@ -47,21 +48,32 @@ export default function PresupuestoTable({
                 const nuevos = { ...prev };
                 selectedItems.forEach((item) => {
                     if (nuevos[item.id] === undefined) {
-                        nuevos[item.id] = Number(item.cantidad) / mo;
+                        const emp = Number(item.empleados || mo);
+                        nuevos[item.id] = emp > 0 ? Number(item.cantidad) / emp : 0;
+                    }
+                });
+                return nuevos;
+            });
+            setEmpleadosLogistica((prev) => {
+                const nuevos = { ...prev };
+                selectedItems.forEach((item) => {
+                    if (nuevos[item.id] === undefined) {
+                        nuevos[item.id] = Number(item.empleados || mo);
                     }
                 });
                 return nuevos;
             });
         }
-    }, [esLogisticaConMO, totalEmpleadosMO]); // Solo al cambiar MO o al activarse
+    }, [esLogisticaConMO, totalEmpleadosMO]);
 
     const getCantidadVisual = (item) => {
         if (esLogisticaConMO) {
             const selected = selectedMap[item.id];
             if (!selected) return 0;
+            const emp = empleadosLogistica[item.id] ?? Number(selected.empleados || totalEmpleadosMO);
             return diasLogistica[item.id] !== undefined
                 ? diasLogistica[item.id]
-                : Number(selected.cantidad) / Number(totalEmpleadosMO);
+                : (emp > 0 ? Number(selected.cantidad) / emp : 0);
         }
         const selected = selectedMap[item.id];
         return selected ? selected.cantidad : 0;
@@ -94,21 +106,28 @@ export default function PresupuestoTable({
     const handleCantidadChange = (id, val) => {
         const nuevoValor = Math.max(Number(val), 0);
         
-        // Si es logística con MO, la "cantidad" visual son días, pero guardamos empleados × días
+        // Si es logística con MO: el input edita DÍAS, guardamos empleados × días
         if (esLogisticaConMO) {
-            const mo = Number(totalEmpleadosMO);
+            const emp = empleadosLogistica[id] ?? Number(totalEmpleadosMO);
             const dias = nuevoValor;
             setDiasLogistica(prev => ({ ...prev, [id]: dias }));
-            const cantidadEfectiva = mo * dias;
+            const cantidadEfectiva = emp * dias;
 
             const itemsActualizados = catalogItems.map(item => {
                 if (item.id === id) {
-                    return { ...item, cantidad: cantidadEfectiva };
+                    return {
+                        ...item,
+                        cantidad: cantidadEfectiva,
+                        empleados: emp,
+                    };
                 }
-                // Mantener los items seleccionados que no estamos tocando
                 const selected = selectedMap[item.id];
                 if (selected) {
-                    return { ...item, cantidad: selected.cantidad };
+                    return {
+                        ...item,
+                        cantidad: selected.cantidad,
+                        empleados: selected.empleados,
+                    };
                 }
                 return item;
             }).filter(item => Number(item.cantidad) > 0);
@@ -144,18 +163,26 @@ export default function PresupuestoTable({
 
         // Si es logística con MO, step suma/resta 1 día
         if (esLogisticaConMO) {
-            const mo = Number(totalEmpleadosMO);
+            const emp = empleadosLogistica[id] ?? Number(totalEmpleadosMO);
             const dias = nuevoValor;
             setDiasLogistica(prev => ({ ...prev, [id]: dias }));
-            const cantidadEfectiva = mo * dias;
+            const cantidadEfectiva = emp * dias;
 
             const itemsActualizados = catalogItems.map(item => {
                 if (item.id === id) {
-                    return { ...item, cantidad: cantidadEfectiva };
+                    return {
+                        ...item,
+                        cantidad: cantidadEfectiva,
+                        empleados: emp,
+                    };
                 }
                 const selected = selectedMap[item.id];
                 if (selected) {
-                    return { ...item, cantidad: selected.cantidad };
+                    return {
+                        ...item,
+                        cantidad: selected.cantidad,
+                        empleados: selected.empleados,
+                    };
                 }
                 return item;
             }).filter(item => Number(item.cantidad) > 0);
@@ -199,13 +226,18 @@ export default function PresupuestoTable({
                 const mo = Number(totalEmpleadosMO);
                 const diasInicial = 1;
                 setDiasLogistica(prev => ({ ...prev, [item.id]: diasInicial }));
+                setEmpleadosLogistica(prev => ({ ...prev, [item.id]: mo }));
                 const cantidadEfectiva = mo * diasInicial;
 
                 const itemsFiltrados = [
                     ...catalogItems
                         .filter(i => selectedMap[i.id])
-                        .map(i => ({ ...i, cantidad: selectedMap[i.id].cantidad })),
-                    { ...item, cantidad: cantidadEfectiva },
+                        .map(i => ({
+                            ...i,
+                            cantidad: selectedMap[i.id].cantidad,
+                            empleados: selectedMap[i.id].empleados,
+                        })),
+                    { ...item, cantidad: cantidadEfectiva, empleados: mo },
                 ].filter(i => Number(i.cantidad) > 0);
 
                 if (setPresupuestoData) {
@@ -226,6 +258,48 @@ export default function PresupuestoTable({
                 setPresupuestoData((prev) => ({ ...prev, [tipo]: itemsFiltrados }));
             }
             toast.success("Registro agregado al APU");
+        }
+    };
+
+    const handleEmpleadosChange = (id, val) => {
+        const nuevoValor = Math.max(Number(val), 0);
+
+        if (esLogisticaConMO) {
+            const emp = nuevoValor;
+            setEmpleadosLogistica(prev => ({ ...prev, [id]: emp }));
+
+            // Obtener los días visuales actuales para este item
+            const selected = selectedMap[id];
+            const dias = diasLogistica[id] !== undefined
+                ? diasLogistica[id]
+                : (selected
+                    ? (emp > 0 ? Number(selected.cantidad) / emp : 0)
+                    : 0);
+
+            const cantidadEfectiva = emp * dias;
+
+            const itemsActualizados = catalogItems.map(item => {
+                if (item.id === id) {
+                    return {
+                        ...item,
+                        cantidad: cantidadEfectiva,
+                        empleados: emp,
+                    };
+                }
+                const sel = selectedMap[item.id];
+                if (sel) {
+                    return {
+                        ...item,
+                        cantidad: sel.cantidad,
+                        empleados: sel.empleados,
+                    };
+                }
+                return item;
+            }).filter(item => Number(item.cantidad) > 0);
+
+            if (setPresupuestoData) {
+                setPresupuestoData((prev) => ({ ...prev, [tipo]: itemsActualizados }));
+            }
         }
     };
 
@@ -373,8 +447,19 @@ export default function PresupuestoTable({
 
                                         case "empleados":
                                             return (
-                                                <td key={col.key} className="text-center font-bold text-blue-600">
-                                                    {esLogisticaConMO ? Number(totalEmpleadosMO) : "-"}
+                                                <td key={col.key} className="text-center">
+                                                    {esLogisticaConMO ? (
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="1"
+                                                            value={empleadosLogistica[item.id] ?? Number(totalEmpleadosMO)}
+                                                            onChange={(e) =>
+                                                                handleEmpleadosChange(item.id, parseFloat(e.target.value) || 0)
+                                                            }
+                                                            className="w-16 border rounded text-center font-bold text-blue-600"
+                                                        />
+                                                    ) : "-"}
                                                 </td>
                                             );
 
@@ -391,7 +476,7 @@ export default function PresupuestoTable({
                                                 <td key={col.key} className="text-center">
                                                     ${Number(
                                                         (esLogisticaConMO 
-                                                            ? Number(totalEmpleadosMO) * item.cantidad 
+                                                            ? Number(empleadosLogistica[item.id] ?? totalEmpleadosMO) * item.cantidad 
                                                             : item.cantidad
                                                         ) * Number(getPrecio(item))
                                                     ).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
