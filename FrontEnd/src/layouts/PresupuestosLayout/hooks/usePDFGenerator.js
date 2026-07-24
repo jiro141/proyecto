@@ -116,11 +116,19 @@ export default function usePDFGenerator() {
            TOTALES
         ========================= */
     let finalY = doc.lastAutoTable.finalY + 10;
-    const total = formData.presupuesto_estimado || 0;
+    const subtotal = formData.presupuesto_estimado || 0;
+    const descuento = Number(formData.porcentaje_descuento || 0);
+    const montoDescuento = subtotal * (descuento / 100);
+    const total = subtotal - montoDescuento;
 
     doc.setFontSize(9);
-    doc.text(`SUB-TOTAL: $${total.toFixed(2)}`, 150, finalY);
-    doc.text(`TOTAL: $${total.toFixed(2)}`, 150, finalY + 7);
+    doc.text(`SUB-TOTAL: $${subtotal.toFixed(2)}`, 150, finalY);
+    if (descuento > 0) {
+      doc.text(`DESCUENTO (${descuento}%): -$${montoDescuento.toFixed(2)}`, 150, finalY + 7);
+      doc.text(`TOTAL: $${total.toFixed(2)}`, 150, finalY + 14);
+    } else {
+      doc.text(`TOTAL: $${total.toFixed(2)}`, 150, finalY + 7);
+    }
 
     /* =========================
            PIE DE DOCUMENTO

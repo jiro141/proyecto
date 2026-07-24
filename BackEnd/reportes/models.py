@@ -173,7 +173,23 @@ class Reporte(models.Model):
         max_digits=14,
         decimal_places=2,
         default=Decimal("0.00"),
-        help_text="Suma de total_apu de todos los APUs vinculados",
+        help_text="Suma de total_apu de todos los APUs vinculados (con descuento aplicado si existe)",
+    )
+
+    porcentaje_descuento = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        validators=[MinValueValidator(0), MaxValueValidator(99)],
+        help_text="Porcentaje de descuento aplicado al total del presupuesto (0-99%)",
+    )
+
+    descripcion_descuento = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Descripción del descuento",
+        help_text="Razón o concepto del descuento (opcional)",
     )
 
     validez_oferta = models.CharField(
@@ -258,14 +274,24 @@ class Reporte(models.Model):
 
     def recalcular_total(self):
         """
-        Suma el presupuesto_base de todos los APUs relacionados, actualiza el total 
-        y verifica si el estado debe pasar a Pagado.
+        Suma el presupuesto_base de todos los APUs relacionados, aplica el descuento
+        si existe, actualiza el total y verifica si el estado debe pasar a Pagado.
         """
         # 1. Sumar APUs usando presupuesto_base (ya incluye cantidad)
         total_apus = self.apus.aggregate(total=Sum("presupuesto_base"))["total"] or Decimal("0.00")
-        self.total_reporte = total_apus.quantize(Decimal("0.01"))
-        
-        # 2. Lista de campos a actualizar
+        total_base = total_apus.quantize(Decimal("0.01"))
+
+        # 2. Aplicar descuento si existe
+        descuento = self.porcentaje_descuento or Decimal("0.00")
+        if descuento > 0:
+            factor = (Decimal("100.00") - descuento) / Decimal("100.00")
+            total_con_descuento = total_base * factor
+        else:
+            total_con_descuento = total_base
+
+        self.total_reporte = total_con_descuento.quantize(Decimal("0.01"))
+
+        # 3. Lista de campos a actualizar
         campos_a_actualizar = ["total_reporte"]
         
         # 3. Lógica automática de pago: Si el saldo es 0 o menor, y ya estaba ejecutado

@@ -41,6 +41,8 @@ const initialPresupuesto = () => ({
   presupuesto_estimado: 0,
   porcentaje_productividad: 1,
   apus: [initialAPU()],
+  porcentaje_descuento: 0,
+  descripcion_descuento: "",
   validez_oferta: "5 DÍAS",
   forma_pago: "60% ANTICIPO  40% A SU ENTREGA",
   terminos_condiciones: "LOS PRECIOS NO INCLUYEN IVA; LO QUE NO ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.",

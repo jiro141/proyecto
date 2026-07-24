@@ -214,6 +214,8 @@ class ReporteSerializer(serializers.ModelSerializer):
             "fecha_creacion",
             "fecha_estimacion_culminacion",
             "total_reporte",
+            "porcentaje_descuento",
+            "descripcion_descuento",
             "total_abonado",
             "saldo_pendiente",
             "validez_oferta",

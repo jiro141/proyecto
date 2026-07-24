@@ -40,6 +40,14 @@ export const updateReporte = async (id, payload) => {
 /**
  * Actualizar solo el estado de un reporte
  */
+/**
+ * Actualizar campos específicos de un reporte (PATCH parcial)
+ */
+export const updateReportePartial = async (id, payload) => {
+  const response = await AuthApi.patch(`/reportes/${id}/`, payload);
+  return response.data;
+};
+
 export const updateReporteEstado = async (id, estado) => {
   const response = await AuthApi.patch(`/reportes/${id}/`, { estado });
   return response.data;

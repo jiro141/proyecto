@@ -38,6 +38,8 @@ export default function useReportesActions() {
                 const reportePayload = {
                     cliente: formData.cliente.id,
                     descripcion: formData.descripcion || "Nuevo presupuesto",
+                    porcentaje_descuento: Number(formData.porcentaje_descuento || 0),
+                    descripcion_descuento: formData.descripcion_descuento || "",
                     validez_oferta: formData.validez_oferta || "5 DÍAS",
                     forma_pago: formData.forma_pago || "60% ANTICIPO  40% A SU ENTREGA",
                     terminos_condiciones: formData.terminos_condiciones || "LOS PRECIOS NO INCLUYEN IVA; LO QUE NO ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.",

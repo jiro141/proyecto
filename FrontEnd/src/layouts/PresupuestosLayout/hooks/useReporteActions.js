@@ -69,8 +69,11 @@ export const useReporteActions = () => {
         fechaCulminacion: reporte.fecha_estimacion_culminacion 
           ? new Date(reporte.fecha_estimacion_culminacion) 
           : new Date(),
-        presupuesto_base: Number(reporte.total_reporte),
-        presupuesto_estimado: Number(reporte.total_reporte),
+        // ✅ Calcular base desde APUs (sin descuento, porque total_reporte ya incluye descuento)
+        presupuesto_base: (reporte.apus || []).reduce((sum, apu) => sum + Number(apu.presupuesto_base || 0), 0),
+        presupuesto_estimado: (reporte.apus || []).reduce((sum, apu) => sum + Number(apu.presupuesto_base || 0), 0),
+        porcentaje_descuento: Number(reporte.porcentaje_descuento || 0),
+        descripcion_descuento: reporte.descripcion_descuento || "",
         porcentaje_productividad: 1,
         validez_oferta: reporte.validez_oferta || "5 DÍAS",
         forma_pago: reporte.forma_pago || "60% ANTICIPO  40% A SU ENTREGA",
