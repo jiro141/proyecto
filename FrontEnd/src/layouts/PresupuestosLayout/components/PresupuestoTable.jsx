@@ -22,6 +22,7 @@ export default function PresupuestoTable({
     loading,
     formFields,
     onRefetch,
+    totalEmpleadosMO = 0, // 👥 para logística: empleados desde Mano de Obra
 }) {
     const catalogItems = dataSource || [];
     
@@ -33,10 +34,45 @@ export default function PresupuestoTable({
             selectedMap[item.id] = item;
         });
     }
+
+    // 👥 Para logística: separar días visuales de la cantidad efectiva (empleados × días)
+    const esLogisticaConMO = tipo === "logistica" && Number(totalEmpleadosMO) > 0;
+    const [diasLogistica, setDiasLogistica] = useState({});
+
+    // Inicializar días visuales desde la cantidad guardada en el contexto
+    useEffect(() => {
+        if (esLogisticaConMO) {
+            const mo = Number(totalEmpleadosMO);
+            setDiasLogistica((prev) => {
+                const nuevos = { ...prev };
+                selectedItems.forEach((item) => {
+                    if (nuevos[item.id] === undefined) {
+                        nuevos[item.id] = Number(item.cantidad) / mo;
+                    }
+                });
+                return nuevos;
+            });
+        }
+    }, [esLogisticaConMO, totalEmpleadosMO]); // Solo al cambiar MO o al activarse
+
+    const getCantidadVisual = (item) => {
+        if (esLogisticaConMO) {
+            const selected = selectedMap[item.id];
+            if (!selected) return 0;
+            return diasLogistica[item.id] !== undefined
+                ? diasLogistica[item.id]
+                : Number(selected.cantidad) / Number(totalEmpleadosMO);
+        }
+        const selected = selectedMap[item.id];
+        return selected ? selected.cantidad : 0;
+    };
     
     const displayItems = catalogItems.map(item => {
         const selected = selectedMap[item.id];
         if (selected) {
+            if (esLogisticaConMO) {
+                return { ...item, cantidad: getCantidadVisual(item) };
+            }
             return { ...item, cantidad: selected.cantidad };
         }
         return item;
@@ -56,20 +92,42 @@ export default function PresupuestoTable({
     };
 
     const handleCantidadChange = (id, val) => {
-        const nuevaCantidad = Math.max(Number(val), 0);
+        const nuevoValor = Math.max(Number(val), 0);
         
+        // Si es logística con MO, la "cantidad" visual son días, pero guardamos empleados × días
+        if (esLogisticaConMO) {
+            const mo = Number(totalEmpleadosMO);
+            const dias = nuevoValor;
+            setDiasLogistica(prev => ({ ...prev, [id]: dias }));
+            const cantidadEfectiva = mo * dias;
+
+            const itemsActualizados = catalogItems.map(item => {
+                if (item.id === id) {
+                    return { ...item, cantidad: cantidadEfectiva };
+                }
+                // Mantener los items seleccionados que no estamos tocando
+                const selected = selectedMap[item.id];
+                if (selected) {
+                    return { ...item, cantidad: selected.cantidad };
+                }
+                return item;
+            }).filter(item => Number(item.cantidad) > 0);
+
+            if (setPresupuestoData) {
+                setPresupuestoData((prev) => ({ ...prev, [tipo]: itemsActualizados }));
+            }
+            return;
+        }
+
+        // Comportamiento original para los demás tipos
         const updatedItems = displayItems.map((r) =>
-            r.id === id ? { ...r, cantidad: nuevaCantidad } : r
+            r.id === id ? { ...r, cantidad: nuevoValor } : r
         );
         
-        const cantidadMap = {};
-        updatedItems.forEach(item => {
-            cantidadMap[item.id] = item.cantidad;
-        });
-        
         const itemsActualizados = catalogItems.map(item => {
-            if (cantidadMap[item.id] !== undefined) {
-                return { ...item, cantidad: cantidadMap[item.id] };
+            const updated = updatedItems.find(u => u.id === item.id);
+            if (updated) {
+                return { ...item, cantidad: updated.cantidad };
             }
             return item;
         }).filter(item => Number(item.cantidad) > 0);
@@ -82,19 +140,41 @@ export default function PresupuestoTable({
     const handleCantidadStep = (id, delta) => {
         const currentItem = displayItems.find(r => r.id === id);
         const currentCantidad = currentItem?.cantidad || 0;
-        
+        const nuevoValor = Math.max(currentCantidad + delta, 0);
+
+        // Si es logística con MO, step suma/resta 1 día
+        if (esLogisticaConMO) {
+            const mo = Number(totalEmpleadosMO);
+            const dias = nuevoValor;
+            setDiasLogistica(prev => ({ ...prev, [id]: dias }));
+            const cantidadEfectiva = mo * dias;
+
+            const itemsActualizados = catalogItems.map(item => {
+                if (item.id === id) {
+                    return { ...item, cantidad: cantidadEfectiva };
+                }
+                const selected = selectedMap[item.id];
+                if (selected) {
+                    return { ...item, cantidad: selected.cantidad };
+                }
+                return item;
+            }).filter(item => Number(item.cantidad) > 0);
+
+            if (setPresupuestoData) {
+                setPresupuestoData((prev) => ({ ...prev, [tipo]: itemsActualizados }));
+            }
+            return;
+        }
+
+        // Comportamiento original
         const updatedItems = displayItems.map((r) =>
-            r.id === id ? { ...r, cantidad: Math.max(currentCantidad + delta, 0) } : r
+            r.id === id ? { ...r, cantidad: nuevoValor } : r
         );
         
-        const cantidadMap = {};
-        updatedItems.forEach(item => {
-            cantidadMap[item.id] = item.cantidad;
-        });
-        
         const itemsActualizados = catalogItems.map(item => {
-            if (cantidadMap[item.id] !== undefined) {
-                return { ...item, cantidad: cantidadMap[item.id] };
+            const updated = updatedItems.find(u => u.id === item.id);
+            if (updated) {
+                return { ...item, cantidad: updated.cantidad };
             }
             return item;
         }).filter(item => Number(item.cantidad) > 0);
@@ -114,21 +194,33 @@ export default function PresupuestoTable({
             setFormData({ ...item, ...selectedItem });
             setModalOpen(true);
         } else {
-            const updatedItems = displayItems.map((r) =>
-                r.id === item.id ? { ...r, cantidad: 1 } : r
-            );
-            
-            const cantidadMap = {};
-            updatedItems.forEach(i => {
-                cantidadMap[i.id] = i.cantidad;
-            });
-            
-            const itemsFiltrados = catalogItems.map(item => {
-                if (cantidadMap[item.id] !== undefined) {
-                    return { ...item, cantidad: cantidadMap[item.id] };
+            // Si es logística con MO, al seleccionar: 1 día = empleados × 1
+            if (esLogisticaConMO) {
+                const mo = Number(totalEmpleadosMO);
+                const diasInicial = 1;
+                setDiasLogistica(prev => ({ ...prev, [item.id]: diasInicial }));
+                const cantidadEfectiva = mo * diasInicial;
+
+                const itemsFiltrados = [
+                    ...catalogItems
+                        .filter(i => selectedMap[i.id])
+                        .map(i => ({ ...i, cantidad: selectedMap[i.id].cantidad })),
+                    { ...item, cantidad: cantidadEfectiva },
+                ].filter(i => Number(i.cantidad) > 0);
+
+                if (setPresupuestoData) {
+                    setPresupuestoData((prev) => ({ ...prev, [tipo]: itemsFiltrados }));
                 }
-                return item;
-            }).filter(i => Number(i.cantidad) > 0);
+                toast.success("Registro agregado al APU");
+                return;
+            }
+
+            const itemsFiltrados = [
+                ...catalogItems
+                    .filter(i => selectedMap[i.id])
+                    .map(i => ({ ...i, cantidad: selectedMap[i.id].cantidad })),
+                { ...item, cantidad: 1 },
+            ].filter(i => Number(i.cantidad) > 0);
             
             if (setPresupuestoData) {
                 setPresupuestoData((prev) => ({ ...prev, [tipo]: itemsFiltrados }));
@@ -227,47 +319,89 @@ export default function PresupuestoTable({
                                         : "hover:bg-gray-50"}
                                 `}
                             >
-                                <td 
-                                    className="px-2 py-2 text-[#0B2C4D] font-semibold text-left cursor-pointer hover:underline"
-                                    onClick={(e) => handleRowClick(e, item)}
-                                >
-                                    {item.descripcion}
-                                </td>
-                                <td className="text-center">{item.unidad}</td>
-                                <td className="text-center">
-                                    <div className="flex items-center justify-center gap-2">
-                                        <button
-                                            onClick={() => handleCantidadStep(item.id, -1)}
-                                            className="p-1 border rounded hover:bg-gray-100"
-                                        >
-                                            <FaMinus size={12} />
-                                        </button>
+                                {columnas.map((col) => {
+                                    switch (col.key) {
+                                        case "descripcion":
+                                            return (
+                                                <td
+                                                    key={col.key}
+                                                    className="px-2 py-2 text-[#0B2C4D] font-semibold text-left cursor-pointer hover:underline"
+                                                    onClick={(e) => handleRowClick(e, item)}
+                                                >
+                                                    {item.descripcion}
+                                                </td>
+                                            );
 
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="any"
-                                            value={item.cantidad}
-                                            onChange={(e) =>
-                                                handleCantidadChange(item.id, parseFloat(e.target.value) || 0)
-                                            }
-                                            className="w-16 border rounded text-center"
-                                        />
+                                        case "unidad":
+                                            return (
+                                                <td key={col.key} className="text-center">
+                                                    {item.unidad}
+                                                </td>
+                                            );
 
-                                        <button
-                                            onClick={() => handleCantidadStep(item.id, 1)}
-                                            className="p-1 border rounded hover:bg-gray-100"
-                                        >
-                                            <FaPlus size={12} />
-                                        </button>
-                                    </div>
-                                </td>
-                                <td className="text-center">
-                                    ${Number(getPrecio(item)).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </td>
-                                <td className="text-center">
-                                    ${Number(item.cantidad * Number(getPrecio(item))).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </td>
+                                        case "cantidad":
+                                            return (
+                                                <td key={col.key} className="text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <button
+                                                            onClick={() => handleCantidadStep(item.id, -1)}
+                                                            className="p-1 border rounded hover:bg-gray-100"
+                                                        >
+                                                            <FaMinus size={12} />
+                                                        </button>
+
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="any"
+                                                            value={item.cantidad}
+                                                            onChange={(e) =>
+                                                                handleCantidadChange(item.id, parseFloat(e.target.value) || 0)
+                                                            }
+                                                            className="w-16 border rounded text-center"
+                                                        />
+
+                                                        <button
+                                                            onClick={() => handleCantidadStep(item.id, 1)}
+                                                            className="p-1 border rounded hover:bg-gray-100"
+                                                        >
+                                                            <FaPlus size={12} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            );
+
+                                        case "empleados":
+                                            return (
+                                                <td key={col.key} className="text-center font-bold text-blue-600">
+                                                    {esLogisticaConMO ? Number(totalEmpleadosMO) : "-"}
+                                                </td>
+                                            );
+
+                                        case "precio_unitario":
+                                        case "depreciacion_bs_hora":
+                                            return (
+                                                <td key={col.key} className="text-center">
+                                                    ${Number(getPrecio(item)).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </td>
+                                            );
+
+                                        case "total":
+                                            return (
+                                                <td key={col.key} className="text-center">
+                                                    ${Number(
+                                                        (esLogisticaConMO 
+                                                            ? Number(totalEmpleadosMO) * item.cantidad 
+                                                            : item.cantidad
+                                                        ) * Number(getPrecio(item))
+                                                    ).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </td>
+                                            );
+
+                                        default:
+                                            return <td key={col.key} className="text-center">-</td>;
+                                    }
+                                })}
                             </tr>
                         ))}
                     </tbody>

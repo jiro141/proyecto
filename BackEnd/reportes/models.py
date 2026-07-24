@@ -366,6 +366,13 @@ class APU(models.Model):
         max_digits=12, decimal_places=2, default=Decimal("0.00")
     )
 
+    porcentaje_administracion = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("15.00"),
+        help_text="Porcentaje de gastos administrativos (ej: 15.00 = 15%)",
+    )
+
     bono_alimenticio = models.DecimalField(
         max_digits=12,
         decimal_places=2,

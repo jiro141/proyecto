@@ -26,6 +26,7 @@ const initialAPU = () => ({
   mano_obra: [],
   herramientas: [],
   logistica: [],
+  porcentaje_administracion: 15, // % de gastos administrativos
 });
 
 const initialPresupuesto = () => ({

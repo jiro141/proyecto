@@ -159,6 +159,7 @@ class APUSerializer(serializers.ModelSerializer):
             "fecha_creacion",
             'presupuesto_base',
             'presupuesto_con_desp',
+            'porcentaje_administracion',
             # Detalle
             "materiales",
             "herramientas",

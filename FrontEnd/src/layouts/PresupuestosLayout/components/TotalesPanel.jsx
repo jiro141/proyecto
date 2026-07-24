@@ -132,7 +132,8 @@ const TotalesPanel = ({
     const costoDirectoPorUnidad =
       costoPorUnidad + materialesTotal + herramientasPorRendimiento;
 
-    const adminYGastos = costoDirectoPorUnidad * 0.15;
+    const porcentajeAdmin = Number(apuActual.porcentaje_administracion || 15) / 100;
+    const adminYGastos = costoDirectoPorUnidad * porcentajeAdmin;
     const subTotal = costoDirectoPorUnidad + adminYGastos;
     const utilidad = subTotal * 0.15;
     const totalUnitario = subTotal + utilidad;
@@ -163,6 +164,7 @@ const TotalesPanel = ({
     rendimiento,
     presupuesto_base,
     cantidad,
+    apuActual.porcentaje_administracion,
   ]);
 
   // 🔁 Sincroniza el presupuesto_base con el totalUnitario × cantidad
@@ -218,6 +220,9 @@ const TotalesPanel = ({
           subTotal={subTotal}
           utilidad={utilidad}
           totalUnitario={totalUnitario}
+          porcentajeAdmin={Number(apuActual.porcentaje_administracion || 15)}
+          apuId={apuActual.id}
+          effectiveIndex={effectiveIndex}
         />
 
         {/* === ACORDEONES (DERECHA) === */}

@@ -73,8 +73,9 @@ def recalculate_apu_totals(apu: "APU") -> None:
     herramientas_por_rendimiento = total_herramientas / rendimiento if rendimiento > 0 else Decimal("0.00")
     costo_directo_por_unidad = costo_por_unidad + total_materiales + herramientas_por_rendimiento
     
-    # Gastos administrativos 15%
-    gastos_administrativos_15 = costo_directo_por_unidad * Decimal("0.15")
+    # Gastos administrativos (% configurable desde el APU)
+    porcentaje_admin = apu.porcentaje_administracion or Decimal("15.00")
+    gastos_administrativos_15 = costo_directo_por_unidad * (porcentaje_admin / Decimal("100.00"))
     
     # Subtotal
     subtotal = costo_directo_por_unidad + gastos_administrativos_15

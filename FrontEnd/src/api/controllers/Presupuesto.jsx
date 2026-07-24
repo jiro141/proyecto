@@ -234,6 +234,19 @@ export const updateNotaReporte = async (reporteId, data) => {
   }
 };
 
+// Actualizar el porcentaje de administración de un APU
+export const updateAPUPorcentajeAdmin = async (apuId, porcentaje) => {
+  try {
+    const response = await AuthApi.patch(`/reportes/apus/${apuId}/`, {
+      porcentaje_administracion: porcentaje,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error actualizando porcentaje de administración:", error.response?.data || error);
+    throw error;
+  }
+};
+
 // Eliminar una nota
 export const deleteNotaReporte = async (notaId) => {
   try {

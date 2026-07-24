@@ -37,6 +37,11 @@ export default function Etapa2Modals({
     const { formData: contextoFormData, currentAPUIndex, updateAPUSection } = usePresupuesto();
     const apuActual = contextoFormData.apus?.[currentAPUIndex] || {};
 
+    // 👥 Total de empleados desde Mano de Obra (para calcular logística)
+    const totalEmpleadosMO = (apuActual.mano_obra || []).reduce(
+        (sum, mo) => sum + Number(mo.cantidad || 0), 0
+    );
+
     // ======================================
     // 🔧 Sincronización para herramientas/mano_obra/logistica
     // ======================================
@@ -62,6 +67,7 @@ export default function Etapa2Modals({
         columnas,
         formFields,
         onRefetch,
+        totalEmpleadosMO, // 👥 para logística
     }) => {
         // ✅ Callback que sincroniza datos - pasar directo sin wrappers
         // El setPresupuestoData ya viene con la lógica de sincronización desde Etapa2
@@ -90,6 +96,8 @@ export default function Etapa2Modals({
                 setPresupuestoData={setPresupuestoData}
                 formFields={formFields}
                 onRefetch={onRefetch}
+                // 👥 Para logística: cuántos empleados hay en MO
+                totalEmpleadosMO={totalEmpleadosMO}
             />
         );
     };
@@ -283,7 +291,7 @@ export default function Etapa2Modals({
                 title="Logística"
                 isOpen={openModal === "logistica"}
                 onClose={() => setOpenModal(null)}
-                width="max-w-3xl"
+                width="max-w-4xl"
                 height={"h-3/4"}
             >
                 <div className="max-h-[80vh] overflow-y-auto p-4">
@@ -295,7 +303,8 @@ export default function Etapa2Modals({
                         columnas: [
                             { key: "descripcion", label: "Descripción" },
                             { key: "unidad", label: "Unidad" },
-                            { key: "cantidad", label: "Cantidad" },
+                            { key: "cantidad", label: "Días" },
+                            { key: "empleados", label: "Empleados" },
                             { key: "precio_unitario", label: "Precio Unitario" },
                             { key: "total", label: "Total" },
                         ],
@@ -305,6 +314,7 @@ export default function Etapa2Modals({
                             { name: "precio_unitario", label: "Precio Unitario", type: "number" },
                         ],
                         onRefetch: refetchLogistica,
+                        totalEmpleadosMO: totalEmpleadosMO,
                     })}
                 </div>
             </Modal>
