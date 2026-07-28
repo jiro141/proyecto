@@ -472,14 +472,15 @@ export default function PresupuestoTable({
                                             );
 
                                         case "total":
+                                            const valorTotal = (() => {
+                                                const cant = esLogisticaConMO 
+                                                    ? Number(empleadosLogistica[item.id] ?? totalEmpleadosMO) * item.cantidad 
+                                                    : item.cantidad;
+                                                return Math.round(cant * Number(getPrecio(item)) * 100) / 100;
+                                            })();
                                             return (
                                                 <td key={col.key} className="text-center">
-                                                    ${Number(
-                                                        (esLogisticaConMO 
-                                                            ? Number(empleadosLogistica[item.id] ?? totalEmpleadosMO) * item.cantidad 
-                                                            : item.cantidad
-                                                        ) * Number(getPrecio(item))
-                                                    ).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    ${valorTotal.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </td>
                                             );
 
