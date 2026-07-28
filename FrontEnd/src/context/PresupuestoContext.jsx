@@ -195,12 +195,9 @@ export const PresupuestoProvider = ({ children }) => {
   useEffect(() => {
     if (loading) return;
     
-    // Si viene de edición (tiene ID), no guardar en draft para evitar duplicación
+    // Si viene de edición (presupuesto_edicion está presente), esperar a que se hydrate
     const edicionPendiente = localStorage.getItem("presupuesto_edicion");
     if (edicionPendiente) return;
-    
-    // Si el formData tiene ID (edición), no guardar en draft
-    if (formData?.id) return;
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
   }, [formData, loading]);
