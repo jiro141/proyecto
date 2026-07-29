@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useEtapa2Logic } from "../hooks/useEtapa2Logic";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 import TotalesPanel from "../components/TotalesPanel";
@@ -23,24 +23,24 @@ export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
     logistica: [],
   });
   const [totales, setTotales] = useState({ grandTotal: 0 });
-  const isInitialLoadRef = useRef(true); // Ref en lugar de state para evitar re-renders
 
   // 🔄 Callback para sincronizar cambios al contexto del APU
+  // Solo sincroniza la sección QUE CAMBIÓ, comparando prev vs newData
   const handlePresupuestoChange = useCallback((updater) => {
     setPresupuestoData((prev) => {
       const newData = typeof updater === "function" ? updater(prev) : updater;
-      
-      // Sincronizar cada sección al contexto del APU
-      if (newData.herramientas) {
+
+      // Detectar qué sección cambió realmente para no re-sincronizar todo
+      if (newData.herramientas !== prev.herramientas) {
         updateAPUSection("herramientas", newData.herramientas);
       }
-      if (newData.mano_obra) {
+      if (newData.mano_obra !== prev.mano_obra) {
         updateAPUSection("mano_obra", newData.mano_obra);
       }
-      if (newData.logistica) {
+      if (newData.logistica !== prev.logistica) {
         updateAPUSection("logistica", newData.logistica);
       }
-      
+
       return newData;
     });
   }, [updateAPUSection]);
@@ -72,34 +72,18 @@ export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
     refetchLogistica,
   } = useEtapa2Logic();
 
-  // 🔄 Sincronizar datos del APU al estado local solo en carga inicial
+  // 🔄 Sincronizar datos del APU al estado local cada vez que cambia el APU activo
   useEffect(() => {
-    if (!isInitialLoadRef.current) return;
-    
-    // Solo sincronizar si hay datos reales del APU
     const apuActual = formData.apus?.[currentAPUIndex];
-    if (!apuActual) {
-      // Si es un APU vacío nuevo, marcar como cargado
-      isInitialLoadRef.current = false;
-      return;
-    }
+    if (!apuActual) return;
 
-    const tieneHerramientas = (apuActual.herramientas || []).some(h => Number(h.cantidad) > 0);
-    const tieneManoObra = (apuActual.mano_obra || []).some(mo => Number(mo.cantidad) > 0);
-    const tieneLogistica = (apuActual.logistica || []).some(l => Number(l.cantidad) > 0);
-
-    if (tieneHerramientas || tieneManoObra || tieneLogistica) {
-      // Cargar datos existentes del APU
-      setPresupuestoData({
-        herramientas: apuActual.herramientas || [],
-        mano_obra: apuActual.mano_obra || [],
-        logistica: apuActual.logistica || [],
-      });
-    }
-    
-    // Marcar carga inicial como completada
-    isInitialLoadRef.current = false;
-  }, [formData.apus, currentAPUIndex]);
+    // SIEMPRE cargar los datos del APU actual al estado local
+    setPresupuestoData({
+      herramientas: apuActual.herramientas || [],
+      mano_obra: apuActual.mano_obra || [],
+      logistica: apuActual.logistica || [],
+    });
+  }, [currentAPUIndex]); // Solo depende del índice, no de formData.apus
 
   // 🔄 Recalcular total general al cambiar datos
   useEffect(() => {

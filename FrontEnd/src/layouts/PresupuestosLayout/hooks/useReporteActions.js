@@ -6,6 +6,7 @@ import {
 } from "../../../api/controllers/Presupuesto";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 import { useNavigate } from "react-router-dom";
+import { get, set, del } from "idb-keyval";
 
 export const useReporteActions = () => {
   const [selectedReporte, setSelectedReporte] = useState(null);
@@ -136,18 +137,19 @@ export const useReporteActions = () => {
             cantidad: Number(l.cantidad) || 0,
             precio_unitario: Number(l.precio_unitario || 0),
             unidad: l.unidad || "",
+            empleados: Number(l.empleados) || undefined,
           })),
         })),
       };
 
       // ✅ Limpiar cualquier dato anterior antes de cargar edición
-      localStorage.removeItem("presupuesto_edicion");
-      localStorage.removeItem("presupuesto_draft");
+      await del("presupuesto_edicion");
+      await del("presupuesto_draft");
       
-      console.log("📦 Datos adaptados para edición:", JSON.stringify(adaptedData, null, 2));
       
-      // Guardar en localStorage para persistencia
-      localStorage.setItem("presupuesto_edicion", JSON.stringify(adaptedData));
+      // Guardar en IndexedDB para persistencia
+      await set("presupuesto_edicion", adaptedData);
+      await set("presupuesto_draft", adaptedData);
       hydratePresupuesto(adaptedData);
       navigate("/informes/Crear");
     } catch (error) {
@@ -227,7 +229,6 @@ export const useReporteActions = () => {
     let notaData = { titulo: "Nota", notas: "" };
     try {
       const notas = await getNotasByReporte(detalle.id);
-      console.log("Notas response:", notas);
       
       // La respuesta tiene .results (paginação)
       const notasArray = notas?.results || notas;

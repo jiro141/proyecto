@@ -43,19 +43,6 @@ export default function Etapa2Modals({
     );
 
     // ======================================
-    // 🔧 Sincronización para herramientas/mano_obra/logistica
-    // ======================================
-    const handlePresupuestoTableChange = (section, updater) => {
-        setPresupuestoData((prev) => {
-            const newData = typeof updater === "function" ? updater(prev) : updater;
-            // ✅ Guardar TODOS los items en el contexto (como materiales)
-            const items = newData[section] || [];
-            updateAPUSection(section, items);
-            return newData;
-        });
-    };
-
-    // ======================================
     // 🧠 Función para renderizar modales de herramientas/mano de obra/logística
     // Igual que stock/consumibles
     // ======================================

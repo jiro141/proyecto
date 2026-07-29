@@ -55,7 +55,6 @@ const Tables = ({
     (!isSubInventario ? 1 : 0) + (isClientesLista ? 1 : 0);
 
   const handleOpenReportes = (cliente) => {
-    console.log("📦 Cliente seleccionado:", cliente);
     setClienteSeleccionado(cliente);
     setIsReportesModalOpen(true);
   };

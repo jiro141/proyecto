@@ -1,7 +1,9 @@
 // src/context/PresupuestoContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
+import { get, set, del } from "idb-keyval";
 
 const STORAGE_KEY = "presupuesto_draft";
+const EDICION_KEY = "presupuesto_edicion";
 const PresupuestoContext = createContext();
 
 /* =====================
@@ -118,7 +120,7 @@ export const PresupuestoProvider = ({ children }) => {
   };
 
   const resetPresupuesto = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    del(STORAGE_KEY).catch(() => {});
     setFormData(initialPresupuesto());
     setCurrentAPUIndex(0);
   };
@@ -144,39 +146,27 @@ export const PresupuestoProvider = ({ children }) => {
   ===================== */
 
   useEffect(() => {
-    const hydrateFromStorage = () => {
+    const hydrateFromStorage = async () => {
       try {
         // 1️⃣ Primero: verificar si viene de edición (presupuesto_edicion)
-        const edicionData = localStorage.getItem("presupuesto_edicion");
+        const edicionData = await get(EDICION_KEY);
         if (edicionData) {
-          const parsed = JSON.parse(edicionData);
-          console.log("🔄 [PresupuestoContext] Hidratando desde edición");
-          console.log("📋 APUs en edición:", parsed.apus?.length);
-          if (parsed.apus?.[0]?.herramientas) {
-            console.log("📋 Herramientas APU 0:", parsed.apus[0].herramientas);
-          }
-          localStorage.removeItem("presupuesto_edicion");
+          await del(EDICION_KEY);
           setFormData({
             ...initialPresupuesto(),
-            ...parsed,
+            ...edicionData,
           });
           setLoading(false);
           return;
         }
 
         // 2️⃣ Segundo: verificar si hay un borrador (presupuesto_draft)
-        const saved = localStorage.getItem(STORAGE_KEY);
+        const saved = await get(STORAGE_KEY);
         if (saved) {
-          const parsed = JSON.parse(saved);
-          console.log("🔄 [PresupuestoContext] Hidratando desde draft");
-          console.log("📋 APUs en draft:", parsed.apus?.length);
-          if (parsed.apus?.[0]?.herramientas) {
-            console.log("📋 Herramientas APU 0:", parsed.apus[0].herramientas);
-          }
           setFormData({
             ...initialPresupuesto(),
-            ...parsed,
-            fechaCulminacion: new Date(parsed.fechaCulminacion),
+            ...saved,
+            fechaCulminacion: new Date(saved.fechaCulminacion),
           });
         }
       } catch (e) {
@@ -190,20 +180,23 @@ export const PresupuestoProvider = ({ children }) => {
     hydrateFromStorage();
   }, []);
 
-  // Guardar a localStorage solo cuando NO está cargando Y no viene de edición reciente
-  // Si hay presupuesto_edicion, no guardar hasta que se hydrate
   useEffect(() => {
-    if (loading) return;
-    
-    // Si viene de edición (presupuesto_edicion está presente), esperar a que se hydrate
-    const edicionPendiente = localStorage.getItem("presupuesto_edicion");
-    if (edicionPendiente) return;
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+    const persistDraft = async () => {
+      if (loading) return;
+
+      const edicionPendiente = await get(EDICION_KEY);
+      if (edicionPendiente) return;
+
+      await set(STORAGE_KEY, formData);
+      console.log("💾 [PresupuestoContext] Draft guardado en IndexedDB. APUs:", formData.apus?.length);
+      console.log("📦 Objeto completo:", formData);
+    };
+
+    persistDraft();
   }, [formData, loading]);
 
   const hydratePresupuesto = (data) => {
-    console.log("🔄 [PresupuestoContext] hydratePresupuesto llamado:", data);
+
     setFormData({
       ...initialPresupuesto(),
       ...data,

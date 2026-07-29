@@ -87,6 +87,13 @@ export const useEtapa2Logic = () => {
         setConsumibles(merged);
     }, [consRaw, currentAPUIndex, materiales.consumibles]);
 
+    // Helper para matchear items guardados vs catálogo:
+    // 1️⃣ Por ID (funciona para presupuestos nuevos en la misma sesión)
+    // 2️⃣ Por descripción (fallback para edición, cuando los IDs son de tabla join)
+    const findSaved = (savedItems, catalogItem) =>
+        savedItems.find((x) => x.id === catalogItem.id) ||
+        savedItems.find((x) => x.descripcion?.toLowerCase() === catalogItem.descripcion?.toLowerCase());
+
     useEffect(() => {
         if (!herramientasRaw) {
             setHerramientas([]);
@@ -94,7 +101,7 @@ export const useEtapa2Logic = () => {
         }
         const savedHerramientas = apuActual.herramientas || [];
         const merged = herramientasRaw.map((item) => {
-            const saved = savedHerramientas.find((x) => x.id === item.id);
+            const saved = findSaved(savedHerramientas, item);
             return saved
                 ? { ...item, cantidad: saved.cantidad || 0 }
                 : { ...item, cantidad: Number(item.cantidad) || 0 };
@@ -109,7 +116,7 @@ export const useEtapa2Logic = () => {
         }
         const savedManoObra = apuActual.mano_obra || [];
         const merged = empleadosRaw.map((item) => {
-            const saved = savedManoObra.find((x) => x.id === item.id);
+            const saved = findSaved(savedManoObra, item);
             return saved
                 ? { ...item, cantidad: saved.cantidad || 0 }
                 : { ...item, cantidad: Number(item.cantidad) || 0 };
@@ -124,7 +131,7 @@ export const useEtapa2Logic = () => {
         }
         const savedLogistica = apuActual.logistica || [];
         const merged = logisticaRaw.map((item) => {
-            const saved = savedLogistica.find((x) => x.id === item.id);
+            const saved = findSaved(savedLogistica, item);
             return saved
                 ? { ...item, cantidad: saved.cantidad || 0 }
                 : { ...item, cantidad: Number(item.cantidad) || 0 };

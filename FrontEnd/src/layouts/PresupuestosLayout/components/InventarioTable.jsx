@@ -75,7 +75,6 @@ export default function InventarioTable(props) {
                         onDepreciacionChange={logic.handleDepreciacionChange}
                         onDescripcionClick={async () => {
                           // Cargar datos frescos del backend por ID
-                          console.log("Editando item:", item.id, "tipo:", tipo);
                           try {
                             const freshItem = await getItemById(tipo, item.id);
                             // Normalizar campos relacionados

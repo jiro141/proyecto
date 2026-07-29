@@ -192,8 +192,6 @@ const [loading, setLoading] = useState(true);
     }
 
     try {
-      // Debug: ver qué se está enviando
-      console.log("Enviando items:", JSON.stringify(itemsValidos, null, 2));
       
       await createNotaEntrega({
         reporte: reporte.id,

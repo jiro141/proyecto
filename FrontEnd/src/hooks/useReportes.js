@@ -11,7 +11,6 @@ export default function useReportes(search = "", clienteId = null) {
     setLoading(true);
     try {
       const data = await getReportes(search, clienteId);
-      console.log("Fetched reportes:", data);
       
       setAllReportes(data);
     } catch (err) {

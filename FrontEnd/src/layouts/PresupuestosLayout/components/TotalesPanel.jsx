@@ -40,10 +40,6 @@ const TotalesPanel = ({
   const mano_obra = apuActual.mano_obra || [];
   const logistica = apuActual.logistica || [];
 
-  console.log("📊 APU herramientas:", herramientas);
-  console.log("📊 APU mano_obra:", mano_obra);
-  console.log("📊 APU logistica:", logistica);
-
   // 🧩 Tomar presupuesto_base del body del APU
   const presupuesto_base = Number(apuActual.body?.presupuesto_base || 0);
   const cantidad = Number(apuActual.body?.cantidad || 1);

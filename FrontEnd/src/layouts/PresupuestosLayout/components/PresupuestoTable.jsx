@@ -211,10 +211,21 @@ export default function PresupuestoTable({
         }
     };
 
+    // 🔍 Helper: busca un item en el presupuesto primero por ID, luego por descripción
+    // (necesario para edición, donde los IDs del backend NO coinciden con los del catálogo)
+    const findInPresupuesto = (item) => {
+        const byId = selectedMap[item.id];
+        if (byId) return byId;
+        const savedItems = Array.isArray(presupuestoData?.[tipo]) ? presupuestoData[tipo] : [];
+        return savedItems.find(
+            (x) => x.descripcion?.toLowerCase() === item.descripcion?.toLowerCase()
+        );
+    };
+
     const handleRowClick = (e, item) => {
         e.stopPropagation();
         
-        const selectedItem = selectedMap[item.id];
+        const selectedItem = findInPresupuesto(item);
         
         if (selectedItem) {
             setEditItem({ ...item, ...selectedItem });
@@ -229,14 +240,14 @@ export default function PresupuestoTable({
                 setEmpleadosLogistica(prev => ({ ...prev, [item.id]: mo }));
                 const cantidadEfectiva = mo * diasInicial;
 
+                const itemsActuales = catalogItems
+                    .filter(i => findInPresupuesto(i))
+                    .map(i => {
+                        const saved = findInPresupuesto(i);
+                        return { ...i, cantidad: saved.cantidad, empleados: saved.empleados };
+                    });
                 const itemsFiltrados = [
-                    ...catalogItems
-                        .filter(i => selectedMap[i.id])
-                        .map(i => ({
-                            ...i,
-                            cantidad: selectedMap[i.id].cantidad,
-                            empleados: selectedMap[i.id].empleados,
-                        })),
+                    ...itemsActuales,
                     { ...item, cantidad: cantidadEfectiva, empleados: mo },
                 ].filter(i => Number(i.cantidad) > 0);
 
@@ -247,10 +258,11 @@ export default function PresupuestoTable({
                 return;
             }
 
+            const itemsActuales = catalogItems
+                .filter(i => findInPresupuesto(i))
+                .map(i => ({ ...i, cantidad: findInPresupuesto(i).cantidad }));
             const itemsFiltrados = [
-                ...catalogItems
-                    .filter(i => selectedMap[i.id])
-                    .map(i => ({ ...i, cantidad: selectedMap[i.id].cantidad })),
+                ...itemsActuales,
                 { ...item, cantidad: 1 },
             ].filter(i => Number(i.cantidad) > 0);
             

@@ -84,20 +84,16 @@ export default function useReportesActions() {
                 const titulo = formData.titulo || "Nota";
                 const descripcion = formData.notas || "";
 
-                console.log("📝 Guardando nota:", { titulo, descripcion, notaId: formData.notaId });
-
                 // Solo guardar nota si hay descripción (no vacía)
                 if (descripcion && descripcion.trim() !== "") {
                     if (formData.notaId) {
                         // Actualizar nota existente (usar reporteId, no notaId)
-                        console.log("🔄 Actualizando nota existente para reporte:", formData.id);
                         await updateNotaReporte(formData.id, {
                             titulo: titulo,
                             descripcion: descripcion,
                         });
                     } else {
                         // Crear nueva nota ASOCIADA AL REPORTE
-                        console.log("➕ Creando nueva nota para reporte:", reporte.id);
                         const nota = await createNotaReporte(reporte.id, {
                             titulo: titulo,
                             descripcion: descripcion,
@@ -105,20 +101,16 @@ export default function useReportesActions() {
                         // Guardar el ID de la nota para futuras actualizaciones
                         formData.notaId = nota.id;
                     }
-                } else {
-                    console.log("⚠️ Nota vacía, no se guarda");
                 }
 
                 // =========================
                 // 🧮 3. ELIMINAR APUs EXISTENTES (si es edición)
                 // =========================
                 if (esEdicion) {
-                    console.log("🗑️ Eliminando APUs existentes para recrearlos...");
                     const apusActuales = await getAPUsByReporte(reporte.id);
                     for (const apu of apusActuales) {
                         await deleteAPU(apu.id);
                     }
-                    console.log("✅ APUs eliminados, se crearán los nuevos");
                 }
 
                 // =========================
@@ -226,6 +218,7 @@ export default function useReportesActions() {
                             cantidad: Number(log.cantidad) || 1,
                             precio_unitario: Number(log.precio_unitario) || 0,
                             unidad: log.unidad || "UND",
+                            empleados: Number(log.empleados) || undefined,
                         });
                     }
                 }

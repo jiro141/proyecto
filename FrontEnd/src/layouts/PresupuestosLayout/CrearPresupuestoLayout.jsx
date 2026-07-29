@@ -9,6 +9,7 @@ import useReportes from "../../hooks/useReportes";
 import { createReporte } from "../../api/controllers/Presupuesto";
 import { getControlConfig } from "../../api/controllers/ControlConfig";
 import { usePresupuesto } from "../../context/PresupuestoContext";
+import { del } from "idb-keyval";
 
 // 🧩 Componentes
 import Etapa1 from "./steps/Etapa1";
@@ -43,9 +44,9 @@ export default function CrearPresupuestoLayout() {
   // ================================
   // LIMPIAR PRESUPUESTO
   // ================================
-  const handleLimpiarPresupuesto = () => {
-    localStorage.removeItem("presupuesto_edicion");
-    localStorage.removeItem("presupuesto_draft");
+  const handleLimpiarPresupuesto = async () => {
+    await del("presupuesto_edicion");
+    await del("presupuesto_draft");
     resetPresupuesto();
     setModalLimpiarOpen(false);
     window.location.reload();
