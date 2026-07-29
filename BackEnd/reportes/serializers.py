@@ -112,6 +112,7 @@ class APULogisticaSerializer(serializers.ModelSerializer):
             "cantidad",
             "precio_unitario",
             "total_logistica",
+            "empleados",
         ]
         read_only_fields = ["total_logistica"]
 

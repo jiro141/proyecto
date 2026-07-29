@@ -672,6 +672,10 @@ class APULogistica(models.Model):
     total_logistica = models.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal("0.00")
     )
+    empleados = models.PositiveIntegerField(
+        default=1,
+        help_text="Cantidad de empleados para este item (solo informativo, no afecta cálculos)",
+    )
 
     def save(self, *args, **kwargs):
         self.total_logistica = (self.precio_unitario * self.cantidad).quantize(
