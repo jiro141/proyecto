@@ -63,5 +63,5 @@ class Command(BaseCommand):
 
         # Recalcular totales del reporte
         reporte = apus.first().reporte
-        reporte.recalcular_totales()
+        reporte.recalcular_total()
         self.stdout.write(self.style.SUCCESS(f"Totales del reporte recalculados."))
