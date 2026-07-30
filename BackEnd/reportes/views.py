@@ -274,6 +274,7 @@ class APUListCreateView(generics.ListCreateAPIView):
     """
 
     serializer_class = APUSerializer
+    pagination_class = None  # Siempre traer TODOS los APUs (edición necesita la lista completa)
 
     def get_queryset(self):
         reporte_id = self.kwargs.get("reporte_id")
