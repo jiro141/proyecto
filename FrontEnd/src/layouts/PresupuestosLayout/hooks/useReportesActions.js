@@ -116,13 +116,14 @@ export default function useReportesActions() {
                 // =========================
                 // 🧮 4. CREAR APUs NUEVOS
                 // =========================
-                for (const apu of formData.apus || []) {
+                for (const [index, apu] of (formData.apus || []).entries()) {
 
                     let apuResponse;
 
                     // Siempre crear nuevo APU ( tanto para creación como edición )
                     apuResponse = await createAPU(reporte.id, {
                         ...apu.body,
+                        numero: index + 1,
                         reporte: reporte.id,
                     });
 

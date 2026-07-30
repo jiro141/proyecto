@@ -168,7 +168,6 @@ class APUSerializer(serializers.ModelSerializer):
             "logisticas",
         ]
         read_only_fields = [
-            "numero",
             "precio_unitario",
             "total_base",
             "total_materiales",
