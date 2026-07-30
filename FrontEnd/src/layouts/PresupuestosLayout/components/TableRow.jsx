@@ -1,4 +1,5 @@
 import { FaPlus, FaMinus } from "react-icons/fa";
+import DecimalInput from "../../../components/DecimalInput";
 
 export default function TableRow({
   item,
@@ -46,18 +47,11 @@ export default function TableRow({
             <FaMinus size={12} />
           </button>
 
-          <input
-            type="number"
-            value={cantidad ?? ""}
-            min="0"
-            step="any"
-            onChange={(e) =>
-              handleCantidadInputChange(
-                item.id,
-                parseFloat(e.target.value || 0)
-              )
-            }
+          <DecimalInput
+            value={cantidad ?? 0}
+            onChange={(val) => handleCantidadInputChange(item.id, val)}
             className="w-12 text-center text-sm font-medium border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0B2C4D] no-spin"
+            placeholder="0"
           />
 
           <button
@@ -71,14 +65,11 @@ export default function TableRow({
 
       {/* Desp (%) */}
       <td className="py-2.5 px-2 text-center">
-        <input
-          type="number"
-          step="any"
-          value={desp ?? ""}
-          onChange={(e) =>
-            onDepreciacionChange(item.id, parseFloat(e.target.value) || 0)
-          }
+        <DecimalInput
+          value={desp ?? 0}
+          onChange={(val) => onDepreciacionChange(item.id, val)}
           className="w-14 text-center text-sm font-medium border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#0B2C4D] no-spin"
+          placeholder="0"
         />
       </td>
 

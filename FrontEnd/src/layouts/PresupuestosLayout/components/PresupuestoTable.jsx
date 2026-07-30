@@ -3,6 +3,7 @@ import { FaPlus, FaMinus } from "react-icons/fa";
 import TableHeader from "./TableHeader";
 import { toast } from "react-toastify";
 import Modal from "../../../components/Modal";
+import DecimalInput from "../../../components/DecimalInput";
 import {
   createHerramienta,
   updateHerramienta,
@@ -436,15 +437,11 @@ export default function PresupuestoTable({
                                                             <FaMinus size={12} />
                                                         </button>
 
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            step="any"
+                                                        <DecimalInput
                                                             value={item.cantidad}
-                                                            onChange={(e) =>
-                                                                handleCantidadChange(item.id, parseFloat(e.target.value) || 0)
-                                                            }
+                                                            onChange={(val) => handleCantidadChange(item.id, val)}
                                                             className="w-16 border rounded text-center"
+                                                            placeholder="0"
                                                         />
 
                                                         <button
@@ -461,15 +458,11 @@ export default function PresupuestoTable({
                                             return (
                                                 <td key={col.key} className="text-center">
                                                     {esLogisticaConMO ? (
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            step="1"
+                                                        <DecimalInput
                                                             value={empleadosLogistica[item.id] ?? Number(totalEmpleadosMO)}
-                                                            onChange={(e) =>
-                                                                handleEmpleadosChange(item.id, parseFloat(e.target.value) || 0)
-                                                            }
+                                                            onChange={(val) => handleEmpleadosChange(item.id, val)}
                                                             className="w-16 border rounded text-center font-bold text-blue-600"
+                                                            placeholder="0"
                                                         />
                                                     ) : "-"}
                                                 </td>
