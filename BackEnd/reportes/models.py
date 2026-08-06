@@ -626,7 +626,7 @@ class APUManoObra(models.Model):
     descripcion = models.CharField(max_length=255, blank=True, null=True)
     unidad = models.CharField(max_length=50, blank=True, null=True)
     cantidad = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("1.00")
+        max_digits=10, decimal_places=4, default=Decimal("1.00")
     )
     precio_unitario = models.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal("0.00")
