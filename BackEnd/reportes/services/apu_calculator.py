@@ -48,10 +48,8 @@ def recalculate_apu_totals(apu: "APU") -> None:
     # Bono alimenticio: $15 por día
     bono_alimenticio = dias_trabajados * Decimal("15.00")
     
-    # Prestaciones sociales: 200% del (total mano obra base + logística)
-    # Según sistema viejo: se calcula sobre base + logística
-    base_para_prestaciones = total_mano_obra_base + total_logistica
-    prestaciones_sociales = base_para_prestaciones * Decimal("2.00")
+    # Prestaciones sociales: 200% de la mano de obra base (sin logística)
+    prestaciones_sociales = total_mano_obra_base * Decimal("2.00")
     
     # Total mano de obra = base + bono + prestaciones + logística
     total_mano_obra = total_mano_obra_base + bono_alimenticio + prestaciones_sociales + total_logistica

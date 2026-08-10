@@ -109,8 +109,8 @@ const TotalesPanel = ({
     // Bono alimenticio: $15 × días trabajados
     const bonoAlimentacion = totalDiasTrabajados * 15;
 
-    // ✅ Prestaciones: 200% del (manoObraBaseTotal + bonoAlimenticio)
-    const prestacionesSociales = (manoObraBaseTotal + logisticaTotal) * 2;
+    // ✅ Prestaciones: 200% de la mano de obra base (sin logística)
+    const prestacionesSociales = manoObraBaseTotal * 2;
 
     // ✅ Total mano de obra (como sistema viejo): base + bono + prestaciones + logística
     const manoObraTotal =

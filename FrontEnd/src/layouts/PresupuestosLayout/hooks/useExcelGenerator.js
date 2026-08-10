@@ -421,7 +421,7 @@ export default function useExcelGenerator() {
           [
             "TOTAL MANO DE OBRA BASE",
             {
-              f: `IFERROR(G${safe(totalMoRow) - 1}+G${safe(totalLogRow) - 1},0)`,
+              f: `IFERROR(G${safe(totalMoRow) - 1},0)`,
             },
           ],
           [
@@ -437,7 +437,7 @@ export default function useExcelGenerator() {
           [
             "TOTAL MANO DE OBRA",
             {
-              f: `IFERROR(F${safe(row) + 2}+F${safe(row) + 3}+F${safe(row) + 4},0)`,
+              f: `IFERROR(F${safe(row) + 2}+F${safe(row) + 3}+F${safe(row) + 4}+G${safe(totalLogRow) - 1},0)`,
             },
           ],
           ["COSTO POR UNIDAD", { f: `IFERROR(F${safe(row) + 5}/B9,0)` }],
