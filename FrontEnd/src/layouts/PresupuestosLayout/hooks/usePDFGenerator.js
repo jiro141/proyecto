@@ -170,7 +170,7 @@ export default function usePDFGenerator() {
     const dibujarNota = (titulo, contenido) => {
       if (!titulo && !contenido) return;
 
-      finalY += 30;
+      finalY += 15;
 
       if (titulo) {
         doc.setFont("helvetica", "bold");
