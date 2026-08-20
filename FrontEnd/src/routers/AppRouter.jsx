@@ -19,6 +19,8 @@ import ProveedoresHome from "../pages/ProveedoresHome";
 import ClientesHome from "../layouts/ClientsLayout/ClientesHome";
 import ClientesCuentas from "../layouts/ClientsLayout/ClientesCuentas";
 import ClientesCuentasPorCliente from "../layouts/ClientsLayout/ClientesCuentasPorCliente";
+import FacturacionLayout from "../layouts/FacturacionLayout/FacturacionLayout";
+import CrearFacturaLayout from "../layouts/FacturacionLayout/CrearFacturaLayout";
 
 const AppRouter = () => {
   return (
@@ -52,6 +54,10 @@ const AppRouter = () => {
             <Route index />
             <Route path="Lista" element={<PresupuestosLayout />} />
             <Route path="Crear" element={<CrearPresupuestoLayout />} />
+          </Route>
+          <Route path="facturas">
+            <Route path="lista" element={<FacturacionLayout />} />
+            <Route path="generar" element={<CrearFacturaLayout />} />
           </Route>
         </Route>
       </Route>

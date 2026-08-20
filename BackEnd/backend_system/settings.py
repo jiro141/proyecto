@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     "inventario.apps.InventarioConfig",
     "corsheaders",
     "reportes",
-    "cuentas"
+    "cuentas",
+    "facturacion"
 ]
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (

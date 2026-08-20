@@ -2,8 +2,9 @@
 import axios from "axios";
 import { toast } from "react-toastify";
 
-// Base URL de tu backend Django
-const BASE_URL = "https://hermabe.cloud/api";
+// Base URL de tu backend Django.
+// Se puede sobreescribir en local con la variable VITE_API_URL (ver .env.local)
+const BASE_URL = import.meta.env.VITE_API_URL || "https://hermabe.cloud/api";
 
 // Mensajes de error en español
 const getErrorMessage = (error) => {

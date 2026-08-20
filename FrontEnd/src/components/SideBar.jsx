@@ -24,6 +24,7 @@ const SideBar = () => {
   const [showInventory, setShowInventory] = useState(false);
   const [showReports, setShowReports] = useState(false);
   const [showClients, setShowClients] = useState(false);
+  const [showInvoicing, setShowInvoicing] = useState(false);
 
   return (
     <aside className="sidebar">
@@ -140,6 +141,32 @@ const SideBar = () => {
             <NavLink to="/informes/Crear" className="sidebar-sublink">
               <FaPlusCircle />
               <span>Crear Nuevo</span>
+            </NavLink>
+          </div>
+        )}
+
+        {/* --- Facturación --- */}
+        <div
+          className="sidebar-link submenu-toggle"
+          onClick={() => setShowInvoicing(!showInvoicing)}
+          style={{ cursor: "pointer" }}
+        >
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <FaFileInvoiceDollar />
+            <span>Facturación</span>
+          </div>
+          {showInvoicing ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
+        </div>
+
+        {showInvoicing && (
+          <div className="submenu">
+            <NavLink to="/facturas/generar" className="sidebar-sublink">
+              <FaPlusCircle />
+              <span>Generar</span>
+            </NavLink>
+            <NavLink to="/facturas/lista" className="sidebar-sublink">
+              <FaFileInvoiceDollar />
+              <span>Facturas</span>
             </NavLink>
           </div>
         )}
