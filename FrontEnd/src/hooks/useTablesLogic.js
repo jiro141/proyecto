@@ -109,10 +109,7 @@ const useTablesLogic = ({
       return JSON.stringify(resolvedValue);
     }
 
-    const displayText =
-      typeof resolvedValue === "string" && resolvedValue.length > 15
-        ? resolvedValue.slice(0, 15) + "..."
-        : resolvedValue ?? "—";
+    const displayText = resolvedValue ?? "—";
 
     const isMonetary =
       colKey === "costo" ||
