@@ -11,9 +11,6 @@ const columns = [
   { key: "nombre", label: "Nombre de la Empresa" },
   { key: "rif", label: "R.I.F" },
   { key: "encargado", label: "Encargado" },
-  { key: "telefono", label: "Teléfono" },
-  { key: "direccion", label: "Dirección" },
-  { key: "correo_electronico", label: "Correo Electronico" },
 ];
 
 export default function ClientesHome() {
