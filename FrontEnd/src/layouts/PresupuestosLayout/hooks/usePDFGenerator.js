@@ -17,7 +17,7 @@ export default function usePDFGenerator() {
     doc.setFontSize(10);
     doc.text("RIF: V-14368387-3", 50, 26);
     doc.text(
-      "Carrera 7 N° 12-81, San Vicente, San Cristóbal, Edo. Táchira",
+      "Carrera 7 N° 12-81, San Vicente, San Juan de Cólon, Edo. Táchira",
       50,
       31,
     );
