@@ -164,7 +164,7 @@ const construirDoc = (factura, extra, cfg) => {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-    return moneda === "BS" ? f : `$${f}`;
+    return moneda === "BS" ? `Bs ${f}` : `$${f}`;
   };
 
   /* ---- ENCABEZADO (inicia en TOP_MARGIN) ---- */
@@ -379,8 +379,9 @@ const construirDoc = (factura, extra, cfg) => {
   const totalLabelFS = 9.5;
   const totalFS = 10.5;
 
-  // Prefijo de la columna BS: solo en USD (cuando hay dos columnas). En bolívares no.
-  const bsPrefijo = esUSD ? "Bs " : "";
+  // Prefijo de la columna BS: siempre "Bs " (tanto en USD como en bolívares),
+  // para que una factura en Bs quede claramente identificada como tal.
+  const bsPrefijo = "Bs ";
 
   // Helper para dibujar fila compacta
   const drawRow = (y, label, valBS, valUSD, isTotal = false) => {
