@@ -186,6 +186,7 @@ class FacturaSerializer(serializers.ModelSerializer):
         )
 
         reportes = validated_data.pop("_reportes")
+        validated_data.pop("reporte", None)
         items_data = self.context.get("items_data", [])
         factura_completa = self.context.get("factura_completa", False)
 
