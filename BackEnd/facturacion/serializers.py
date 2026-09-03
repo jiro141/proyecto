@@ -194,6 +194,14 @@ class FacturaSerializer(serializers.ModelSerializer):
         reporte = reportes[0]
         factura = Factura(reporte=reporte, **validated_data)
 
+        def _a_moneda(usd):
+            """Convierte un monto en USD a la moneda de la factura (Bs → multiplica por tasa)."""
+            if factura.moneda == "BS":
+                tasa = factura.tasa_bs_usd or _Dec("0.00")
+                if tasa > 0:
+                    return (usd * tasa).quantize(_Dec("0.01"))
+            return usd
+
         if factura_completa:
             # Modo descripción completa (Opción B): un ítem por presupuesto,
             # cada uno con su descripción y su total_reporte.
@@ -217,7 +225,7 @@ class FacturaSerializer(serializers.ModelSerializer):
                             )
                         }
                     )
-                total_factura += total_rep
+                total_factura += _a_moneda(total_rep)
 
             factura.monto_iva = (total_factura * _Dec("16.00") / _Dec("100.00")).quantize(
                 _Dec("0.01")
@@ -230,7 +238,7 @@ class FacturaSerializer(serializers.ModelSerializer):
                 ]
             )
             for rep in reportes:
-                total_rep = rep.total_reporte or _Dec("0.00")
+                total_rep = _a_moneda(rep.total_reporte or _Dec("0.00"))
                 FacturaItem.objects.create(
                     factura=factura,
                     apu=None,
