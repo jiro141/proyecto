@@ -15,7 +15,7 @@ const columns = [
 
 export default function EppLayout() {
   const [search, setSearch] = useState("");
-  const { data, loading, error, refetch } = useInventario("epp", search);
+  const { data, loading, error, refetch, page, setPage, pagination } = useInventario("epp", search);
   const { proveedores, refetch: refetchProveedores } = useProveedores();
   const [isModalOpen, setModalOpen] = useState(false);
   const [isProvModalOpen, setProvModalOpen] = useState(false);
@@ -99,6 +99,9 @@ export default function EppLayout() {
         tipo={"epp"}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
+        page={page}
+        onPageChange={setPage}
+        pagination={pagination}
       />
 
       <Modal

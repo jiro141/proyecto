@@ -15,7 +15,7 @@ const columns = [
 
 export default function HerramientasLayout() {
   const [search, setSearch] = useState("");
-  const { data, loading, error, refetch } = useInventario("herramientas", search);
+  const { data, loading, error, refetch, page, setPage, pagination } = useInventario("herramientas", search);
   const [isModalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -66,6 +66,9 @@ export default function HerramientasLayout() {
         tipo={"herramientas"}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
+        page={page}
+        onPageChange={setPage}
+        pagination={pagination}
       />
 
       <Modal

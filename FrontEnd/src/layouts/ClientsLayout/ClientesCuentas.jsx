@@ -9,6 +9,7 @@ import Select from "react-select";
 import useCuentas from "../../hooks/useCuentas";
 import { createAbono, deleteAbono, getReportes, getReporteAbonos, getResumenCuentas } from "../../api/controllers/Cuentas";
 import useCuentasExcelGenerator from "../PresupuestosLayout/hooks/useCuentasExcelGenerator";
+import Paginator from "../../components/Paginator";
 
 const formatCurrency = (value) => {
   const num = parseFloat(value);
@@ -30,7 +31,7 @@ const formatDate = (dateString) => {
 const ITEMS_PER_PAGE = 5;
 
 export default function ClientesCuentas() {
-  const { reportes, loading, error, refetch } = useCuentas();
+  const { reportes, loading, error, refetch, page, setPage, pagination } = useCuentas();
   const [search, setSearch] = useState("");
   const [isModalOpen, setModalOpen] = useState(false);
   const [isDetalleOpen, setDetalleOpen] = useState(false);
@@ -360,6 +361,14 @@ export default function ClientesCuentas() {
             )}
           </tbody>
         </table>
+
+        {/* PAGINADOR SERVER-SIDE */}
+        <Paginator
+          currentPage={page}
+          totalCount={pagination.count}
+          pageSize={20}
+          onPageChange={setPage}
+        />
       </div>
 
       {/* Modal Registrar Abono */}

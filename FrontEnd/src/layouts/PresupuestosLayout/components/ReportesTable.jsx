@@ -1,6 +1,7 @@
 import React from "react";
 import BounceLoader from "react-spinners/BounceLoader";
 import { getReporteDetalle } from "../../../api/controllers/Presupuesto";
+import Paginator from "../../../components/Paginator";
 
 const formatDate = (value) => {
   if (!value) return "—";
@@ -37,7 +38,11 @@ export default function ReportesTable({
   data = [],
   loading,
   onRowClick,
-  onAction, 
+  onAction,
+  // Props de paginación server-side
+  page,
+  onPageChange,
+  pagination, // { count, totalPages }
 }) {
   return (
     <div className="relative flex flex-col h-full -mx-7 -mb-7 mt-4">
@@ -122,6 +127,16 @@ export default function ReportesTable({
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* PAGINADOR SERVER-SIDE */}
+      {pagination && page && onPageChange && (
+        <Paginator
+          currentPage={page}
+          totalCount={pagination.count}
+          pageSize={20}
+          onPageChange={onPageChange}
+        />
       )}
     </div>
   );

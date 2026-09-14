@@ -64,7 +64,7 @@ export const columns = [
 
 export default function ReportesLayout({ clienteSeleccionado }) {
   const [search, setSearch] = useState("");
-  const { reportes, loading, error, refetch } = useReportes(search, clienteSeleccionado?.id);
+  const { reportes, loading, error, refetch, page, setPage, pagination } = useReportes(search, clienteSeleccionado?.id);
   const [isModalOpen, setModalOpen] = useState(false);
   const [isEntregaModalOpen, setEntregaModalOpen] = useState(false);
   const [isConfirmOpen, setConfirmOpen] = useState(false);
@@ -187,6 +187,9 @@ export default function ReportesLayout({ clienteSeleccionado }) {
         loading={loading}
         onRowClick={handleRowClick}
         onAction={handleAction}
+        page={page}
+        onPageChange={setPage}
+        pagination={pagination}
       />
 
       <ReporteDetalleModal

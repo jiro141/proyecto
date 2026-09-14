@@ -2,50 +2,84 @@ import AuthApi from "../AuthApi";
 
 /**
  * Obtener todos los elementos de EPP
- * @returns {Promise<Array>} Lista de EPPs
+ * @param {string} search
+ * @param {number} page - número de página (1-indexed)
  */
-export const getEpp = async (search = "") => {
-  const response = await AuthApi.get(`/inventario/epp/?search=${search}`);
+export const getEpp = async (search = "", page = 1) => {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  params.append("page", page);
+  const response = await AuthApi.get(`/inventario/epp/?${params.toString()}`);
   return response.data;
 };
 
 /**
  * Obtener todos los elementos de Stock
- * @returns {Promise<Array>} Lista de stock
+ * @param {string} search
+ * @param {number} page - número de página (1-indexed)
  */
-export const getStock = async (search = "") => {
-  const response = await AuthApi.get(`/inventario/stock/?search=${search}`);
+export const getStock = async (search = "", page = 1) => {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  params.append("page", page);
+  const response = await AuthApi.get(`/inventario/stock/?${params.toString()}`);
   return response.data;
 };
+
 export const getTaza = async () => {
   const response = await AuthApi.get(`/inventario/taza/`);
-
   return response.data;
 };
 
 /**
  * Obtener todos los elementos de Consumibles
- * @returns {Promise<Array>} Lista de consumibles
+ * @param {string} search
+ * @param {number} page - número de página (1-indexed)
  */
-export const getConsumibles = async (search = "") => {
-  const response = await AuthApi.get(
-    `/inventario/consumibles/?search=${search}`
-  );
+export const getConsumibles = async (search = "", page = 1) => {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  params.append("page", page);
+  const response = await AuthApi.get(`/inventario/consumibles/?${params.toString()}`);
   return response.data;
 };
 
-export const getHerramientas = async (search = "") => {
-  const response = await AuthApi.get(`/inventario/herramientas/?search=${search}`);
+/**
+ * Obtener herramientas
+ * @param {string} search
+ * @param {number} page - número de página (1-indexed)
+ */
+export const getHerramientas = async (search = "", page = 1) => {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  params.append("page", page);
+  const response = await AuthApi.get(`/inventario/herramientas/?${params.toString()}`);
   return response.data;
 };
 
-export const getEmpleados = async (search = "") => {
-  const response = await AuthApi.get(`/inventario/empleados/?search=${search}`);
+/**
+ * Obtener empleados
+ * @param {string} search
+ * @param {number} page - número de página (1-indexed)
+ */
+export const getEmpleados = async (search = "", page = 1) => {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  params.append("page", page);
+  const response = await AuthApi.get(`/inventario/empleados/?${params.toString()}`);
   return response.data;
 };
 
-export const getLogistica = async (search = "") => {
-  const response = await AuthApi.get(`/inventario/logistica/?search=${search}`);
+/**
+ * Obtener logística
+ * @param {string} search
+ * @param {number} page - número de página (1-indexed)
+ */
+export const getLogistica = async (search = "", page = 1) => {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  params.append("page", page);
+  const response = await AuthApi.get(`/inventario/logistica/?${params.toString()}`);
   return response.data;
 };
 
@@ -96,16 +130,19 @@ export const updateLogistica = async (id, payload) => {
   const response = await AuthApi.put(`/inventario/logistica/${id}/`, payload);
   return response.data;
 };
-export const getMovimientos = async (search = "") => {
-  const response = await AuthApi.get(
-    `/inventario/movimientos/?search=${search}`
-  );
+export const getMovimientos = async (search = "", page = 1) => {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  params.append("page", page);
+  const response = await AuthApi.get(`/inventario/movimientos/?${params.toString()}`);
   return response.data;
 };
-export const getProveedores = async (search = "") => {
-  const response = await AuthApi.get(
-    `/inventario/proveedores/?search=${search}`
-  );
+
+export const getProveedores = async (search = "", page = 1) => {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  params.append("page", page);
+  const response = await AuthApi.get(`/inventario/proveedores/?${params.toString()}`);
   return response.data;
 };
 
@@ -153,10 +190,12 @@ export const getItemById = async (tipo, id) => {
 /**
  * Obtener proveedores con búsqueda opcional
  * @param {string} search
+ * @param {number} page - número de página (1-indexed)
  */
-export const getProveedoresSearch = async (search = "") => {
-  const response = await AuthApi.get(
-    `/inventario/proveedores/?search=${search}`
-  );
+export const getProveedoresSearch = async (search = "", page = 1) => {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  params.append("page", page);
+  const response = await AuthApi.get(`/inventario/proveedores/?${params.toString()}`);
   return response.data;
 };

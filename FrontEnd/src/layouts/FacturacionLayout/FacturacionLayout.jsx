@@ -6,6 +6,7 @@ import BounceLoader from "react-spinners/BounceLoader";
 import useFacturas from "../../hooks/useFacturas";
 import { anularFactura } from "../../api/controllers/Facturas";
 import Modal from "../../components/Modal";
+import Paginator from "../../components/Paginator";
 import FacturaDetalleModal from "./components/FacturaDetalleModal";
 import { formatFecha, formatMoneda, EstadoBadge } from "./utils";
 
@@ -13,7 +14,7 @@ export default function FacturacionLayout() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const { facturas, loading, refetch } = useFacturas(debouncedSearch);
+  const { facturas, loading, refetch, page, setPage, pagination } = useFacturas(debouncedSearch);
   const [detalle, setDetalle] = useState(null);
   const [anularId, setAnularId] = useState(null);
   const [anulando, setAnulando] = useState(false);
@@ -162,6 +163,14 @@ export default function FacturacionLayout() {
             )}
           </tbody>
         </table>
+
+        {/* PAGINADOR SERVER-SIDE */}
+        <Paginator
+          currentPage={page}
+          totalCount={pagination.count}
+          pageSize={20}
+          onPageChange={setPage}
+        />
       </div>
 
       {/* Modal detalle */}

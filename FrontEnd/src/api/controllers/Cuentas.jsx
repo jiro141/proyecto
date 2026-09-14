@@ -1,7 +1,7 @@
 import AuthApi from "../AuthApi";
 
-export const getCuentasCobrar = async () => {
-  const response = await AuthApi.get("/reportes/cuentas-cobrar/");
+export const getCuentasCobrar = async (page = 1) => {
+  const response = await AuthApi.get(`/reportes/cuentas-cobrar/?page=${page}`);
   return response.data;
 };
 

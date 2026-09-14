@@ -1,20 +1,22 @@
 import AuthApi from "../AuthApi";
 
 /**
- * Obtener todas las facturas (con opción de búsqueda)
+ * Obtener todas las facturas (con opción de búsqueda y paginación)
  * @param {string} search - busca por n_factura, cliente o rif
  * @param {number|null} reporteId - filtra por presupuesto
+ * @param {number} page - número de página (1-indexed)
  */
-export const getFacturas = async (search = "", reporteId = null) => {
+export const getFacturas = async (search = "", reporteId = null, page = 1) => {
   let url = "/facturas/";
   const params = [];
   if (search) params.push(`search=${encodeURIComponent(search)}`);
   if (reporteId) params.push(`reporte_id=${encodeURIComponent(reporteId)}`);
+  params.push(`page=${page}`);
   if (params.length > 0) {
     url += `?${params.join("&")}`;
   }
   const response = await AuthApi.get(url);
-  return response.data.results || response.data;
+  return response.data;
 };
 
 /**

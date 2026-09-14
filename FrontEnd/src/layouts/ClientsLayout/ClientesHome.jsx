@@ -15,7 +15,7 @@ const columns = [
 
 export default function ClientesHome() {
   const [search, setSearch] = useState("");
-  const { clientes, loading, error, refetch } = useClientes(search);
+  const { clientes, loading, error, refetch, page, setPage, pagination } = useClientes(search);
   const [editItem, setEditItem] = useState(null);
   const [isModalOpen, setModalOpen] = useState(false);
 
@@ -87,6 +87,9 @@ export default function ClientesHome() {
         loading={loading}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
+        page={page}
+        onPageChange={setPage}
+        pagination={pagination}
       />
 
       {/* 🧩 Modal solo para editar cliente */}

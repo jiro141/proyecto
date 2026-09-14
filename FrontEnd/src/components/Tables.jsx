@@ -4,6 +4,7 @@ import { FaSearch, FaSave, FaSyncAlt } from "react-icons/fa";
 import { FaRegTrashCan } from "react-icons/fa6";
 import { useLocation } from "react-router-dom";
 import Modal from "./Modal";
+import Paginator from "./Paginator";
 import useTablesLogic from "../hooks/useTablesLogic";
 import PresupuestosLayout from "../layouts/PresupuestosLayout/PresupuestosLayout";
 const Tables = ({
@@ -18,6 +19,10 @@ const Tables = ({
   taza,
   tazaLoading,
   tazaRefetch,
+  // Props de paginación server-side
+  page,
+  onPageChange,
+  pagination, // { count, totalPages }
 }) => {
   const location = useLocation();
   const isClientesLista = location.pathname === "/clientes/Lista";
@@ -228,6 +233,16 @@ const Tables = ({
           )}
         </tbody>
       </table>
+
+      {/* PAGINADOR SERVER-SIDE */}
+      {pagination && page && onPageChange && (
+        <Paginator
+          currentPage={page}
+          totalCount={pagination.count}
+          pageSize={20}
+          onPageChange={onPageChange}
+        />
+      )}
 
       {/* MODAL CONFIRMACIÓN ELIMINAR */}
       <Modal

@@ -29,7 +29,7 @@ export default function ConsumiblesLayout() {
   const [isDeptModalOpen, setDeptModalOpen] = useState(false);
   const [isProvModalOpen, setProvModalOpen] = useState(false);
 
-  const { data, loading, error, refetch } = useInventario("consumibles", search);
+  const { data, loading, error, refetch, page, setPage, pagination } = useInventario("consumibles", search);
   const { departamentos, loading: loadingDept, refetch: refetchDepartamentos } = useDepartamentos(searchDept);
   const { ubicaciones, refetch: refetchUbicaciones } = useUbicaciones();
   const { lugares, refetch: refetchLugares } = useLugaresConsumo();
@@ -159,6 +159,9 @@ export default function ConsumiblesLayout() {
         loading={loading}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
+        page={page}
+        onPageChange={setPage}
+        pagination={pagination}
       />
 
       <Modal

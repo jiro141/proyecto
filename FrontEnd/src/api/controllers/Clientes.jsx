@@ -1,11 +1,15 @@
 import AuthApi from "../AuthApi";
 
 /**
- * Obtener todos los clientes (con opción de búsqueda)
+ * Obtener todos los clientes (con opción de búsqueda y paginación)
  * @param {string} search - texto a buscar por nombre, encargado o rif
+ * @param {number} page - número de página (1-indexed)
  */
-export const getClientes = async (search = "") => {
-  const response = await AuthApi.get(`/reportes/clientes/?search=${search}`);
+export const getClientes = async (search = "", page = 1) => {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  params.append("page", page);
+  const response = await AuthApi.get(`/reportes/clientes/?${params.toString()}`);
   return response.data;
 };
 

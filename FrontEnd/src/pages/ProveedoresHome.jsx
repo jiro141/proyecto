@@ -16,7 +16,7 @@ const columns = [
 
 export default function ProveedoresHome() {
   const [search, setSearch] = useState("");
-  const { proveedores, loading, error, refetch } = useProveedores(search);
+  const { proveedores, loading, error, refetch, page, setPage, pagination } = useProveedores(search);
   const [editItem, setEditItem] = useState(null);
   const [isModalOpen, setModalOpen] = useState(false);
 
@@ -67,6 +67,9 @@ export default function ProveedoresHome() {
         loading={loading}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
+        page={page}
+        onPageChange={setPage}
+        pagination={pagination}
       />
 
       <Modal

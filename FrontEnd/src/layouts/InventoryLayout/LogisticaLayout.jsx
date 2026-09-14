@@ -15,7 +15,7 @@ const columns = [
 
 export default function LogisticaLayout() {
   const [search, setSearch] = useState("");
-  const { data, loading, error, refetch } = useInventario("logistica", search);
+  const { data, loading, error, refetch, page, setPage, pagination } = useInventario("logistica", search);
   const [isModalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -66,6 +66,9 @@ export default function LogisticaLayout() {
         tipo={"logistica"}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
+        page={page}
+        onPageChange={setPage}
+        pagination={pagination}
       />
 
       <Modal

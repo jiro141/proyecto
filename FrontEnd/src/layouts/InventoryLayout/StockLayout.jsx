@@ -20,7 +20,7 @@ const columns = [
 
 export default function StockLayout() {
   const [search, setSearch] = useState("");
-  const { data, loading, error, refetch } = useInventario("stock", search);
+  const { data, loading, error, refetch, page, setPage, pagination } = useInventario("stock", search);
   const {
     data: taza,
     loading: tazaLoading,
@@ -184,6 +184,9 @@ export default function StockLayout() {
         tazaLoading={tazaLoading}
         tazaError={tazaError}
         tazaRefetch={tazaRefetch}
+        page={page}
+        onPageChange={setPage}
+        pagination={pagination}
       />
 
       {/* Modal para agregar stock */}

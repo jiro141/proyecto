@@ -15,7 +15,7 @@ const columns = [
 
 export default function EmpleadosLayout() {
   const [search, setSearch] = useState("");
-  const { data, loading, error, refetch } = useInventario("empleados", search);
+  const { data, loading, error, refetch, page, setPage, pagination } = useInventario("empleados", search);
   const [isModalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
@@ -66,6 +66,9 @@ export default function EmpleadosLayout() {
         tipo={"empleados"}
         onAdd={handleAddOrEdit}
         onSearch={setSearch}
+        page={page}
+        onPageChange={setPage}
+        pagination={pagination}
       />
 
       <Modal

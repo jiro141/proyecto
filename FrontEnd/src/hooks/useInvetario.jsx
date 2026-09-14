@@ -23,11 +23,10 @@ export default function useInventario(tipo, search = "") {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ count: 0, totalPages: 1 });
 
-  /** ======================
-   * Obtener datos del inventario
-   * ====================== */
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
       setError(null);
@@ -36,12 +35,19 @@ export default function useInventario(tipo, search = "") {
       if (!controller)
         throw new Error(`Tipo de inventario "${tipo}" no válido`);
 
-      // 🚀 Soporte para búsqueda (si el controlador lo acepta)
-      const result = await controller(search);
+      const result = await controller(search, pageNum);
 
-
-
-      setData(result.results ? result.results : result);
+      // Backend DRF returns { count, next, previous, results }
+      if (result.results) {
+        setData(result.results);
+        setPagination({
+          count: result.count || 0,
+          totalPages: Math.ceil((result.count || 0) / 20),
+        });
+      } else {
+        setData(Array.isArray(result) ? result : []);
+        setPagination({ count: Array.isArray(result) ? result.length : 0, totalPages: 1 });
+      }
     } catch (err) {
       setError(err.message || "Error al obtener datos");
     } finally {
@@ -49,12 +55,26 @@ export default function useInventario(tipo, search = "") {
     }
   }, [tipo, search]);
 
-
-  /** ======================
-   * Ejecutar al montar o cuando cambia tipo o search
-   * ====================== */
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-  return { data, loading, error, refetch: fetchData };
+    setPage(1);
+    fetchData(1);
+  }, [tipo, search]);
+
+  useEffect(() => {
+    fetchData(page);
+  }, [page]);
+
+  const setPageAndFetch = (newPage) => {
+    setPage(newPage);
+  };
+
+  return {
+    data,
+    loading,
+    error,
+    refetch: () => fetchData(page),
+    page,
+    setPage: setPageAndFetch,
+    pagination,
+  };
 }
