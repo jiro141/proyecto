@@ -11,6 +11,13 @@ from .models import (
     NotaDebito, NotaDebitoItem, NotaDebitoConfig,
 )
 
+# Margen de tolerancia (en USD) para el redondeo acumulado al facturar en Bs.
+# Cada precio_unitario se redondea a 2 decimales en Bs por línea; con varios
+# APU y cantidades grandes ese redondeo puede sumar unos centavos de más al
+# convertir de vuelta a USD. Sin este margen, la validación por monto
+# rechaza facturas legítimas por diferencias de centavos.
+TOLERANCIA_REDONDEO_USD = Decimal("0.05")
+
 
 def _dec(valor, default="0.00"):
     """Convierte a Decimal de forma segura."""
@@ -230,7 +237,7 @@ def validar_items_factura(
         ),
         Decimal("0.00"),
     )
-    if subtotal_usd > restante_total:
+    if subtotal_usd > restante_total + TOLERANCIA_REDONDEO_USD:
         raise ValidationError(
             {
                 "items": (

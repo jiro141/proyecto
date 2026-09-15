@@ -378,10 +378,16 @@ export default function CrearFacturaModal({ presupuestos, onClose }) {
     return round2((Number(montoFacturado) || 0) * factor);
   }, [montoFacturado, moneda, tasaBCV]);
 
+  // Margen de tolerancia por redondeo acumulado al convertir a Bs (ver
+  // TOLERANCIA_REDONDEO_USD en el backend, services.py). Con varios APU y
+  // cantidades grandes, redondear cada precio_unitario a 2 decimales en Bs
+  // puede sumar unos centavos de más que no son un error real.
   const subtotalExcedeRestante = useMemo(() => {
     if (!restanteFacturacion) return false;
-    return totales.subtotal > restanteEnMoneda;
-  }, [totales.subtotal, restanteEnMoneda, restanteFacturacion]);
+    const factor = moneda === "BS" ? Number(tasaBCV?.promedio) || 0 : 1;
+    const tolerancia = 0.05 * factor;
+    return totales.subtotal > restanteEnMoneda + tolerancia;
+  }, [totales.subtotal, restanteEnMoneda, restanteFacturacion, moneda, tasaBCV]);
 
   // ── Guardar ──
   const handleSave = async () => {
