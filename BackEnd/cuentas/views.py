@@ -213,14 +213,10 @@ class AbonoViewSet(viewsets.ModelViewSet):
                 status=404
             )
 
-        # Obtener reportes del cliente
+        # Obtener reportes del cliente (solo Ejecutado y Pagado)
         reportes_qs = Reporte.objects.filter(
             cliente=cliente,
-            estado__in=[
-                EstadoChoices.EJECUTADO,
-                EstadoChoices.APROBADO_ESPERA,
-                EstadoChoices.PAGADO,
-            ]
+            estado__in=[EstadoChoices.EJECUTADO, EstadoChoices.PAGADO]
         ).prefetch_related('abonos').order_by('-fecha_creacion')
 
         reportes_data = []
