@@ -1,14 +1,21 @@
 from decimal import Decimal
 
-from django.db import models
+from django.db import models, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from reportes.models import Reporte, EstadoChoices
-from .models import Factura, FacturaItem, FacturaConfig, EstadoFactura
-from .serializers import FacturaSerializer, FacturaConfigSerializer
+from .models import (
+    Factura, FacturaItem, FacturaConfig, EstadoFactura,
+    NotaCredito, NotaDebito, EstadoNota,
+)
+from .serializers import (
+    FacturaSerializer, FacturaConfigSerializer,
+    NotaCreditoSerializer, NotaCreditoConfigSerializer,
+    NotaDebitoSerializer, NotaDebitoConfigSerializer,
+)
 from .services import (
     validar_reporte_facturable,
     monto_pendiente_por_apu,
@@ -17,6 +24,7 @@ from .services import (
     monto_facturado_reporte,
     total_base_sin_descuento,
     restante_facturacion,
+    crear_nota_credito_desde_factura,
 )
 
 
@@ -125,7 +133,13 @@ class FacturaDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class AnularFacturaView(APIView):
-    """POST /facturas/<pk>/anular/ — anula una factura EMITIDA."""
+    """
+    POST /facturas/<pk>/anular/ — anula una factura EMITIDA y genera nota de crédito o débito.
+
+    Body:
+      - motivo: string (opcional)
+      - tipo_nota: "credito" | "debito" (default: "credito")
+    """
 
     def post(self, request, pk):
         factura = get_object_or_404(Factura, pk=pk)
@@ -136,10 +150,49 @@ class AnularFacturaView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        factura.estado = EstadoFactura.ANULADA
-        factura.save(update_fields=["estado", "updated_at"])
+        motivo = request.data.get("motivo", "")
+        tipo_nota = request.data.get("tipo_nota", "credito")
+
+        if tipo_nota not in ("credito", "debito"):
+            return Response(
+                {"detail": "tipo_nota debe ser 'credito' o 'debito'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Cambiar estado de la factura + generar la nota correspondiente de
+        # forma atómica: si la creación de la nota falla, el cambio de
+        # estado de la factura se revierte también (no queda anulada sin
+        # nota de respaldo fiscal).
+        with transaction.atomic():
+            factura.estado = EstadoFactura.ANULADA
+            factura.save(update_fields=["estado", "updated_at"])
+
+            if tipo_nota == "credito":
+                from .services import crear_nota_credito_desde_factura
+                nota = crear_nota_credito_desde_factura(factura, motivo=motivo)
+                nota_data = NotaCreditoSerializer(nota).data
+            else:
+                from .services import crear_nota_debito_desde_factura
+                nota = crear_nota_debito_desde_factura(
+                    factura,
+                    items_data=[
+                        {
+                            "apu_id": item.apu_id,
+                            "apu_descripcion": item.apu_descripcion,
+                            "unidad": item.unidad,
+                            "cantidad": str(item.cantidad),
+                            "precio_unitario": str(item.precio_unitario),
+                        }
+                        for item in factura.items.all()
+                    ],
+                    motivo=motivo or f"Nota de débito por anulación de factura {factura.n_factura}",
+                )
+                nota_data = NotaDebitoSerializer(nota).data
+
         serializer = FacturaSerializer(factura)
-        return Response(serializer.data)
+        data = serializer.data
+        data["nota_generada"] = nota_data
+        return Response(data)
 
 
 # ============================================================
@@ -280,4 +333,203 @@ class FacturaConfigView(APIView):
         )
         data = FacturaConfigSerializer(config).data
         data["siguiente_n_factura"] = proximo_n_factura()
+        return Response(data, status=status.HTTP_201_CREATED)
+
+
+# ============================================================
+# 📄 NOTAS DE CRÉDITO
+# ============================================================
+
+
+class NotaCreditoListCreateView(generics.ListCreateAPIView):
+    """
+    GET: lista notas de crédito (búsqueda por n_nota o cliente).
+    POST: crea una nota de crédito manual (opcional).
+    """
+
+    serializer_class = NotaCreditoSerializer
+
+    def get_queryset(self):
+        qs = NotaCredito.objects.select_related("factura").prefetch_related("items")
+
+        search = self.request.query_params.get("search", "")
+        factura_id = self.request.query_params.get("factura_id")
+        if factura_id:
+            qs = qs.filter(factura_id=factura_id)
+        if search:
+            qs = qs.filter(
+                models.Q(n_nota__icontains=search)
+                | models.Q(cliente_nombre__icontains=search)
+                | models.Q(cliente_rif__icontains=search)
+            )
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        factura_id = request.data.get("factura")
+        motivo = request.data.get("motivo", "")
+
+        if not factura_id:
+            return Response(
+                {"detail": "El campo factura es obligatorio."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        factura = get_object_or_404(Factura, pk=factura_id)
+
+        if factura.estado == EstadoFactura.ANULADA:
+            return Response(
+                {"detail": "No se puede crear una nota de crédito para una factura anulada."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        nota = crear_nota_credito_desde_factura(factura, motivo=motivo)
+        serializer = NotaCreditoSerializer(nota)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class NotaCreditoDetailView(generics.RetrieveDestroyAPIView):
+    """
+    GET: detalle de la nota de crédito.
+    DELETE: anula una nota de crédito EMITIDA.
+    """
+
+    serializer_class = NotaCreditoSerializer
+
+    def get_queryset(self):
+        return NotaCredito.objects.select_related("factura").prefetch_related("items")
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        if instance.estado == EstadoNota.ANULADA:
+            return Response(
+                {"detail": "La nota de crédito ya está anulada."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        instance.estado = EstadoNota.ANULADA
+        instance.save(update_fields=["estado", "updated_at"])
+        serializer = NotaCreditoSerializer(instance)
+        return Response(serializer.data)
+
+
+class NotaCreditoConfigView(APIView):
+    """
+    GET: configuración + siguiente n_nota (NC-NNNN).
+    POST: crea/actualiza la configuración.
+    """
+
+    def get(self, request):
+        config = NotaCreditoConfig.objects.first()
+        if not config:
+            return Response(
+                {"detail": "No existe configuración de notas de crédito."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = NotaCreditoConfigSerializer(config)
+        data = serializer.data
+        data["siguiente_n_nota"] = proximo_n_nota_credito()
+        return Response(data)
+
+    def post(self, request):
+        serializer = NotaCreditoConfigSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        config, _ = NotaCreditoConfig.objects.update_or_create(
+            id=1, defaults=serializer.validated_data
+        )
+        data = NotaCreditoConfigSerializer(config).data
+        data["siguiente_n_nota"] = proximo_n_nota_credito()
+        return Response(data, status=status.HTTP_201_CREATED)
+
+
+# ============================================================
+# 📄 NOTAS DE DÉBITO
+# ============================================================
+
+
+class NotaDebitoListCreateView(generics.ListCreateAPIView):
+    """
+    GET: lista notas de débito (búsqueda por n_nota o cliente).
+    POST: crea una nota de débito con items.
+    """
+
+    serializer_class = NotaDebitoSerializer
+
+    def get_queryset(self):
+        qs = NotaDebito.objects.select_related("factura").prefetch_related("items")
+
+        search = self.request.query_params.get("search", "")
+        factura_id = self.request.query_params.get("factura_id")
+        if factura_id:
+            qs = qs.filter(factura_id=factura_id)
+        if search:
+            qs = qs.filter(
+                models.Q(n_nota__icontains=search)
+                | models.Q(cliente_nombre__icontains=search)
+                | models.Q(cliente_rif__icontains=search)
+            )
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        nota = serializer.save()
+        result = NotaDebitoSerializer(nota).data
+        return Response(result, status=status.HTTP_201_CREATED)
+
+
+class NotaDebitoDetailView(generics.RetrieveDestroyAPIView):
+    """
+    GET: detalle de la nota de débito.
+    DELETE: anula una nota de débito EMITIDA.
+    """
+
+    serializer_class = NotaDebitoSerializer
+
+    def get_queryset(self):
+        return NotaDebito.objects.select_related("factura").prefetch_related("items")
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        if instance.estado == EstadoNota.ANULADA:
+            return Response(
+                {"detail": "La nota de débito ya está anulada."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        instance.estado = EstadoNota.ANULADA
+        instance.save(update_fields=["estado", "updated_at"])
+        serializer = NotaDebitoSerializer(instance)
+        return Response(serializer.data)
+
+
+class NotaDebitoConfigView(APIView):
+    """
+    GET: configuración + siguiente n_nota (ND-NNNN).
+    POST: crea/actualiza la configuración.
+    """
+
+    def get(self, request):
+        config = NotaDebitoConfig.objects.first()
+        if not config:
+            return Response(
+                {"detail": "No existe configuración de notas de débito."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = NotaDebitoConfigSerializer(config)
+        data = serializer.data
+        data["siguiente_n_nota"] = proximo_n_nota_debito()
+        return Response(data)
+
+    def post(self, request):
+        serializer = NotaDebitoConfigSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        config, _ = NotaDebitoConfig.objects.update_or_create(
+            id=1, defaults=serializer.validated_data
+        )
+        data = NotaDebitoConfigSerializer(config).data
+        data["siguiente_n_nota"] = proximo_n_nota_debito()
         return Response(data, status=status.HTTP_201_CREATED)

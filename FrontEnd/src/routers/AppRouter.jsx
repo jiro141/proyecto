@@ -21,6 +21,10 @@ import ClientesCuentas from "../layouts/ClientsLayout/ClientesCuentas";
 import ClientesCuentasPorCliente from "../layouts/ClientsLayout/ClientesCuentasPorCliente";
 import FacturacionLayout from "../layouts/FacturacionLayout/FacturacionLayout";
 import CrearFacturaLayout from "../layouts/FacturacionLayout/CrearFacturaLayout";
+import NotasCreditoLayout from "../layouts/FacturacionLayout/NotasCreditoLayout";
+import NotasDebitoLayout from "../layouts/FacturacionLayout/NotasDebitoLayout";
+import NotasGeneradasLayout from "../layouts/FacturacionLayout/NotasGeneradasLayout";
+import CrearNotaDebitoLayout from "../layouts/FacturacionLayout/CrearNotaDebitoLayout";
 
 const AppRouter = () => {
   return (
@@ -58,6 +62,10 @@ const AppRouter = () => {
           <Route path="facturas">
             <Route path="lista" element={<FacturacionLayout />} />
             <Route path="generar" element={<CrearFacturaLayout />} />
+            <Route path="notas-credito/lista" element={<NotasCreditoLayout />} />
+            <Route path="notas-debito/lista" element={<NotasDebitoLayout />} />
+            <Route path="notas-debito/crear" element={<CrearNotaDebitoLayout />} />
+            <Route path="notas-generadas" element={<NotasGeneradasLayout />} />
           </Route>
         </Route>
       </Route>

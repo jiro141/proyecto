@@ -1,13 +1,19 @@
 from rest_framework import serializers
 
 from reportes.models import Reporte
-from .models import Factura, FacturaItem, FacturaConfig, FacturaReporte
+from .models import (
+    Factura, FacturaItem, FacturaConfig, FacturaReporte,
+    NotaCredito, NotaCreditoItem, NotaCreditoConfig,
+    NotaDebito, NotaDebitoItem, NotaDebitoConfig,
+)
 from .services import (
     validar_reporte_facturable,
     validar_items_factura,
     calcular_totales,
     crear_items_factura,
     reemplazar_items_factura,
+    proximo_n_nota_credito,
+    proximo_n_nota_debito,
 )
 
 
@@ -313,4 +319,254 @@ class FacturaSerializer(serializers.ModelSerializer):
 class FacturaConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = FacturaConfig
+        fields = "__all__"
+
+
+# ============================================================
+# 📄 ITEM DE NOTA DE CRÉDITO
+# ============================================================
+
+
+class NotaCreditoItemSerializer(serializers.ModelSerializer):
+    apu_id = serializers.IntegerField(source="apu.id", read_only=True, allow_null=True)
+
+    class Meta:
+        model = NotaCreditoItem
+        fields = [
+            "id",
+            "apu_id",
+            "apu_descripcion",
+            "unidad",
+            "cantidad",
+            "precio_unitario",
+            "total_item",
+        ]
+        read_only_fields = ["total_item"]
+
+
+# ============================================================
+# 📄 NOTA DE CRÉDITO
+# ============================================================
+
+
+class NotaCreditoSerializer(serializers.ModelSerializer):
+    items = NotaCreditoItemSerializer(many=True, read_only=True)
+
+    # Lectura: info derivada
+    n_factura = serializers.CharField(source="factura.n_factura", read_only=True)
+    cliente_id = serializers.IntegerField(source="factura.reporte.cliente.id", read_only=True)
+    estado_display = serializers.CharField(source="get_estado_display", read_only=True)
+    moneda_display = serializers.CharField(source="get_moneda_display", read_only=True)
+    siguiente_nota = serializers.SerializerMethodField(read_only=True)
+
+    def get_siguiente_nota(self, obj):
+        if not obj.pk:
+            return proximo_n_nota_credito()
+        return None
+
+    class Meta:
+        model = NotaCredito
+        fields = [
+            "id",
+            "factura",
+            "n_factura",
+            "cliente_id",
+            "serie",
+            "numero",
+            "n_nota",
+            "fecha",
+            "motivo",
+            "moneda",
+            "moneda_display",
+            "tasa_bs_usd",
+            "fecha_tasa",
+            # Snapshot del cliente
+            "cliente_nombre",
+            "cliente_rif",
+            "cliente_encargado",
+            "cliente_telefono",
+            "cliente_direccion",
+            "cliente_correo",
+            # Estado
+            "estado",
+            "estado_display",
+            # Montos
+            "porcentaje_descuento",
+            "porcentaje_iva",
+            "monto_iva",
+            "subtotal",
+            "monto_descuento",
+            "total",
+            "items",
+            "siguiente_nota",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "serie",
+            "numero",
+            "cliente_nombre",
+            "cliente_rif",
+            "cliente_encargado",
+            "cliente_telefono",
+            "cliente_direccion",
+            "cliente_correo",
+            "estado",
+            "subtotal",
+            "monto_descuento",
+            "total",
+            "created_at",
+            "updated_at",
+        ]
+
+
+# ============================================================
+# 📄 ITEM DE NOTA DE DÉBITO
+# ============================================================
+
+
+class NotaDebitoItemSerializer(serializers.ModelSerializer):
+    apu_id = serializers.IntegerField(source="apu.id", read_only=True, allow_null=True)
+
+    class Meta:
+        model = NotaDebitoItem
+        fields = [
+            "id",
+            "apu_id",
+            "apu_descripcion",
+            "unidad",
+            "cantidad",
+            "precio_unitario",
+            "total_item",
+        ]
+        read_only_fields = ["total_item"]
+
+
+# ============================================================
+# 📄 NOTA DE DÉBITO
+# ============================================================
+
+
+class NotaDebitoSerializer(serializers.ModelSerializer):
+    items = NotaDebitoItemSerializer(many=True, read_only=True)
+
+    # Escritura: items anidados
+    items_data = serializers.ListField(
+        child=serializers.DictField(), write_only=True, required=False
+    )
+
+    # Lectura: info derivada
+    n_factura = serializers.CharField(source="factura.n_factura", read_only=True)
+    cliente_id = serializers.IntegerField(source="factura.reporte.cliente.id", read_only=True)
+    estado_display = serializers.CharField(source="get_estado_display", read_only=True)
+    moneda_display = serializers.CharField(source="get_moneda_display", read_only=True)
+    siguiente_nota = serializers.SerializerMethodField(read_only=True)
+
+    def get_siguiente_nota(self, obj):
+        if not obj.pk:
+            return proximo_n_nota_debito()
+        return None
+
+    class Meta:
+        model = NotaDebito
+        fields = [
+            "id",
+            "factura",
+            "n_factura",
+            "cliente_id",
+            "serie",
+            "numero",
+            "n_nota",
+            "fecha",
+            "motivo",
+            "moneda",
+            "moneda_display",
+            "tasa_bs_usd",
+            "fecha_tasa",
+            # Snapshot del cliente
+            "cliente_nombre",
+            "cliente_rif",
+            "cliente_encargado",
+            "cliente_telefono",
+            "cliente_direccion",
+            "cliente_correo",
+            # Estado
+            "estado",
+            "estado_display",
+            # Montos
+            "porcentaje_descuento",
+            "porcentaje_iva",
+            "monto_iva",
+            "subtotal",
+            "monto_descuento",
+            "total",
+            "items",
+            "items_data",
+            "siguiente_nota",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "serie",
+            "numero",
+            "cliente_nombre",
+            "cliente_rif",
+            "cliente_encargado",
+            "cliente_telefono",
+            "cliente_direccion",
+            "cliente_correo",
+            "estado",
+            "subtotal",
+            "monto_descuento",
+            "total",
+            "created_at",
+            "updated_at",
+        ]
+
+    def validate(self, attrs):
+        from django.shortcuts import get_object_or_404
+
+        if not attrs.get("fecha"):
+            raise serializers.ValidationError({"fecha": "La fecha es obligatoria."})
+
+        if not attrs.get("motivo"):
+            raise serializers.ValidationError({"motivo": "El motivo es obligatorio."})
+
+        # Validar moneda BS
+        moneda = attrs.get("moneda", "USD")
+        if moneda == "BS":
+            if not attrs.get("tasa_bs_usd"):
+                raise serializers.ValidationError(
+                    {"tasa_bs_usd": "La tasa Bs/USD es obligatoria al usar Bolívares."}
+                )
+
+        return attrs
+
+    def create(self, validated_data):
+        from .services import crear_nota_debito_desde_factura
+
+        items_data = validated_data.pop("items_data", [])
+        factura = validated_data.pop("factura")
+        factura_obj = get_object_or_404(Factura, pk=factura)
+
+        nota = crear_nota_debito_desde_factura(
+            factura_obj, items_data, motivo=validated_data.get("motivo", "")
+        )
+        return nota
+
+
+# ============================================================
+# ⚙️ CONFIGURACIÓN DE NOTAS
+# ============================================================
+
+
+class NotaCreditoConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotaCreditoConfig
+        fields = "__all__"
+
+
+class NotaDebitoConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotaDebitoConfig
         fields = "__all__"

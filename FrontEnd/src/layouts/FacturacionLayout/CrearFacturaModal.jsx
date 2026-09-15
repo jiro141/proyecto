@@ -8,6 +8,8 @@ import {
   FaCheckDouble,
   FaFileInvoiceDollar,
   FaDollarSign,
+  FaEdit,
+  FaUndo,
 } from "react-icons/fa";
 import BounceLoader from "react-spinners/BounceLoader";
 import Modal from "../../components/Modal";
@@ -52,8 +54,16 @@ export default function CrearFacturaModal({ presupuestos, onClose }) {
   const { generarPDFFactura, calcularMaxItems } = usePDFFactura();
 
   // ── Datos de contexto ──
+  // `tasaBCV` es la tasa EFECTIVA en uso (BCV oficial o manual/especial).
+  // `tasaBCVOriginal` guarda la tasa BCV tal cual vino de la API, para poder
+  // volver a ella sin tener que re-consultar el servicio externo.
   const [tasaBCV, setTasaBCV] = useState(null);
+  const [tasaBCVOriginal, setTasaBCVOriginal] = useState(null);
   const [configFactura, setConfigFactura] = useState(null);
+
+  // ── Modal de tasa especial (manual) ──
+  const [showTasaEspecialModal, setShowTasaEspecialModal] = useState(false);
+  const [inputTasaEspecial, setInputTasaEspecial] = useState("");
 
   // ── Presupuestos seleccionados ──
   const [reportesDetalle, setReportesDetalle] = useState([]);
@@ -107,6 +117,7 @@ export default function CrearFacturaModal({ presupuestos, onClose }) {
         ]);
         if (cancel) return;
         setTasaBCV(tasa);
+        setTasaBCVOriginal(tasa);
         setConfigFactura(config);
         setNumeroFactura(config?.siguiente_n_factura || "");
         if (!tasa) {
@@ -218,6 +229,64 @@ export default function CrearFacturaModal({ presupuestos, onClose }) {
       nueva === "BS" ? round2(prev * factor) : round2(prev / factor)
     );
     setMoneda(nueva);
+  };
+
+  // ── Cambio de tasa (BCV ↔ especial/manual) con la misma moneda activa ──
+  // Si la moneda actual es BS, los precios de los items ya están expresados
+  // en Bs usando la tasa vigente (`tasaBCV.promedio`). Al cambiar la tasa
+  // (ya sea a una especial o de vuelta a la oficial) hay que reconvertirlos:
+  // primero "deshacer" la tasa anterior y aplicar la nueva, para no perder
+  // precisión ni tener que guardar los precios originales en USD aparte.
+  const aplicarNuevaTasa = (nuevaTasa) => {
+    const tasaAnterior = Number(tasaBCV?.promedio) || 0;
+    const tasaNueva = Number(nuevaTasa?.promedio) || 0;
+    if (
+      moneda === "BS" &&
+      tasaAnterior > 0 &&
+      tasaNueva > 0 &&
+      tasaAnterior !== tasaNueva
+    ) {
+      const factor = tasaNueva / tasaAnterior;
+      setItems((prev) =>
+        prev.map((it) => ({
+          ...it,
+          precio_unitario: round2(it.precio_unitario * factor),
+        }))
+      );
+      setPrecioCompleta((prev) => round2((Number(prev) || 0) * factor));
+    }
+    setTasaBCV(nuevaTasa);
+  };
+
+  const handleAbrirTasaEspecial = () => {
+    setInputTasaEspecial(
+      tasaBCV?.promedio ? String(tasaBCV.promedio) : ""
+    );
+    setShowTasaEspecialModal(true);
+  };
+
+  const handleConfirmarTasaEspecial = () => {
+    const valor = Number(inputTasaEspecial);
+    if (!(valor > 0)) {
+      toast.error("Ingresá una tasa especial válida (mayor a 0)");
+      return;
+    }
+    aplicarNuevaTasa({
+      promedio: Number(valor.toFixed(4)),
+      fechaActualizacion: new Date().toISOString(),
+      esManual: true,
+    });
+    setShowTasaEspecialModal(false);
+    toast.success("Tasa especial aplicada");
+  };
+
+  const handleUsarTasaOficial = () => {
+    if (!tasaBCVOriginal) {
+      toast.error("No hay tasa BCV oficial disponible para restaurar");
+      return;
+    }
+    aplicarNuevaTasa(tasaBCVOriginal);
+    toast.success("Se restauró la tasa BCV oficial");
   };
 
   // ── Items ──
@@ -450,6 +519,7 @@ export default function CrearFacturaModal({ presupuestos, onClose }) {
   };
 
   return (
+    <>
     <Modal
       isOpen={presupuestos && presupuestos.length > 0}
       onClose={onClose}
@@ -594,12 +664,32 @@ export default function CrearFacturaModal({ presupuestos, onClose }) {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Tasa BCV (oficial)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    {tasaBCV?.esManual ? "Tasa especial (manual)" : "Tasa BCV (oficial)"}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAbrirTasaEspecial}
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-[#0B2C4D] text-[#0B2C4D] bg-white hover:bg-[#0B2C4D] hover:text-white transition flex items-center gap-1"
+                  >
+                    <FaEdit size={11} />
+                    Tasa especial
+                  </button>
+                </div>
                 {tasaBCV ? (
-                  <div className="border border-blue-200 bg-blue-50 rounded-lg px-3 py-2 text-sm">
-                    <p className="font-bold text-blue-800">
+                  <div
+                    className={`border rounded-lg px-3 py-2 text-sm ${
+                      tasaBCV.esManual
+                        ? "border-amber-300 bg-amber-50"
+                        : "border-blue-200 bg-blue-50"
+                    }`}
+                  >
+                    <p
+                      className={`font-bold ${
+                        tasaBCV.esManual ? "text-amber-800" : "text-blue-800"
+                      }`}
+                    >
                       <FaDollarSign className="inline mr-1" size={14} />
                       Bs{" "}
                       {Number(tasaBCV.promedio).toLocaleString("en-US", {
@@ -607,9 +697,23 @@ export default function CrearFacturaModal({ presupuestos, onClose }) {
                         maximumFractionDigits: 4,
                       })}
                     </p>
-                    <p className="text-xs text-blue-600">
+                    <p
+                      className={`text-xs ${
+                        tasaBCV.esManual ? "text-amber-600" : "text-blue-600"
+                      }`}
+                    >
                       Actualización: {formatFecha(tasaBCV.fechaActualizacion)}
                     </p>
+                    {tasaBCV.esManual && (
+                      <button
+                        type="button"
+                        onClick={handleUsarTasaOficial}
+                        className="text-[11px] text-amber-700 hover:text-amber-900 font-semibold flex items-center gap-1 mt-1"
+                      >
+                        <FaUndo size={9} />
+                        Usar tasa oficial
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <p className="text-xs text-red-500 border border-red-200 bg-red-50 rounded-lg px-3 py-2">
@@ -979,5 +1083,54 @@ export default function CrearFacturaModal({ presupuestos, onClose }) {
         </div>
       )}
     </Modal>
+
+    <Modal
+      isOpen={showTasaEspecialModal}
+      onClose={() => setShowTasaEspecialModal(false)}
+      title="Tasa especial (manual)"
+      width="max-w-sm"
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Ingresá manualmente la tasa Bs/USD a usar para esta factura, en
+          lugar de la tasa BCV oficial.
+        </p>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Tasa Bs por USD
+          </label>
+          <input
+            type="number"
+            min="0"
+            step="0.0001"
+            autoFocus
+            value={inputTasaEspecial}
+            onChange={(e) => setInputTasaEspecial(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleConfirmarTasaEspecial();
+            }}
+            placeholder="Ej: 45.5000"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2C4D]/30"
+          />
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => setShowTasaEspecialModal(false)}
+            className="px-4 py-2 rounded-lg text-sm font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirmarTasaEspecial}
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#0B2C4D] text-white hover:bg-[#0B2C4D]/90 transition"
+          >
+            Aplicar
+          </button>
+        </div>
+      </div>
+    </Modal>
+    </>
   );
 }

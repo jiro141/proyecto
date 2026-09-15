@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { FaPlus, FaEye, FaBan, FaSearch } from "react-icons/fa";
+import { FaPlus, FaEye, FaBan, FaSearch, FaFileAlt, FaDownload } from "react-icons/fa";
 import BounceLoader from "react-spinners/BounceLoader";
 import useFacturas from "../../hooks/useFacturas";
 import { anularFactura } from "../../api/controllers/Facturas";
@@ -10,14 +10,30 @@ import Paginator from "../../components/Paginator";
 import FacturaDetalleModal from "./components/FacturaDetalleModal";
 import { formatFecha, formatMoneda, EstadoBadge } from "./utils";
 
+// Hooks de PDF
+import usePDFNotaCredito from "./hooks/usePDFNotaCredito";
+import usePDFNotaDebito from "./hooks/usePDFNotaDebito";
+
 export default function FacturacionLayout() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const { facturas, loading, refetch, page, setPage, pagination } = useFacturas(debouncedSearch);
   const [detalle, setDetalle] = useState(null);
+
+  // Estado para el modal de anulación
   const [anularId, setAnularId] = useState(null);
+  const [tipoNota, setTipoNota] = useState("credito");
+  const [motivo, setMotivo] = useState("");
   const [anulando, setAnulando] = useState(false);
+
+  // Estado para el modal de resultado
+  const [notaResult, setNotaResult] = useState(null);
+  const [generandoPDF, setGenerandoPDF] = useState(false);
+
+  // Hooks de PDF
+  const { generarPDFNotaCredito } = usePDFNotaCredito();
+  const { generarPDFNotaDebito } = usePDFNotaDebito();
 
   // Debounce del buscador
   useEffect(() => {
@@ -29,9 +45,23 @@ export default function FacturacionLayout() {
     if (!anularId) return;
     setAnulando(true);
     try {
-      await anularFactura(anularId);
-      toast.success("Factura anulada. El monto vuelve a estar disponible.");
+      const result = await anularFactura(anularId, motivo, tipoNota);
+      toast.success(`Factura anulada. ${tipoNota === "credito" ? "Nota de Crédito" : "Nota de Débito"} generada.`);
+
+      // Guardar resultado para mostrar el modal con PDF.
+      // `result.nota_generada` ya viene completo (NotaCreditoSerializer /
+      // NotaDebitoSerializer) con todos los campos planos que necesitan
+      // usePDFNotaCredito/usePDFNotaDebito (cliente_nombre, subtotal,
+      // monto_iva, motivo, n_factura, items, total propio de la nota, etc.).
+      // Solo le agregamos `tipo` porque el backend no lo incluye.
+      setNotaResult({
+        ...result.nota_generada,
+        tipo: tipoNota,
+      });
+
       setAnularId(null);
+      setTipoNota("credito");
+      setMotivo("");
       refetch();
     } catch (error) {
       toast.error("Error al anular la factura");
@@ -41,9 +71,36 @@ export default function FacturacionLayout() {
     }
   };
 
+  const handleDescargarPDF = async () => {
+    if (!notaResult) return;
+    setGenerandoPDF(true);
+    try {
+      let resultado;
+      if (notaResult.tipo === "credito") {
+        resultado = await generarPDFNotaCredito(notaResult, {
+          n_factura: notaResult.n_factura || "",
+        });
+      } else {
+        resultado = await generarPDFNotaDebito(notaResult, {
+          n_factura: notaResult.n_factura || "",
+        });
+      }
+      if (!resultado.ok) {
+        toast.error("No se pudo generar el PDF.");
+        return;
+      }
+      toast.success("PDF descargado.");
+    } catch (err) {
+      console.error("Error generando PDF:", err);
+      toast.error("No se pudo generar el PDF.");
+    } finally {
+      setGenerandoPDF(false);
+    }
+  };
+
   return (
     <div className="p-4 space-y-4">
-      {/* Tabla con estilo compartido (inventario / cuentas por cobrar) */}
+      {/* Tabla */}
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg bg-white">
         {/* Header */}
         <div className="px-6 py-4 bg-[#0b2c4d] border-b flex flex-wrap justify-between items-center gap-3">
@@ -164,7 +221,6 @@ export default function FacturacionLayout() {
           </tbody>
         </table>
 
-        {/* PAGINADOR SERVER-SIDE */}
         <Paginator
           currentPage={page}
           totalCount={pagination.count}
@@ -183,21 +239,92 @@ export default function FacturacionLayout() {
         }}
       />
 
-      {/* Modal confirmar anulación */}
+      {/* ========================================
+          MODAL ANULACIÓN — Paso 1: Tipo de nota + Motivo
+          ======================================== */}
       <Modal
-        isOpen={!!anularId}
-        onClose={() => setAnularId(null)}
-        title="Confirmar anulación"
+        isOpen={!!anularId && !notaResult}
+        onClose={() => {
+          setAnularId(null);
+          setTipoNota("credito");
+          setMotivo("");
+        }}
+        title="Anular Factura"
       >
-        <div className="space-y-4">
-          <p>
-            ¿Estás seguro de anular esta{" "}
-            <span className="font-bold text-red-700">factura</span>? El monto
-            facturado volverá a estar disponible para facturar.
+        <div className="space-y-5">
+          <p className="text-gray-700">
+            Seleccione el tipo de nota a generar para esta anulación:
           </p>
+
+          {/* Tipo de nota */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setTipoNota("credito")}
+              className={`p-4 rounded-lg border-2 text-left transition ${
+                tipoNota === "credito"
+                  ? "border-green-600 bg-green-50"
+                  : "border-gray-200 hover:border-gray-400"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <FaFileAlt
+                  size={18}
+                  className={tipoNota === "credito" ? "text-green-600" : "text-gray-400"}
+                />
+                <span className={`font-bold ${tipoNota === "credito" ? "text-green-700" : "text-gray-700"}`}>
+                  Nota de Crédito
+                </span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Reduce el saldo que el cliente debe. Generada automáticamente al anular.
+              </p>
+            </button>
+
+            <button
+              onClick={() => setTipoNota("debito")}
+              className={`p-4 rounded-lg border-2 text-left transition ${
+                tipoNota === "debito"
+                  ? "border-orange-600 bg-orange-50"
+                  : "border-gray-200 hover:border-gray-400"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <FaFileAlt
+                  size={18}
+                  className={tipoNota === "debito" ? "text-orange-600" : "text-gray-400"}
+                />
+                <span className={`font-bold ${tipoNota === "debito" ? "text-orange-700" : "text-gray-700"}`}>
+                  Nota de Débito
+                </span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Ajusta montos por correcciones o recargos sobre la factura original.
+              </p>
+            </button>
+          </div>
+
+          {/* Motivo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Motivo (opcional)
+            </label>
+            <textarea
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              placeholder="Describa el motivo de la anulación..."
+              rows={2}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Botones */}
           <div className="flex justify-end gap-2">
             <button
-              onClick={() => setAnularId(null)}
+              onClick={() => {
+                setAnularId(null);
+                setTipoNota("credito");
+                setMotivo("");
+              }}
               className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded"
             >
               Cancelar
@@ -205,9 +332,102 @@ export default function FacturacionLayout() {
             <button
               onClick={handleAnular}
               disabled={anulando}
-              className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded disabled:opacity-50"
+              className={`font-semibold px-4 py-2 rounded disabled:opacity-50 flex items-center gap-2 ${
+                tipoNota === "credito"
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-orange-600 hover:bg-orange-700 text-white"
+              }`}
             >
-              {anulando ? "Anulando..." : "Anular factura"}
+              {anulando ? (
+                <>
+                  <BounceLoader size={14} color="white" />
+                  Anulando...
+                </>
+              ) : (
+                <>
+                  <FaBan size={14} />
+                  Anular con {tipoNota === "credito" ? "Nota de Crédito" : "Nota de Débito"}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ========================================
+          MODAL RESULTADO — Paso 2: Nota generada + PDF
+          ======================================== */}
+      <Modal
+        isOpen={!!notaResult}
+        onClose={() => setNotaResult(null)}
+        title="Anulación completada"
+      >
+        <div className="space-y-5">
+          {/* Icono de éxito */}
+          <div className="flex flex-col items-center text-center">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${
+              notaResult?.tipo === "credito" ? "bg-green-100" : "bg-orange-100"
+            }`}>
+              <FaFileAlt
+                size={32}
+                className={notaResult?.tipo === "credito" ? "text-green-600" : "text-orange-600"}
+              />
+            </div>
+            <h3 className="text-lg font-bold text-gray-800">
+              {notaResult?.tipo === "credito" ? "Nota de Crédito" : "Nota de Débito"} generada
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Número: <span className="font-bold">{notaResult?.n_nota}</span>
+            </p>
+          </div>
+
+          {/* Resumen */}
+          <div className={`rounded-lg p-4 ${
+            notaResult?.tipo === "credito" ? "bg-green-50 border border-green-200" : "bg-orange-50 border border-orange-200"
+          }`}>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-gray-500">Factura original:</span>
+                <p className="font-medium">{notaResult?.n_factura || "—"}</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Tipo:</span>
+                <p className="font-medium">
+                  {notaResult?.tipo === "credito" ? "Nota de Crédito" : "Nota de Débito"}
+                </p>
+              </div>
+              <div className="col-span-2">
+                <span className="text-gray-500">Total:</span>
+                <p className="font-bold text-lg">
+                  {formatMoneda(notaResult?.total, notaResult?.moneda)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Botón PDF */}
+          <div className="flex justify-center">
+            <button
+              onClick={handleDescargarPDF}
+              disabled={generandoPDF}
+              className={`px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition disabled:opacity-50 ${
+                notaResult?.tipo === "credito"
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-orange-600 hover:bg-orange-700 text-white"
+              }`}
+            >
+              <FaDownload size={18} />
+              {generandoPDF ? "Generando PDF..." : "Descargar PDF"}
+            </button>
+          </div>
+
+          {/* Cerrar */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => setNotaResult(null)}
+              className="text-gray-500 hover:text-gray-700 text-sm underline"
+            >
+              Cerrar
             </button>
           </div>
         </div>

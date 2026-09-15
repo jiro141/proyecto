@@ -6,6 +6,12 @@ from .views import (
     PresupuestosDisponiblesView,
     PendienteFacturaView,
     FacturaConfigView,
+    NotaCreditoListCreateView,
+    NotaCreditoDetailView,
+    NotaCreditoConfigView,
+    NotaDebitoListCreateView,
+    NotaDebitoDetailView,
+    NotaDebitoConfigView,
 )
 
 urlpatterns = [
@@ -36,4 +42,40 @@ urlpatterns = [
     # ⚙️ CONFIGURACIÓN
     # ===============================
     path("config/", FacturaConfigView.as_view(), name="factura-config"),
+    # ===============================
+    # 📄 NOTAS DE CRÉDITO
+    # ===============================
+    path(
+        "notas-credito/",
+        NotaCreditoListCreateView.as_view(),
+        name="nota-credito-list",
+    ),
+    path(
+        "notas-credito/<int:pk>/",
+        NotaCreditoDetailView.as_view(),
+        name="nota-credito-detail",
+    ),
+    path(
+        "notas-credito/config/",
+        NotaCreditoConfigView.as_view(),
+        name="nota-credito-config",
+    ),
+    # ===============================
+    # 📄 NOTAS DE DÉBITO
+    # ===============================
+    path(
+        "notas-debito/",
+        NotaDebitoListCreateView.as_view(),
+        name="nota-debito-list",
+    ),
+    path(
+        "notas-debito/<int:pk>/",
+        NotaDebitoDetailView.as_view(),
+        name="nota-debito-detail",
+    ),
+    path(
+        "notas-debito/config/",
+        NotaDebitoConfigView.as_view(),
+        name="nota-debito-config",
+    ),
 ]

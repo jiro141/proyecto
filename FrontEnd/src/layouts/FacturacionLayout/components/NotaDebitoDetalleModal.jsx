@@ -2,33 +2,31 @@ import React, { useState } from "react";
 import { FaTimes, FaBan, FaFileInvoiceDollar, FaDownload } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { formatFecha, formatMoneda, EstadoBadge } from "../utils";
-import usePDFFactura from "../hooks/usePDFFactura";
-import usePDFNotaCredito from "../hooks/usePDFNotaCredito";
 import usePDFNotaDebito from "../hooks/usePDFNotaDebito";
 
-export default function FacturaDetalleModal({ factura, onClose, onAnular }) {
-  const { generarPDFFactura, calcularMaxItems } = usePDFFactura();
+export default function NotaDebitoDetalleModal({ nota, onClose, onAnular }) {
+  const { generarPDFNotaDebito, calcularMaxItems } = usePDFNotaDebito();
   const [generando, setGenerando] = useState(false);
 
-  if (!factura) return null;
+  if (!nota) return null;
 
-  const subtotal = Number(factura.subtotal || 0);
-  const descuento = Number(factura.monto_descuento || 0);
-  const iva = Number(factura.monto_iva || 0);
-  const total = Number(factura.total || 0);
+  const subtotal = Number(nota.subtotal || 0);
+  const descuento = Number(nota.monto_descuento || 0);
+  const iva = Number(nota.monto_iva || 0);
+  const total = Number(nota.total || 0);
 
   const maxItemsInfo = calcularMaxItems(
-    factura.items || [],
-    factura.cliente_direccion || ""
+    nota.items || [],
+    nota.cliente_direccion || ""
   );
-  const itemsCount = (factura.items || []).length;
+  const itemsCount = (nota.items || []).length;
   const excedeLimite = !maxItemsInfo.cabenTodos;
 
   const handleGenerarPDF = async () => {
     try {
       setGenerando(true);
-      const resultado = generarPDFFactura(factura, {
-        descripcion: factura.n_presupuesto || "",
+      const resultado = await generarPDFNotaDebito(nota, {
+        n_factura: nota.n_factura || "",
         tasaBCV: null,
       });
       if (!resultado.ok) {
@@ -37,10 +35,10 @@ export default function FacturaDetalleModal({ factura, onClose, onAnular }) {
         );
         return;
       }
-      toast.success("PDF de la factura descargado.");
+      toast.success("PDF de la nota de débito descargado.");
     } catch (err) {
       console.error("Error generando PDF:", err);
-      toast.error("No se pudo generar el PDF de la factura.");
+      toast.error("No se pudo generar el PDF.");
     } finally {
       setGenerando(false);
     }
@@ -54,18 +52,8 @@ export default function FacturaDetalleModal({ factura, onClose, onAnular }) {
           <div className="flex items-center gap-2">
             <FaFileInvoiceDollar size={20} />
             <h2 className="font-bold text-lg">
-            Factura {factura.n_factura}
-            {factura.orden_servicio && (
-              <span className="text-sm font-normal text-gray-200 ml-3">
-                Orden de servicio: {factura.orden_servicio}
-              </span>
-            )}
-            {factura.orden_control && (
-              <span className="text-sm font-normal text-gray-200 ml-3">
-                Orden de control: {factura.orden_control}
-              </span>
-            )}
-          </h2>
+              Nota de Débito {nota.n_nota}
+            </h2>
           </div>
           <button onClick={onClose} className="hover:bg-white/20 p-1 rounded">
             <FaTimes size={20} />
@@ -76,45 +64,41 @@ export default function FacturaDetalleModal({ factura, onClose, onAnular }) {
           {/* Datos generales */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <span className="text-gray-500 text-sm">Presupuesto</span>
-              <p className="font-medium">
-                {Array.isArray(factura.n_presupuestos) &&
-                factura.n_presupuestos.length > 1
-                  ? factura.n_presupuestos.map((np) => `#${np}`).join(", ")
-                  : `#${factura.n_presupuesto}`}
-              </p>
+              <span className="text-gray-500 text-sm">Factura Ref.</span>
+              <p className="font-medium">{nota.n_factura || "—"}</p>
             </div>
             <div>
               <span className="text-gray-500 text-sm">Fecha</span>
-              <p className="font-medium">{formatFecha(factura.fecha)}</p>
+              <p className="font-medium">{formatFecha(nota.fecha)}</p>
             </div>
             <div>
               <span className="text-gray-500 text-sm">Moneda</span>
-              <p className="font-medium">{factura.moneda === "BS" ? "Bolívares (Bs)" : "Dólares (USD)"}</p>
+              <p className="font-medium">{nota.moneda === "BS" ? "Bolívares (Bs)" : "Dólares (USD)"}</p>
             </div>
             <div>
               <span className="text-gray-500 text-sm">Estado</span>
               <div className="mt-1">
-                <EstadoBadge estado={factura.estado} />
+                <EstadoBadge estado={nota.estado} />
               </div>
             </div>
           </div>
 
+          {/* Motivo */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2 text-sm">
+            <span className="font-medium text-yellow-800">Motivo: </span>
+            <span className="text-yellow-700">{nota.motivo || "—"}</span>
+          </div>
+
           {/* Tasa (si aplica) */}
-          {factura.moneda === "BS" && factura.tasa_bs_usd && (
+          {nota.moneda === "BS" && nota.tasa_bs_usd && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm">
               <span className="font-medium text-blue-800">
-                Tasa BCV: Bs {Number(factura.tasa_bs_usd).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                Tasa BCV: Bs {Number(nota.tasa_bs_usd).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
               </span>
-              {factura.fecha_tasa && (
-                <span className="text-blue-600 ml-3">
-                  (fecha de actualización: {formatFecha(factura.fecha_tasa)})
-                </span>
-              )}
             </div>
           )}
 
-          {/* Datos del cliente (snapshot) */}
+          {/* Datos del cliente */}
           <div className="border rounded-lg p-4">
             <h3 className="text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
               Datos del cliente
@@ -122,23 +106,23 @@ export default function FacturaDetalleModal({ factura, onClose, onAnular }) {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
               <div>
                 <span className="text-gray-500">Nombre:</span>{" "}
-                <span className="font-medium">{factura.cliente_nombre}</span>
+                <span className="font-medium">{nota.cliente_nombre}</span>
               </div>
               <div>
                 <span className="text-gray-500">RIF:</span>{" "}
-                <span className="font-medium">{factura.cliente_rif || "—"}</span>
+                <span className="font-medium">{nota.cliente_rif || "—"}</span>
               </div>
               <div>
                 <span className="text-gray-500">Encargado:</span>{" "}
-                <span className="font-medium">{factura.cliente_encargado || "—"}</span>
+                <span className="font-medium">{nota.cliente_encargado || "—"}</span>
               </div>
               <div>
                 <span className="text-gray-500">Teléfono:</span>{" "}
-                <span className="font-medium">{factura.cliente_telefono || "—"}</span>
+                <span className="font-medium">{nota.cliente_telefono || "—"}</span>
               </div>
               <div>
                 <span className="text-gray-500">Dirección:</span>{" "}
-                <span className="font-medium">{factura.cliente_direccion || "—"}</span>
+                <span className="font-medium">{nota.cliente_direccion || "—"}</span>
               </div>
             </div>
           </div>
@@ -169,16 +153,16 @@ export default function FacturaDetalleModal({ factura, onClose, onAnular }) {
                 </tr>
               </thead>
               <tbody>
-                {(factura.items || []).map((item) => (
+                {(nota.items || []).map((item) => (
                   <tr key={item.id} className="border-t">
                     <td className="px-3 py-2">{item.cantidad}</td>
                     <td className="px-3 py-2">{item.apu_descripcion}</td>
                     <td className="px-3 py-2 text-center">{item.unidad || "—"}</td>
                     <td className="px-3 py-2 text-right">
-                      {formatMoneda(item.precio_unitario, factura.moneda)}
+                      {formatMoneda(item.precio_unitario, nota.moneda)}
                     </td>
                     <td className="px-3 py-2 text-right font-medium">
-                      {formatMoneda(item.total_item, factura.moneda)}
+                      {formatMoneda(item.total_item, nota.moneda)}
                     </td>
                   </tr>
                 ))}
@@ -191,21 +175,21 @@ export default function FacturaDetalleModal({ factura, onClose, onAnular }) {
             <div className="w-full max-w-xs space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal</span>
-                <span className="font-medium">{formatMoneda(subtotal, factura.moneda)}</span>
+                <span className="font-medium">{formatMoneda(subtotal, nota.moneda)}</span>
               </div>
               {descuento > 0 && (
                 <div className="flex justify-between text-red-600">
-                  <span>Descuento ({factura.porcentaje_descuento}%)</span>
-                  <span>- {formatMoneda(descuento, factura.moneda)}</span>
+                  <span>Descuento ({nota.porcentaje_descuento}%)</span>
+                  <span>- {formatMoneda(descuento, nota.moneda)}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-gray-600">IVA</span>
-                <span className="font-medium">{formatMoneda(iva, factura.moneda)}</span>
+                <span className="font-medium">{formatMoneda(iva, nota.moneda)}</span>
               </div>
               <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold">
                 <span>TOTAL</span>
-                <span className="text-[#0B2C4D]">{formatMoneda(total, factura.moneda)}</span>
+                <span className="text-[#0B2C4D]">{formatMoneda(total, nota.moneda)}</span>
               </div>
             </div>
           </div>
@@ -213,13 +197,6 @@ export default function FacturaDetalleModal({ factura, onClose, onAnular }) {
 
         {/* Footer */}
         <div className="border-t px-4 py-3 flex justify-end gap-2">
-          {excedeLimite && (
-            <div className="flex-1 flex items-center text-sm text-red-600">
-              <span className="font-semibold">
-                No se puede generar: demasiados ítems para una sola hoja.
-              </span>
-            </div>
-          )}
           <button
             onClick={handleGenerarPDF}
             disabled={generando || excedeLimite}
@@ -228,13 +205,13 @@ export default function FacturaDetalleModal({ factura, onClose, onAnular }) {
             <FaDownload size={16} />
             {generando ? "Generando..." : "Generar PDF"}
           </button>
-          {factura.estado === "EMITIDA" && (
+          {nota.estado === "EMITIDA" && (
             <button
-              onClick={() => onAnular?.(factura.id)}
+              onClick={() => onAnular?.(nota.id)}
               className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2"
             >
               <FaBan size={16} />
-              Anular factura
+              Anular
             </button>
           )}
         </div>

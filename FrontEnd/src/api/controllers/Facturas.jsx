@@ -46,10 +46,16 @@ export const updateFactura = async (id, payload) => {
 };
 
 /**
- * Anular una factura (EMITIDA → ANULADA, libera el pendiente)
+ * Anular una factura (EMITIDA → ANULADA, genera NC o ND automáticamente)
+ * @param {number} id - ID de la factura
+ * @param {string} motivo - Motivo de la anulación
+ * @param {string} tipo_nota - "credito" o "debito" (default: "credito")
  */
-export const anularFactura = async (id) => {
-  const response = await AuthApi.post(`/facturas/${id}/anular/`);
+export const anularFactura = async (id, motivo = "", tipo_nota = "credito") => {
+  const response = await AuthApi.post(`/facturas/${id}/anular/`, {
+    motivo,
+    tipo_nota,
+  });
   return response.data;
 };
 
@@ -92,4 +98,106 @@ export const getTasaBCV = async () => {
     promedio: oficial.promedio,
     fechaActualizacion: oficial.fechaActualizacion,
   };
+};
+
+// ============================================================
+// 📄 NOTAS DE CRÉDITO
+// ============================================================
+
+/**
+ * Obtener todas las notas de crédito
+ */
+export const getNotasCredito = async (search = "", page = 1) => {
+  let url = "/facturas/notas-credito/";
+  const params = [];
+  if (search) params.push(`search=${encodeURIComponent(search)}`);
+  params.push(`page=${page}`);
+  if (params.length > 0) {
+    url += `?${params.join("&")}`;
+  }
+  const response = await AuthApi.get(url);
+  return response.data;
+};
+
+/**
+ * Obtener el detalle de una nota de crédito
+ */
+export const getNotaCreditoDetalle = async (id) => {
+  const response = await AuthApi.get(`/facturas/notas-credito/${id}/`);
+  return response.data;
+};
+
+/**
+ * Crear una nota de crédito manual
+ */
+export const createNotaCredito = async (payload) => {
+  const response = await AuthApi.post("/facturas/notas-credito/", payload);
+  return response.data;
+};
+
+/**
+ * Anular una nota de crédito
+ */
+export const anularNotaCredito = async (id) => {
+  const response = await AuthApi.delete(`/facturas/notas-credito/${id}/`);
+  return response.data;
+};
+
+// ============================================================
+// 📄 NOTAS DE DÉBITO
+// ============================================================
+
+/**
+ * Obtener todas las notas de débito
+ */
+export const getNotasDebito = async (search = "", page = 1) => {
+  let url = "/facturas/notas-debito/";
+  const params = [];
+  if (search) params.push(`search=${encodeURIComponent(search)}`);
+  params.push(`page=${page}`);
+  if (params.length > 0) {
+    url += `?${params.join("&")}`;
+  }
+  const response = await AuthApi.get(url);
+  return response.data;
+};
+
+/**
+ * Obtener el detalle de una nota de débito
+ */
+export const getNotaDebitoDetalle = async (id) => {
+  const response = await AuthApi.get(`/facturas/notas-debito/${id}/`);
+  return response.data;
+};
+
+/**
+ * Crear una nota de débito
+ */
+export const createNotaDebito = async (payload) => {
+  const response = await AuthApi.post("/facturas/notas-debito/", payload);
+  return response.data;
+};
+
+/**
+ * Anular una nota de débito
+ */
+export const anularNotaDebito = async (id) => {
+  const response = await AuthApi.delete(`/facturas/notas-debito/${id}/`);
+  return response.data;
+};
+
+/**
+ * Configuración de notas de crédito (serie + siguiente n_nota)
+ */
+export const getNotaCreditoConfig = async () => {
+  const response = await AuthApi.get("/facturas/notas-credito/config/");
+  return response.data;
+};
+
+/**
+ * Configuración de notas de débito (serie + siguiente n_nota)
+ */
+export const getNotaDebitoConfig = async () => {
+  const response = await AuthApi.get("/facturas/notas-debito/config/");
+  return response.data;
 };

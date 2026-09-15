@@ -349,3 +349,535 @@ class FacturaItem(models.Model):
 
     def __str__(self):
         return f"{self.apu_descripcion[:40]}... x {self.cantidad}"
+
+
+# ==========================
+# ESTADOS DE NOTAS
+# ==========================
+
+
+class EstadoNota(models.TextChoices):
+    EMITIDA = "EMITIDA", "Emitida"
+    ANULADA = "ANULADA", "Anulada"
+
+
+# ==========================
+# CONFIGURACIÓN DE NOTAS DE CRÉDITO
+# ==========================
+
+
+class NotaCreditoConfig(models.Model):
+    """
+    Configuración de la numeración de notas de crédito.
+    serie: prefijo del número de control (ej: "NC" → NC-0001)
+    """
+
+    serie = models.CharField(
+        max_length=10,
+        default="NC",
+        verbose_name="Serie",
+        help_text="Prefijo del número de control (ej: NC → NC-0001)",
+    )
+    punto_inicio = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Punto de inicio",
+        help_text="Número desde el que empieza la secuencia",
+    )
+
+    class Meta:
+        verbose_name = "Configuración de Notas de Crédito"
+        verbose_name_plural = "Configuración de Notas de Crédito"
+
+    def __str__(self):
+        return f"Serie {self.serie} - Inicio: {self.punto_inicio or 1}"
+
+
+# ==========================
+# CONFIGURACIÓN DE NOTAS DE DÉBITO
+# ==========================
+
+
+class NotaDebitoConfig(models.Model):
+    """
+    Configuración de la numeración de notas de débito.
+    serie: prefijo del número de control (ej: "ND" → ND-0001)
+    """
+
+    serie = models.CharField(
+        max_length=10,
+        default="ND",
+        verbose_name="Serie",
+        help_text="Prefijo del número de control (ej: ND → ND-0001)",
+    )
+    punto_inicio = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Punto de inicio",
+        help_text="Número desde el que empieza la secuencia",
+    )
+
+    class Meta:
+        verbose_name = "Configuración de Notas de Débito"
+        verbose_name_plural = "Configuración de Notas de Débito"
+
+    def __str__(self):
+        return f"Serie {self.serie} - Inicio: {self.punto_inicio or 1}"
+
+
+# ==========================
+# NOTA DE CRÉDITO
+# ==========================
+
+
+class NotaCredito(models.Model):
+    """
+    Nota de crédito asociada a una factura.
+    Se genera automáticamente al anular una factura, o manualmente.
+    """
+
+    MONEDA_CHOICES = (
+        ("USD", "Dólares (USD)"),
+        ("BS", "Bolívares (Bs)"),
+    )
+
+    factura = models.ForeignKey(
+        Factura,
+        on_delete=models.CASCADE,
+        related_name="notas_credito",
+        verbose_name="Factura",
+    )
+
+    # --- Control de numeración ---
+    serie = models.CharField(max_length=10, editable=False)
+    numero = models.PositiveIntegerField(editable=False)
+    n_nota = models.CharField(
+        max_length=30,
+        unique=True,
+        editable=False,
+        verbose_name="Número de nota de crédito",
+        help_text="Formato Serie-NNNN (ej: NC-0001)",
+    )
+
+    # --- Datos del documento ---
+    fecha = models.DateField(verbose_name="Fecha de nota de crédito")
+    motivo = models.TextField(
+        default="",
+        blank=True,
+        verbose_name="Motivo",
+        help_text="Motivo de la nota de crédito",
+    )
+
+    moneda = models.CharField(
+        max_length=3,
+        choices=MONEDA_CHOICES,
+        default="USD",
+        verbose_name="Moneda",
+    )
+
+    tasa_bs_usd = models.DecimalField(
+        max_digits=14,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        verbose_name="Tasa Bs/USD",
+    )
+    fecha_tasa = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de la tasa",
+    )
+
+    # --- Snapshot del cliente ---
+    cliente_nombre = models.CharField(max_length=150, verbose_name="Cliente")
+    cliente_rif = models.CharField(max_length=20, default="", blank=True)
+    cliente_encargado = models.CharField(max_length=150, default="", blank=True)
+    cliente_telefono = models.CharField(max_length=20, default="", blank=True)
+    cliente_direccion = models.CharField(max_length=255, default="", blank=True)
+    cliente_correo = models.EmailField(default="", blank=True)
+
+    # --- Estado ---
+    estado = models.CharField(
+        max_length=20,
+        choices=EstadoNota.choices,
+        default=EstadoNota.EMITIDA,
+        verbose_name="Estado",
+    )
+
+    # --- Montos ---
+    porcentaje_descuento = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="% Descuento",
+    )
+    porcentaje_iva = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("16.00"),
+        verbose_name="% IVA",
+    )
+    monto_iva = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Monto IVA",
+    )
+    subtotal = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Subtotal",
+    )
+    monto_descuento = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Monto descuento",
+    )
+    total = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Total",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Nota de Crédito"
+        verbose_name_plural = "Notas de Crédito"
+        ordering = ["-created_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["serie", "numero"],
+                name="unique_serie_numero_nota_credito",
+            )
+        ]
+
+    def _generar_numero(self):
+        config = NotaCreditoConfig.objects.first()
+        serie = config.serie.strip() if config and config.serie else "NC"
+        punto_inicio = config.punto_inicio if config and config.punto_inicio else 1
+
+        ultima = NotaCredito.objects.filter(serie=serie).order_by("-numero").first()
+        if ultima:
+            numero = ultima.numero + 1
+        else:
+            numero = punto_inicio
+
+        self.serie = serie
+        self.numero = numero
+        self.n_nota = f"{serie}-{numero:04d}"
+
+    def _snapshot_cliente(self):
+        if self.factura_id:
+            f = self.factura
+            self.cliente_nombre = f.cliente_nombre
+            self.cliente_rif = f.cliente_rif or ""
+            self.cliente_encargado = f.cliente_encargado or ""
+            self.cliente_telefono = f.cliente_telefono or ""
+            self.cliente_direccion = f.cliente_direccion or ""
+            self.cliente_correo = f.cliente_correo or ""
+
+    def save(self, *args, **kwargs):
+        if not self.n_nota:
+            self._generar_numero()
+        self._snapshot_cliente()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"NC {self.n_nota} - {self.cliente_nombre} [{self.get_estado_display()}]"
+
+
+# ==========================
+# ITEM DE NOTA DE CRÉDITO
+# ==========================
+
+
+class NotaCreditoItem(models.Model):
+    """
+    Línea de una nota de crédito. Espejo de los items de la factura original.
+    """
+
+    nota_credito = models.ForeignKey(
+        NotaCredito,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+
+    apu = models.ForeignKey(
+        APU,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="notas_credito_items",
+        verbose_name="APU",
+    )
+
+    apu_descripcion = models.TextField(verbose_name="Descripción")
+    unidad = models.CharField(max_length=50, default="", blank=True)
+    cantidad = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("1.00"),
+        verbose_name="Cantidad",
+    )
+    precio_unitario = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Precio unitario",
+    )
+    total_item = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Total",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Item de Nota de Crédito"
+        verbose_name_plural = "Items de Nota de Crédito"
+        ordering = ["id"]
+
+    def save(self, *args, **kwargs):
+        cantidad = self.cantidad or Decimal("0.00")
+        precio = self.precio_unitario or Decimal("0.00")
+        self.total_item = (cantidad * precio).quantize(Decimal("0.01"))
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.apu_descripcion[:40]}... x {self.cantidad}"
+
+
+# ==========================
+# NOTA DE DÉBITO
+# ==========================
+
+
+class NotaDebito(models.Model):
+    """
+    Nota de débito asociada a una factura.
+    Se usa para ajustes que incrementan el monto que el cliente debe.
+    """
+
+    MONEDA_CHOICES = (
+        ("USD", "Dólares (USD)"),
+        ("BS", "Bolívares (Bs)"),
+    )
+
+    factura = models.ForeignKey(
+        Factura,
+        on_delete=models.CASCADE,
+        related_name="notas_debito",
+        verbose_name="Factura",
+    )
+
+    # --- Control de numeración ---
+    serie = models.CharField(max_length=10, editable=False)
+    numero = models.PositiveIntegerField(editable=False)
+    n_nota = models.CharField(
+        max_length=30,
+        unique=True,
+        editable=False,
+        verbose_name="Número de nota de débito",
+        help_text="Formato Serie-NNNN (ej: ND-0001)",
+    )
+
+    # --- Datos del documento ---
+    fecha = models.DateField(verbose_name="Fecha de nota de débito")
+    motivo = models.TextField(
+        default="",
+        blank=True,
+        verbose_name="Motivo",
+        help_text="Motivo de la nota de débito",
+    )
+
+    moneda = models.CharField(
+        max_length=3,
+        choices=MONEDA_CHOICES,
+        default="USD",
+        verbose_name="Moneda",
+    )
+
+    tasa_bs_usd = models.DecimalField(
+        max_digits=14,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        verbose_name="Tasa Bs/USD",
+    )
+    fecha_tasa = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de la tasa",
+    )
+
+    # --- Snapshot del cliente ---
+    cliente_nombre = models.CharField(max_length=150, verbose_name="Cliente")
+    cliente_rif = models.CharField(max_length=20, default="", blank=True)
+    cliente_encargado = models.CharField(max_length=150, default="", blank=True)
+    cliente_telefono = models.CharField(max_length=20, default="", blank=True)
+    cliente_direccion = models.CharField(max_length=255, default="", blank=True)
+    cliente_correo = models.EmailField(default="", blank=True)
+
+    # --- Estado ---
+    estado = models.CharField(
+        max_length=20,
+        choices=EstadoNota.choices,
+        default=EstadoNota.EMITIDA,
+        verbose_name="Estado",
+    )
+
+    # --- Montos ---
+    porcentaje_descuento = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="% Descuento",
+    )
+    porcentaje_iva = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("16.00"),
+        verbose_name="% IVA",
+    )
+    monto_iva = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Monto IVA",
+    )
+    subtotal = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Subtotal",
+    )
+    monto_descuento = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Monto descuento",
+    )
+    total = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Total",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Nota de Débito"
+        verbose_name_plural = "Notas de Débito"
+        ordering = ["-created_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["serie", "numero"],
+                name="unique_serie_numero_nota_debito",
+            )
+        ]
+
+    def _generar_numero(self):
+        config = NotaDebitoConfig.objects.first()
+        serie = config.serie.strip() if config and config.serie else "ND"
+        punto_inicio = config.punto_inicio if config and config.punto_inicio else 1
+
+        ultima = NotaDebito.objects.filter(serie=serie).order_by("-numero").first()
+        if ultima:
+            numero = ultima.numero + 1
+        else:
+            numero = punto_inicio
+
+        self.serie = serie
+        self.numero = numero
+        self.n_nota = f"{serie}-{numero:04d}"
+
+    def _snapshot_cliente(self):
+        if self.factura_id:
+            f = self.factura
+            self.cliente_nombre = f.cliente_nombre
+            self.cliente_rif = f.cliente_rif or ""
+            self.cliente_encargado = f.cliente_encargado or ""
+            self.cliente_telefono = f.cliente_telefono or ""
+            self.cliente_direccion = f.cliente_direccion or ""
+            self.cliente_correo = f.cliente_correo or ""
+
+    def save(self, *args, **kwargs):
+        if not self.n_nota:
+            self._generar_numero()
+        self._snapshot_cliente()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"ND {self.n_nota} - {self.cliente_nombre} [{self.get_estado_display()}]"
+
+
+# ==========================
+# ITEM DE NOTA DE DÉBITO
+# ==========================
+
+
+class NotaDebitoItem(models.Model):
+    """
+    Línea de una nota de débito.
+    """
+
+    nota_debito = models.ForeignKey(
+        NotaDebito,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+
+    apu = models.ForeignKey(
+        APU,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="notas_debito_items",
+        verbose_name="APU",
+    )
+
+    apu_descripcion = models.TextField(verbose_name="Descripción")
+    unidad = models.CharField(max_length=50, default="", blank=True)
+    cantidad = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("1.00"),
+        verbose_name="Cantidad",
+    )
+    precio_unitario = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Precio unitario",
+    )
+    total_item = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Total",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Item de Nota de Débito"
+        verbose_name_plural = "Items de Nota de Débito"
+        ordering = ["id"]
+
+    def save(self, *args, **kwargs):
+        cantidad = self.cantidad or Decimal("0.00")
+        precio = self.precio_unitario or Decimal("0.00")
+        self.total_item = (cantidad * precio).quantize(Decimal("0.01"))
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.apu_descripcion[:40]}... x {self.cantidad}"

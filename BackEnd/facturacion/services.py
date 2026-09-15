@@ -5,7 +5,11 @@ from django.db import models
 from rest_framework.exceptions import ValidationError
 
 from reportes.models import Reporte, EstadoChoices, APU
-from .models import Factura, FacturaItem, FacturaConfig, EstadoFactura
+from .models import (
+    Factura, FacturaItem, FacturaConfig, EstadoFactura,
+    NotaCredito, NotaCreditoItem, NotaCreditoConfig,
+    NotaDebito, NotaDebitoItem, NotaDebitoConfig,
+)
 
 
 def _dec(valor, default="0.00"):
@@ -363,3 +367,142 @@ def monto_pendiente_por_apu(reporte, excluir_factura_id=None):
         ya = facturado.get(apu.id, Decimal("0.00"))
         pendiente[apu.id] = max((apu.cantidad or Decimal("0.00")) - ya, Decimal("0.00"))
     return pendiente
+
+
+# ============================================================
+# 📄 NOTAS DE CRÉDITO
+# ============================================================
+
+
+def proximo_n_nota_credito():
+    """Devuelve el siguiente n_nota (NC-NNNN) sin crear la nota."""
+    config = NotaCreditoConfig.objects.first()
+    serie = config.serie.strip() if config and config.serie else "NC"
+    punto_inicio = config.punto_inicio if config and config.punto_inicio else 1
+
+    ultima = NotaCredito.objects.filter(serie=serie).order_by("-numero").first()
+    numero = (ultima.numero + 1) if ultima else punto_inicio
+    return f"{serie}-{numero:04d}"
+
+
+def crear_nota_credito_desde_factura(factura, motivo=""):
+    """
+    Crea una nota de crédito a partir de una factura anulada.
+    Copia los items, totales y snapshot del cliente de la factura original.
+    """
+    from django.utils import timezone
+
+    nc = NotaCredito(
+        factura=factura,
+        fecha=timezone.now().date(),
+        motivo=motivo or f"Nota de crédito por anulación de factura {factura.n_factura}",
+        moneda=factura.moneda,
+        tasa_bs_usd=factura.tasa_bs_usd,
+        fecha_tasa=factura.fecha_tasa,
+        porcentaje_descuento=factura.porcentaje_descuento,
+        porcentaje_iva=factura.porcentaje_iva,
+        monto_iva=factura.monto_iva,
+        subtotal=factura.subtotal,
+        monto_descuento=factura.monto_descuento,
+        total=factura.total,
+    )
+    nc.save()
+
+    # Copiar items de la factura original
+    for item in factura.items.all():
+        NotaCreditoItem.objects.create(
+            nota_credito=nc,
+            apu=item.apu,
+            apu_descripcion=item.apu_descripcion,
+            unidad=item.unidad,
+            cantidad=item.cantidad,
+            precio_unitario=item.precio_unitario,
+        )
+
+    return nc
+
+
+# ============================================================
+# 📄 NOTAS DE DÉBITO
+# ============================================================
+
+
+def proximo_n_nota_debito():
+    """Devuelve el siguiente n_nota (ND-NNNN) sin crear la nota."""
+    config = NotaDebitoConfig.objects.first()
+    serie = config.serie.strip() if config and config.serie else "ND"
+    punto_inicio = config.punto_inicio if config and config.punto_inicio else 1
+
+    ultima = NotaDebito.objects.filter(serie=serie).order_by("-numero").first()
+    numero = (ultima.numero + 1) if ultima else punto_inicio
+    return f"{serie}-{numero:04d}"
+
+
+def crear_nota_debito_desde_factura(factura, items_data, motivo=""):
+    """
+    Crea una nota de débito a partir de una factura.
+    Los items se pasan explícitamente (el usuario los define).
+    """
+    from django.utils import timezone
+
+    if not items_data:
+        raise ValidationError({"items": "La nota de débito debe tener al menos un item."})
+
+    nd = NotaDebito(
+        factura=factura,
+        fecha=timezone.now().date(),
+        motivo=motivo or "",
+        moneda=factura.moneda,
+        tasa_bs_usd=factura.tasa_bs_usd,
+        fecha_tasa=factura.fecha_tasa,
+        porcentaje_descuento=_dec("0.00"),
+        porcentaje_iva=factura.porcentaje_iva,
+    )
+    nd.save()
+
+    for item in items_data:
+        apu_id = item.get("apu_id")
+        apu = None
+        if apu_id:
+            apu = APU.objects.filter(pk=apu_id).first()
+
+        NotaDebitoItem.objects.create(
+            nota_debito=nd,
+            apu=apu,
+            apu_descripcion=item.get("apu_descripcion", "") or "",
+            unidad=item.get("unidad", "") or "",
+            cantidad=_dec(item.get("cantidad"), "1.00"),
+            precio_unitario=_dec(item.get("precio_unitario"), "0.00"),
+        )
+
+    # Calcular totales
+    _calcular_totales_nota_debito(nd)
+    return nd
+
+
+def _calcular_totales_nota_debito(nota):
+    """Recalcula subtotal, descuento y total de una nota de débito."""
+    subtotal = sum(
+        (item.total_item for item in nota.items.all()),
+        Decimal("0.00"),
+    )
+    pct = _dec(nota.porcentaje_descuento, "0.00")
+    monto_descuento = (subtotal * pct / Decimal("100.00")).quantize(Decimal("0.01"))
+    base = (subtotal - monto_descuento).quantize(Decimal("0.01"))
+    monto_iva = _dec(nota.monto_iva, "0.00")
+
+    # Si monto_iva no fue setado, calcularlo del subtotal
+    if monto_iva == Decimal("0.00") and subtotal > 0:
+        pct_iva = _dec(nota.porcentaje_iva, "16.00")
+        monto_iva = (base * pct_iva / Decimal("100.00")).quantize(Decimal("0.01"))
+        nota.monto_iva = monto_iva
+
+    total = (base + nota.monto_iva).quantize(Decimal("0.01"))
+
+    nota.subtotal = subtotal.quantize(Decimal("0.01"))
+    nota.monto_descuento = monto_descuento
+    nota.total = total
+    nota.save(
+        update_fields=["subtotal", "monto_descuento", "monto_iva", "total", "updated_at"]
+    )
+    return total
