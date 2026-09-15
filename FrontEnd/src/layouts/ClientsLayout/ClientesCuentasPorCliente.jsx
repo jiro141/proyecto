@@ -31,6 +31,8 @@ export default function ClientesCuentasPorCliente() {
   const [search, setSearch] = useState("");
   const [expandedClients, setExpandedClients] = useState({});
   const [searchPresupuestos, setSearchPresupuestos] = useState({}); // búsqueda por cliente
+  const [presupuestosPage, setPresupuestosPage] = useState({}); // paginación por cliente
+  const ITEMS_PER_PAGE_CLIENTE = 10;
   
   // Estados para modal de abonos
   const [selectedReporte, setSelectedReporte] = useState(null);
@@ -130,6 +132,12 @@ export default function ClientesCuentasPorCliente() {
     const rif = cliente.cliente?.rif?.toLowerCase() || "";
     return nombre.includes(searchLower) || rif.includes(searchLower);
   });
+
+  // Resetear página de presupuestos cuando cambia la búsqueda de presupuestos
+  const handleSearchPresupuestos = (clienteId, value) => {
+    setSearchPresupuestos(prev => ({ ...prev, [clienteId]: value }));
+    setPresupuestosPage(prev => ({ ...prev, [clienteId]: 1 }));
+  };
 
   // Toggle expandir cliente - solo expandir sin modal
   const toggleClient = (clienteId) => {
@@ -317,70 +325,124 @@ export default function ClientesCuentasPorCliente() {
                     </tr>
 
                     {/* Fila expandida con reportes del cliente */}
-                    {isExpanded && clienteData.reportes && clienteData.reportes.length > 0 && (
-                      <tr key={`${cliente.id}-detail`}>
-                        <td colSpan={7} className="bg-gray-50 px-8 py-4">
-                          {/* Buscador de presupuestos */}
-                          <div className="mb-3">
-                            <input
-                              type="text"
-                              placeholder="Buscar por número o descripción..."
-                              value={searchPresupuestos[cliente.id] || ""}
-                              onChange={(e) => setSearchPresupuestos(prev => ({ ...prev, [cliente.id]: e.target.value }))}
-                              className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0b2c4d] text-black"
-                            />
-                          </div>
-                          
-                          <div className="border rounded-lg overflow-hidden max-h-80 overflow-y-auto">
-                            <table className="w-full text-sm">
-                              <thead className="bg-gray-200 text-gray-700 sticky top-0">
-                                <tr>
-                                  <th className="px-4 py-2 text-left">N° Presupuesto</th>
-                                  <th className="px-4 py-2 text-left">Descripción</th>
-                                  <th className="px-4 py-2 text-right">Total</th>
-                                  <th className="px-4 py-2 text-right">Abonado</th>
-                                  <th className="px-4 py-2 text-right">Pendiente</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {clienteData.reportes
-                                  .filter(reporte => {
-                                    const search = (searchPresupuestos[cliente.id] || "").toLowerCase();
-                                    if (!search) return true;
-                                    return (
-                                      reporte.n_presupuesto?.toLowerCase().includes(search) ||
-                                      reporte.descripcion?.toLowerCase().includes(search)
-                                    );
-                                  })
-                                  .map((reporte) => (
-                                  <tr 
-                                    key={reporte.id} 
-                                    onClick={() => handleOpenAbonosFromClient(reporte)}
-                                    className="border-b hover:bg-blue-50 cursor-pointer transition"
-                                  >
-                                    <td className="px-4 py-2 font-medium text-[#0b2c4d]">
-                                      {reporte.n_presupuesto}
-                                    </td>
-                                    <td className="px-4 py-2">
-                                      {reporte.descripcion || "-"}
-                                    </td>
-                                    <td className="px-4 py-2 text-right">
-                                      {formatCurrency(reporte.total)}
-                                    </td>
-                                    <td className="px-4 py-2 text-right text-green-600">
-                                      {formatCurrency(reporte.abonado)}
-                                    </td>
-                                    <td className={`px-4 py-2 text-right font-medium ${reporte.pendiente > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                      {formatCurrency(reporte.pendiente)}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
+                    {isExpanded && clienteData.reportes && clienteData.reportes.length > 0 && (() => {
+                      // Filtrar presupuestos por búsqueda
+                      const search = (searchPresupuestos[cliente.id] || "").toLowerCase();
+                      const filteredReportes = clienteData.reportes.filter(reporte => {
+                        if (!search) return true;
+                        return (
+                          reporte.n_presupuesto?.toLowerCase().includes(search) ||
+                          reporte.descripcion?.toLowerCase().includes(search)
+                        );
+                      });
+
+                      // Paginación client-side
+                      const totalReportes = filteredReportes.length;
+                      const totalPages = Math.ceil(totalReportes / ITEMS_PER_PAGE_CLIENTE);
+                      const currentPagePresup = presupuestosPage[cliente.id] || 1;
+                      const startIdx = (currentPagePresup - 1) * ITEMS_PER_PAGE_CLIENTE;
+                      const paginatedReportes = filteredReportes.slice(startIdx, startIdx + ITEMS_PER_PAGE_CLIENTE);
+
+                      return (
+                        <tr key={`${cliente.id}-detail`}>
+                          <td colSpan={7} className="bg-gray-50 px-8 py-4">
+                            {/* Buscador de presupuestos */}
+                            <div className="mb-3">
+                              <input
+                                type="text"
+                                placeholder="Buscar por número o descripción..."
+                                value={searchPresupuestos[cliente.id] || ""}
+                                onChange={(e) => handleSearchPresupuestos(cliente.id, e.target.value)}
+                                className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0b2c4d] text-black"
+                              />
+                            </div>
+                            
+                            <div className="border rounded-lg overflow-hidden">
+                              <div className="max-h-80 overflow-y-auto">
+                                <table className="w-full text-sm">
+                                  <thead className="bg-gray-200 text-gray-700 sticky top-0">
+                                    <tr>
+                                      <th className="px-4 py-2 text-left">N° Presupuesto</th>
+                                      <th className="px-4 py-2 text-left">Descripción</th>
+                                      <th className="px-4 py-2 text-right">Total</th>
+                                      <th className="px-4 py-2 text-right">Abonado</th>
+                                      <th className="px-4 py-2 text-right">Pendiente</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {paginatedReportes.length === 0 ? (
+                                      <tr>
+                                        <td colSpan={5} className="text-center py-4 text-gray-500 italic">
+                                          No hay presupuestos
+                                        </td>
+                                      </tr>
+                                    ) : (
+                                      paginatedReportes.map((reporte) => (
+                                        <tr 
+                                          key={reporte.id} 
+                                          onClick={() => handleOpenAbonosFromClient(reporte)}
+                                          className="border-b hover:bg-blue-50 cursor-pointer transition"
+                                        >
+                                          <td className="px-4 py-2 font-medium text-[#0b2c4d]">
+                                            {reporte.n_presupuesto}
+                                          </td>
+                                          <td className="px-4 py-2">
+                                            {reporte.descripcion || "-"}
+                                          </td>
+                                          <td className="px-4 py-2 text-right">
+                                            {formatCurrency(reporte.total)}
+                                          </td>
+                                          <td className="px-4 py-2 text-right text-green-600">
+                                            {formatCurrency(reporte.abonado)}
+                                          </td>
+                                          <td className={`px-4 py-2 text-right font-medium ${reporte.pendiente > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                            {formatCurrency(reporte.pendiente)}
+                                          </td>
+                                        </tr>
+                                      ))
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+
+                              {/* Paginación interna de presupuestos */}
+                              {totalPages > 1 && (
+                                <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 bg-gray-100">
+                                  <p className="text-xs text-gray-600">
+                                    {startIdx + 1}-{Math.min(startIdx + ITEMS_PER_PAGE_CLIENTE, totalReportes)} de {totalReportes} presupuestos
+                                  </p>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPresupuestosPage(prev => ({ ...prev, [cliente.id]: Math.max(1, (prev[cliente.id] || 1) - 1) }));
+                                      }}
+                                      disabled={currentPagePresup === 1}
+                                      className={`px-2 py-1 rounded text-xs transition ${currentPagePresup === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-300 hover:bg-gray-400 text-gray-700'}`}
+                                    >
+                                      ←
+                                    </button>
+                                    <span className="px-2 text-xs text-gray-600">
+                                      {currentPagePresup} / {totalPages}
+                                    </span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPresupuestosPage(prev => ({ ...prev, [cliente.id]: Math.min(totalPages, (prev[cliente.id] || 1) + 1) }));
+                                      }}
+                                      disabled={currentPagePresup === totalPages}
+                                      className={`px-2 py-1 rounded text-xs transition ${currentPagePresup === totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-300 hover:bg-gray-400 text-gray-700'}`}
+                                    >
+                                      →
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })()}
                   </React.Fragment>
                 );
               })}
