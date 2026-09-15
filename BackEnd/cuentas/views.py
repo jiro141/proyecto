@@ -47,9 +47,9 @@ class AbonoViewSet(viewsets.ModelViewSet):
             fecha_desde = request.query_params.get('fecha_desde')
             fecha_hasta = request.query_params.get('fecha_hasta')
 
-            # Obtener TODOS los reportes ejecutados (no solo los que tienen abonos)
+            # Obtener TODOS los reportes ejecutados o pagados (no solo los que tienen abonos)
             reportes_qs = Reporte.objects.filter(
-                estado=EstadoChoices.EJECUTADO
+                estado__in=[EstadoChoices.EJECUTADO, EstadoChoices.PAGADO]
             ).select_related('cliente').prefetch_related('abonos')
 
             # Filtrar por fecha de creación del reporte si se especifica
@@ -118,9 +118,9 @@ class AbonoViewSet(viewsets.ModelViewSet):
         Endpoint para obtener resumen de cuentas por cobrar agrupadas por cliente.
         Ahora incluye TODOS los reportes ejecutados (no solo los pendientes) y sus abonos.
         """
-        # Obtener reportes ejecutados
+        # Obtener reportes ejecutados o pagados
         reportes_qs = Reporte.objects.filter(
-            estado=EstadoChoices.EJECUTADO
+            estado__in=[EstadoChoices.EJECUTADO, EstadoChoices.PAGADO]
         ).select_related('cliente').prefetch_related('abonos')
 
         # Agrupar por cliente
@@ -216,7 +216,11 @@ class AbonoViewSet(viewsets.ModelViewSet):
         # Obtener reportes del cliente
         reportes_qs = Reporte.objects.filter(
             cliente=cliente,
-            estado__in=[EstadoChoices.EJECUTADO, EstadoChoices.APROBADO_ESPERA]
+            estado__in=[
+                EstadoChoices.EJECUTADO,
+                EstadoChoices.APROBADO_ESPERA,
+                EstadoChoices.PAGADO,
+            ]
         ).prefetch_related('abonos').order_by('-fecha_creacion')
 
         reportes_data = []

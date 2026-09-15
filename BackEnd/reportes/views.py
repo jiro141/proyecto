@@ -491,7 +491,8 @@ class NotaReporteDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class CuentasPorCobrarView(generics.ListAPIView):
     """
-    Lista todos los reportes con estado EJECUTADO y saldo pendiente > 0.
+    Lista todos los reportes con estado EJECUTADO o PAGADO (se mantienen
+    visibles en cuentas por cobrar aunque ya esten saldados).
     """
     serializer_class = ReporteListaSerializer
 
@@ -500,7 +501,7 @@ class CuentasPorCobrarView(generics.ListAPIView):
         from django.db.models.functions import Coalesce
         from django.db import models
         from cuentas.models import Abono
-        
+
         # Subquery para calcular el total abonado (especificar output_field como Decimal)
         abonos_subquery = Abono.objects.filter(
             reporte_id=OuterRef('id')
@@ -509,7 +510,7 @@ class CuentasPorCobrarView(generics.ListAPIView):
         ).values('total')
 
         return Reporte.objects.select_related("cliente").filter(
-            estado=EstadoChoices.EJECUTADO
+            estado__in=[EstadoChoices.EJECUTADO, EstadoChoices.PAGADO]
         ).annotate(
             total_abonado=Coalesce(abonos_subquery, Value(0, output_field=models.DecimalField(max_digits=14, decimal_places=2)))
         ).order_by("-fecha_creacion")
