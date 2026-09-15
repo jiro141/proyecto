@@ -4,6 +4,7 @@ import { FaSearch, FaMoneyBillWave, FaBuilding, FaChevronDown, FaChevronUp, FaHi
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Modal from "../../components/Modal";
+import Paginator from "../../components/Paginator";
 import useCuentasPorCliente from "../../hooks/useCuentasPorCliente";
 import useCuentasExcelGenerator from "../PresupuestosLayout/hooks/useCuentasExcelGenerator";
 import { getReporteAbonos, createAbono } from "../../api/controllers/Cuentas";
@@ -26,7 +27,7 @@ const formatDate = (dateString) => {
 };
 
 export default function ClientesCuentasPorCliente() {
-  const { clientes, totales, loading, error } = useCuentasPorCliente();
+  const { clientes, totales, loading, error, page, setPage, pagination } = useCuentasPorCliente();
   const [search, setSearch] = useState("");
   const [expandedClients, setExpandedClients] = useState({});
   const [searchPresupuestos, setSearchPresupuestos] = useState({}); // búsqueda por cliente
@@ -351,7 +352,6 @@ export default function ClientesCuentasPorCliente() {
                                       reporte.descripcion?.toLowerCase().includes(search)
                                     );
                                   })
-                                  .slice(0, 10)
                                   .map((reporte) => (
                                   <tr 
                                     key={reporte.id} 
@@ -386,6 +386,14 @@ export default function ClientesCuentasPorCliente() {
               })}
             </tbody>
           </table>
+
+          {/* PAGINADOR SERVER-SIDE */}
+          <Paginator
+            currentPage={page}
+            totalCount={pagination.count}
+            pageSize={20}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

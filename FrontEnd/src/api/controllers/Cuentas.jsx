@@ -50,9 +50,9 @@ export const deleteAbono = async (id) => {
   return response.data;
 };
 
-// Obtener cuentas por cobrar agrupadas por cliente
-export const getCuentasPorCliente = async () => {
-  const response = await AuthApi.get("/cuentas/abonos/por_cliente/");
+// Obtener cuentas por cobrar agrupadas por cliente (con paginación)
+export const getCuentasPorCliente = async (page = 1) => {
+  const response = await AuthApi.get(`/cuentas/abonos/por_cliente/?page=${page}`);
   return response.data;
 };
 

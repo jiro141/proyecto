@@ -10,13 +10,19 @@ export default function useCuentasPorCliente() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ count: 0, totalPages: 1 });
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
-      const result = await getCuentasPorCliente();
+      const result = await getCuentasPorCliente(pageNum);
       setClientes(result.clientes || []);
       setTotales(result.totales || { total_facturado: 0, total_abonado: 0, total_pendiente: 0 });
+      setPagination({
+        count: result.count || 0,
+        totalPages: result.totalPages || 1,
+      });
     } catch (err) {
       setError(err);
     } finally {
@@ -25,8 +31,16 @@ export default function useCuentasPorCliente() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    fetchData(1);
   }, [fetchData]);
+
+  useEffect(() => {
+    fetchData(page);
+  }, [page]);
+
+  const setPageAndFetch = (newPage) => {
+    setPage(newPage);
+  };
 
   // Obtener detalle de un cliente específico
   const getDetalleCliente = useCallback(async (clienteId) => {
@@ -39,12 +53,15 @@ export default function useCuentasPorCliente() {
     }
   }, []);
 
-  return { 
-    clientes, 
-    totales, 
-    loading, 
-    error, 
-    refetch: fetchData,
-    getDetalleCliente 
+  return {
+    clientes,
+    totales,
+    loading,
+    error,
+    refetch: () => fetchData(page),
+    page,
+    setPage: setPageAndFetch,
+    pagination,
+    getDetalleCliente,
   };
 }

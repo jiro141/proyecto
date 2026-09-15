@@ -116,8 +116,10 @@ class AbonoViewSet(viewsets.ModelViewSet):
     def por_cliente(self, request):
         """
         Endpoint para obtener resumen de cuentas por cobrar agrupadas por cliente.
-        Ahora incluye TODOS los reportes ejecutados (no solo los pendientes) y sus abonos.
+        Soporta paginación con query param ?page=N (20 clientes por página).
         """
+        PAGE_SIZE = 20
+
         # Obtener reportes ejecutados o pagados
         reportes_qs = Reporte.objects.filter(
             estado__in=[EstadoChoices.EJECUTADO, EstadoChoices.PAGADO]
@@ -182,8 +184,21 @@ class AbonoViewSet(viewsets.ModelViewSet):
             reverse=True
         )
 
+        # Paginación manual
+        total_count = len(clientes_ordenados)
+        total_pages = max(1, (total_count + PAGE_SIZE - 1) // PAGE_SIZE)
+        page_num = int(request.query_params.get('page', 1))
+        page_num = max(1, min(page_num, total_pages))
+
+        start = (page_num - 1) * PAGE_SIZE
+        end = start + PAGE_SIZE
+        clientes_paginados = clientes_ordenados[start:end]
+
         return Response({
-            'clientes': clientes_ordenados,
+            'clientes': clientes_paginados,
+            'count': total_count,
+            'page': page_num,
+            'totalPages': total_pages,
             'totales': {
                 'total_facturado': total_facturado,
                 'total_abonado': total_abonado,
