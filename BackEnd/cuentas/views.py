@@ -15,9 +15,16 @@ class AbonoViewSet(viewsets.ModelViewSet):
     serializer_class = AbonoSerializer
 
     def get_queryset(self):
-        qs = Abono.objects.filter(
-            reporte__estado=EstadoChoices.EJECUTADO
-        ).select_related('reporte', 'reporte__cliente')
+        qs = Abono.objects.select_related('reporte', 'reporte__cliente')
+
+        # El filtro por estado EJECUTADO solo aplica al listado general.
+        # Si se deja para retrieve/update/destroy, un abono de un presupuesto
+        # que ya pasó a PAGADO queda inaccesible (404) y no se puede
+        # corregir/eliminar, lo cual rompe la reversión automática de estado.
+        if self.action != 'list':
+            return qs
+
+        qs = qs.filter(reporte__estado=EstadoChoices.EJECUTADO)
 
         # Filtros por fecha
         fecha_desde = self.request.query_params.get('fecha_desde')

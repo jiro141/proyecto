@@ -294,22 +294,30 @@ class Reporte(models.Model):
         # 3. Lista de campos a actualizar
         campos_a_actualizar = ["total_reporte"]
         
-        # 3. Lógica automática de pago: Si el saldo es 0 o menor, y ya estaba ejecutado
+        # 3. Lógica automática de pago: si el saldo llega a 0, pasa a Pagado;
+        # si un abono se edita/elimina y vuelve a quedar saldo pendiente,
+        # regresa a Ejecutado para no dejar presupuestos "Pagado" con deuda real.
         estado_anterior = self.estado
+        observaciones_estado = ""
         if self.total_reporte > 0 and self.saldo_pendiente <= 0:
             if self.estado == EstadoChoices.EJECUTADO:
                 self.estado = EstadoChoices.PAGADO
                 campos_a_actualizar.append("estado")
+                observaciones_estado = "Cambio de estado por pago total"
+        elif self.estado == EstadoChoices.PAGADO and self.saldo_pendiente > 0:
+            self.estado = EstadoChoices.EJECUTADO
+            campos_a_actualizar.append("estado")
+            observaciones_estado = "Reversión de estado: quedó saldo pendiente tras modificar/eliminar un abono"
 
         self.save(update_fields=campos_a_actualizar)
-        
+
         # Registrar cambio de estado en historial si hubo cambio
         if "estado" in campos_a_actualizar and estado_anterior != self.estado:
             HistorialEstadoReporte.objects.create(
                 reporte=self,
                 estado_anterior=estado_anterior,
                 estado_nuevo=self.estado,
-                observaciones="Cambio de estado por pago total"
+                observaciones=observaciones_estado
             )
         
         return self.total_reporte

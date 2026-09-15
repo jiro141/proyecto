@@ -45,6 +45,17 @@ class Abono(models.Model):
         verbose_name_plural = "Abonos"
         ordering = ["-fecha_abono"]
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Recalcula el estado del presupuesto (pasa a Pagado si el saldo
+        # llega a 0, o vuelve a Ejecutado si el abono se corrige hacia abajo).
+        self.reporte.recalcular_total()
+
+    def delete(self, *args, **kwargs):
+        reporte = self.reporte
+        super().delete(*args, **kwargs)
+        reporte.recalcular_total()
+
     @property
     def descripcion_del_reporte(self):
         return self.reporte.descripcion

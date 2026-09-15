@@ -517,20 +517,16 @@ class CuentasPorCobrarView(generics.ListAPIView):
 
 class ReporteAbonosView(APIView):
     """
-    Lista los abonos de un reporte específico (solo si el reporte está en estado ejecutado).
+    Lista los abonos de un reporte específico. No se restringe por estado:
+    un reporte que ya pasó a Pagado sigue necesitando mostrar/editar sus
+    abonos (para corregir un pago cargado mal, por ejemplo).
     """
     def get(self, request, reporte_id):
         from cuentas.models import Abono
         from cuentas.serializers import AbonoSerializer
-        
-        # Verificar que el reporte esté en estado ejecutado
-        reporte = get_object_or_404(
-            Reporte.objects.filter(
-                estado=EstadoChoices.EJECUTADO
-            ),
-            pk=reporte_id
-        )
-        
+
+        reporte = get_object_or_404(Reporte, pk=reporte_id)
+
         abonos = Abono.objects.filter(reporte_id=reporte_id).order_by("-fecha_abono")
         serializer = AbonoSerializer(abonos, many=True)
         return Response(serializer.data)
