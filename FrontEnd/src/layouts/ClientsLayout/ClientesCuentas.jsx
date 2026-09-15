@@ -31,7 +31,7 @@ const formatDate = (dateString) => {
 const ITEMS_PER_PAGE = 5;
 
 export default function ClientesCuentas() {
-  const { reportes, loading, error, refetch, page, setPage, pagination } = useCuentas();
+  const { reportes, loading, error, refetch, page, setPage, pagination, totales: totalesApi } = useCuentas();
   const [search, setSearch] = useState("");
   const [isModalOpen, setModalOpen] = useState(false);
   const [isDetalleOpen, setDetalleOpen] = useState(false);
@@ -202,14 +202,13 @@ export default function ClientesCuentas() {
     );
   });
 
-  const totales = reportes.reduce(
-    (acc, curr) => ({
-      totalReportes: acc.totalReportes + parseFloat(curr.total_reporte || 0),
-      totalAbonado: acc.totalAbonado + parseFloat(curr.total_abonado || 0),
-      totalPendiente: acc.totalPendiente + parseFloat(curr.saldo_pendiente || 0),
-    }),
-    { totalReportes: 0, totalAbonado: 0, totalPendiente: 0 }
-  );
+  // Totales reales (de todos los registros filtrados), no solo la pagina
+  // actual de la tabla -- vienen calculados desde el backend.
+  const totales = {
+    totalReportes: parseFloat(totalesApi.total_reportes || 0),
+    totalAbonado: parseFloat(totalesApi.total_abonado || 0),
+    totalPendiente: parseFloat(totalesApi.total_pendiente || 0),
+  };
 
   const totalPages = Math.ceil(abonosReporte.length / ITEMS_PER_PAGE);
   const paginatedAbonos = useMemo(() => {

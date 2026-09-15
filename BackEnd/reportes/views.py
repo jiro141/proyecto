@@ -515,6 +515,35 @@ class CuentasPorCobrarView(generics.ListAPIView):
             total_abonado=Coalesce(abonos_subquery, Value(0, output_field=models.DecimalField(max_digits=14, decimal_places=2)))
         ).order_by("-fecha_creacion")
 
+    def list(self, request, *args, **kwargs):
+        from decimal import Decimal
+        from django.db.models import Sum
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Totales sobre TODO el queryset filtrado, no solo la pagina actual.
+        agregados = queryset.aggregate(
+            total_reportes=Sum("total_reporte"),
+            total_abonado=Sum("total_abonado"),
+        )
+        total_reportes = agregados["total_reportes"] or Decimal("0.00")
+        total_abonado = agregados["total_abonado"] or Decimal("0.00")
+        totales = {
+            "total_reportes": total_reportes,
+            "total_abonado": total_abonado,
+            "total_pendiente": total_reportes - total_abonado,
+        }
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+            response.data["totales"] = totales
+            return response
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"results": serializer.data, "totales": totales})
+
 
 class ReporteAbonosView(APIView):
     """

@@ -7,18 +7,20 @@ export default function useCuentas() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ count: 0, totalPages: 1 });
+  const [totales, setTotales] = useState({ total_reportes: 0, total_abonado: 0, total_pendiente: 0 });
 
   const fetchData = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
       const result = await getCuentasCobrar(pageNum);
-      // Backend DRF returns { count, next, previous, results }
+      // Backend DRF returns { count, next, previous, results, totales }
       if (result.results) {
         setReportes(result.results);
         setPagination({
           count: result.count || 0,
           totalPages: Math.ceil((result.count || 0) / 20),
         });
+        if (result.totales) setTotales(result.totales);
       } else {
         setReportes(Array.isArray(result) ? result : []);
         setPagination({ count: Array.isArray(result) ? result.length : 0, totalPages: 1 });
@@ -60,6 +62,7 @@ export default function useCuentas() {
     page,
     setPage: setPageAndFetch,
     pagination,
+    totales,
     addAbono,
     removeAbono,
   };
