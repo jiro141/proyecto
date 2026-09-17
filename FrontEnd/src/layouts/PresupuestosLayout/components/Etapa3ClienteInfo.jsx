@@ -89,79 +89,80 @@ export const ClienteInfo = ({ formData, presupuestoEstimado }) => {
 
   return (
     <>
-      <div className="bg-white shadow-md rounded-lg p-5 border border-gray-200">
-        <h3 className="text-lg font-semibold text-[#0B2C4D] mb-3">
-          Información del Cliente
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-          <p>
-            <strong>Cliente:</strong> {formData?.cliente?.nombre || "—"}
-          </p>
-          <p>
-            <strong>RIF:</strong> {formData?.cliente?.rif || "—"}
-          </p>
-          <p>
-            <strong>Encargado:</strong> {formData?.cliente?.encargado || "—"}
-          </p>
+      <div className="flex flex-col md:flex-row gap-4">
+        {/* Información del Cliente - 70% */}
+        <div className="w-full md:w-[70%] bg-white shadow-md rounded-lg p-5 border border-gray-200">
+          <h3 className="text-lg font-semibold text-[#0B2C4D] mb-3">
+            Información del Cliente
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+            <p>
+              <strong>Cliente:</strong> {formData?.cliente?.nombre || "—"}
+            </p>
+            <p>
+              <strong>RIF:</strong> {formData?.cliente?.rif || "—"}
+            </p>
+            <p>
+              <strong>Encargado:</strong> {formData?.cliente?.encargado || "—"}
+            </p>
 
-          <p>
-            <strong>Fecha de Culminación:</strong>{" "}
-            {new Date(formData?.fechaCulminacion).toLocaleDateString()}
-          </p>
-          <p>
-            <strong>Presupuesto Base:</strong>{" "}
-            {formatoMoneda(presupuestoEstimado || 0)}
-          </p>
+            <p>
+              <strong>Fecha de Culminación:</strong>{" "}
+              {new Date(formData?.fechaCulminacion).toLocaleDateString()}
+            </p>
+            <p>
+              <strong>Presupuesto Base:</strong>{" "}
+              {formatoMoneda(presupuestoEstimado || 0)}
+            </p>
 
-          {/* Descuento clickeable */}
-          <p>
-            <strong>Descuento:</strong>{" "}
-            <span
-              className="text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition-colors"
-              onClick={abrirModal}
-              title="Haz clic para editar el descuento"
-            >
-              {porcentajeDesc > 0
-                ? `${porcentajeDesc}%`
-                : "Sin descuento"}
-            </span>
-            {formData?.descripcion_descuento && porcentajeDesc > 0 && (
-              <span className="text-gray-500 ml-1">
-                ({formData.descripcion_descuento})
+            {/* Descuento clickeable */}
+            <p>
+              <strong>Descuento:</strong>{" "}
+              <span
+                className="text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition-colors"
+                onClick={abrirModal}
+                title="Haz clic para editar el descuento"
+              >
+                {porcentajeDesc > 0
+                  ? `${porcentajeDesc}%`
+                  : "Sin descuento"}
               </span>
+              {formData?.descripcion_descuento && porcentajeDesc > 0 && (
+                <span className="text-gray-500 ml-1">
+                  ({formData.descripcion_descuento})
+                </span>
+              )}
+            </p>
+
+            {/* Total con descuento */}
+            <p className="font-semibold text-[#0B2C4D]">
+              <strong>Total con Descuento:</strong>{" "}
+              {formatoMoneda(totalConDescuento)}
+            </p>
+          </div>
+        </div>
+
+        {/* Notas Admin - 30% */}
+        <div className="w-full md:w-[30%] bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex flex-col">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-semibold text-yellow-800">
+              Notas Admin
+            </label>
+            {guardandoNotasAdmin && (
+              <span className="text-xs text-gray-400 italic">Guardando...</span>
             )}
+          </div>
+          <p className="text-xs text-yellow-600 mb-2">
+            Internas del administrador. No se renderizan en PDF ni Excel.
           </p>
-
-          {/* Total con descuento */}
-          <p className="font-semibold text-[#0B2C4D]">
-            <strong>Total con Descuento:</strong>{" "}
-            {formatoMoneda(totalConDescuento)}
-          </p>
+          <textarea
+            value={formData?.notas_admin || ""}
+            onChange={(e) => handleNotasAdminChange(e.target.value)}
+            placeholder="Escribir notas internas del administrador..."
+            rows={6}
+            className="w-full flex-1 border border-yellow-300 rounded-md px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          />
         </div>
-      </div>
-
-      {/* ============================== */}
-      {/* NOTAS ADMIN (solo admin) */}
-      {/* ============================== */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-semibold text-yellow-800">
-            Notas Admin
-          </label>
-          {guardandoNotasAdmin && (
-            <span className="text-xs text-gray-400 italic">Guardando...</span>
-          )}
-        </div>
-        <p className="text-xs text-yellow-600 mb-2">
-          Estas notas son internas del administrador. No se renderizan en PDF ni Excel.
-        </p>
-        <textarea
-          value={formData?.notas_admin || ""}
-          onChange={(e) => handleNotasAdminChange(e.target.value)}
-          placeholder="Escribir notas internas del administrador..."
-          rows={3}
-          className="w-full border border-yellow-300 rounded-md px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400"
-        />
       </div>
 
       {/* Modal para editar descuento */}
