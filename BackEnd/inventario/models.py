@@ -10,14 +10,14 @@ from decimal import Decimal, ROUND_HALF_UP
 
 
 class LugarConsumo(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=500)
 
     def __str__(self):
         return self.name
 
 
 class Ubicacion(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=500)
 
     def __str__(self):
         return self.name
