@@ -22,6 +22,7 @@ export const ClienteInfo = ({ formData, presupuestoEstimado }) => {
     formData?.descripcion_descuento ?? ""
   );
   const [guardando, setGuardando] = useState(false);
+  const [guardandoNotasAdmin, setGuardandoNotasAdmin] = useState(false);
 
   const abrirModal = () => {
     setPorcentajeInput(formData?.porcentaje_descuento ?? 0);
@@ -59,6 +60,25 @@ export const ClienteInfo = ({ formData, presupuestoEstimado }) => {
     }
 
     setModalOpen(false);
+  };
+
+  // ==============================
+  // NOTAS ADMIN
+  // ==============================
+  const handleNotasAdminChange = async (valor) => {
+    updatePresupuestoField("notas_admin", valor);
+
+    // Si el reporte ya existe en backend, persistir automáticamente
+    if (formData?.id) {
+      setGuardandoNotasAdmin(true);
+      try {
+        await updateReportePartial(formData.id, { notas_admin: valor });
+      } catch (error) {
+        console.error("Error al guardar notas admin:", error);
+      } finally {
+        setGuardandoNotasAdmin(false);
+      }
+    }
   };
 
   const porcentajeDesc = formData?.porcentaje_descuento ?? 0;
@@ -118,6 +138,30 @@ export const ClienteInfo = ({ formData, presupuestoEstimado }) => {
             {formatoMoneda(totalConDescuento)}
           </p>
         </div>
+      </div>
+
+      {/* ============================== */}
+      {/* NOTAS ADMIN (solo admin) */}
+      {/* ============================== */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-semibold text-yellow-800">
+            Notas Admin
+          </label>
+          {guardandoNotasAdmin && (
+            <span className="text-xs text-gray-400 italic">Guardando...</span>
+          )}
+        </div>
+        <p className="text-xs text-yellow-600 mb-2">
+          Estas notas son internas del administrador. No se renderizan en PDF ni Excel.
+        </p>
+        <textarea
+          value={formData?.notas_admin || ""}
+          onChange={(e) => handleNotasAdminChange(e.target.value)}
+          placeholder="Escribir notas internas del administrador..."
+          rows={3}
+          className="w-full border border-yellow-300 rounded-md px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400"
+        />
       </div>
 
       {/* Modal para editar descuento */}

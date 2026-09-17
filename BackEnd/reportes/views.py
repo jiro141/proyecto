@@ -172,6 +172,7 @@ class DuplicarReporteView(APIView):
                 validez_oferta=reporte_original.validez_oferta,
                 forma_pago=reporte_original.forma_pago,
                 terminos_condiciones=reporte_original.terminos_condiciones,
+                notas_admin=reporte_original.notas_admin,
             )
 
             # 2. Copiar APUs con todos sus sub-recursos

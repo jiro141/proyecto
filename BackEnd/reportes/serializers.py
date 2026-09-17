@@ -221,6 +221,7 @@ class ReporteSerializer(serializers.ModelSerializer):
             "validez_oferta",
             "forma_pago",
             "terminos_condiciones",
+            "notas_admin",
             "estado",
             "estado_display",
             "apus",

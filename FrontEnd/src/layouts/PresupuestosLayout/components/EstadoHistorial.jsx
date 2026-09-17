@@ -132,6 +132,12 @@ export default function EstadoHistorial({ reporte, onEstadoActualizado }) {
             ${parseFloat(reporte.total_reporte || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </span>
         </div>
+        {reporte.notas_admin && (
+          <div className="mt-2 pt-2 border-t border-gray-200">
+            <span className="text-xs font-semibold text-yellow-700 uppercase">Notas Admin:</span>
+            <p className="text-xs text-yellow-800 mt-1 whitespace-pre-wrap">{reporte.notas_admin}</p>
+          </div>
+        )}
       </div>
 
       {/* Secciones principales */}

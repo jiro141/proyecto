@@ -43,6 +43,7 @@ export default function useReportesActions() {
                     validez_oferta: formData.validez_oferta || "5 DÍAS",
                     forma_pago: formData.forma_pago || "60% ANTICIPO  40% A SU ENTREGA",
                     terminos_condiciones: formData.terminos_condiciones || "LOS PRECIOS NO INCLUYEN IVA; LO QUE NO ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.",
+                    notas_admin: formData.notas_admin || "",
                 };
                 
                 // Agregar orden_servicio si existe (es opcional)

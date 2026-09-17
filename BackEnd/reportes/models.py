@@ -215,6 +215,13 @@ class Reporte(models.Model):
         verbose_name="Términos y condiciones",
     )
 
+    notas_admin = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Notas Admin",
+        help_text="Notas internas del administrador. No se renderizan en PDF ni Excel.",
+    )
+
     class Meta:
         ordering = ["-fecha_creacion", "-id"]
         verbose_name = "Reporte"

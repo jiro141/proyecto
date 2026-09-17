@@ -37,6 +37,7 @@ const initialPresupuesto = () => ({
   orden_servicio: "", // Orden de servicio (opcional)
   titulo: "Nota",
   notas: "",
+  notas_admin: "",
   descripcion: "",
   fechaCulminacion: new Date(),
   presupuesto_base: 0,

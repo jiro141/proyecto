@@ -65,6 +65,7 @@ export const useReporteActions = () => {
         titulo: notaData.titulo,
         descripcion: reporte.descripcion,
         notas: notaData.notas,
+        notas_admin: reporte.notas_admin || "",
         notaId: notaData.notaId,
         // ✅ Usar fecha_estimacion_culminacion del backend, o la actual si no existe
         fechaCulminacion: reporte.fecha_estimacion_culminacion 

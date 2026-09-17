@@ -162,6 +162,13 @@ class ReporteAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        (
+            "Notas Admin (solo visible para administradores)",
+            {
+                "fields": ("notas_admin",),
+                "classes": ("collapse",),
+            },
+        ),
     )
 
 
