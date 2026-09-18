@@ -200,8 +200,7 @@ class Reporte(models.Model):
         verbose_name="Validez de la oferta",
     )
 
-    forma_pago = models.CharField(
-        max_length=200,
+    forma_pago = models.TextField(
         default="60% ANTICIPO  40% A SU ENTREGA",
         blank=True,
         null=True,
