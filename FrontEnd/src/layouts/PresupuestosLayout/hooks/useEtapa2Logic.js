@@ -13,6 +13,9 @@ export const useEtapa2Logic = () => {
         loading: loadingStock,
         error: errorStock,
         refetch: refetchStock,
+        page: stockPage,
+        setPage: setStockPage,
+        pagination: stockPagination,
     } = useInventario("stock", searchStock);
 
     const {
@@ -20,24 +23,36 @@ export const useEtapa2Logic = () => {
         loading: loadingCons,
         error: errorCons,
         refetch: refetchCons,
+        page: consPage,
+        setPage: setConsPage,
+        pagination: consPagination,
     } = useInventario("consumibles", searchCons);
 
     const {
         data: herramientasRaw,
         loading: loadingHerramientas,
         refetch: refetchHerramientas,
+        page: herramientasPage,
+        setPage: setHerramientasPage,
+        pagination: herramientasPagination,
     } = useInventario("herramientas", "");
 
     const {
         data: empleadosRaw,
         loading: loadingEmpleados,
         refetch: refetchEmpleados,
+        page: empleadosPage,
+        setPage: setEmpleadosPage,
+        pagination: empleadosPagination,
     } = useInventario("empleados", "");
 
     const {
         data: logisticaRaw,
         loading: loadingLogistica,
         refetch: refetchLogistica,
+        page: logisticaPage,
+        setPage: setLogisticaPage,
+        pagination: logisticaPagination,
     } = useInventario("logistica", "");
 
 
@@ -164,5 +179,20 @@ export const useEtapa2Logic = () => {
         refetchHerramientas,
         refetchEmpleados,
         refetchLogistica,
+        stockPage,
+        setStockPage,
+        stockPagination,
+        consPage,
+        setConsPage,
+        consPagination,
+        herramientasPage,
+        setHerramientasPage,
+        herramientasPagination,
+        empleadosPage,
+        setEmpleadosPage,
+        empleadosPagination,
+        logisticaPage,
+        setLogisticaPage,
+        logisticaPagination,
     };
 };

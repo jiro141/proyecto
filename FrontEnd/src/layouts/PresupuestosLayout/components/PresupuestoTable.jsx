@@ -4,6 +4,7 @@ import TableHeader from "./TableHeader";
 import { toast } from "react-toastify";
 import Modal from "../../../components/Modal";
 import DecimalInput from "../../../components/DecimalInput";
+import Paginator from "../../../components/Paginator";
 import {
   createHerramienta,
   updateHerramienta,
@@ -24,6 +25,9 @@ export default function PresupuestoTable({
     formFields,
     onRefetch,
     totalEmpleadosMO = 0, // 👥 para logística: empleados desde Mano de Obra
+    page, // 📄 página actual
+    onPageChange, // 📄 cambia de página
+    pagination, // 📄 { count, totalPages, ... }
 }) {
     const catalogItems = dataSource || [];
     
@@ -80,16 +84,51 @@ export default function PresupuestoTable({
         return selected ? selected.cantidad : 0;
     };
     
-    const displayItems = catalogItems.map(item => {
-        const selected = selectedMap[item.id];
-        if (selected) {
-            if (esLogisticaConMO) {
-                return { ...item, cantidad: getCantidadVisual(item) };
-            }
-            return { ...item, cantidad: selected.cantidad };
+    // 🔍 Helper: busca un item en el presupuesto primero por ID, luego por descripción
+    // (necesario para edición, donde los IDs del backend NO coinciden con los del catálogo)
+    const findInPresupuesto = (item) => {
+        const byId = selectedMap[item.id];
+        if (byId) return byId;
+        const savedItems = Array.isArray(presupuestoData?.[tipo]) ? presupuestoData[tipo] : [];
+        return savedItems.find(
+            (x) => x.descripcion?.toLowerCase() === item.descripcion?.toLowerCase()
+        );
+    };
+
+    // Página actual: catálogo + cantidad/empleados guardados (merge por id o descripción)
+    const pageItems = catalogItems.map(item => {
+        const saved = findInPresupuesto(item);
+        if (esLogisticaConMO) {
+            const merged = saved
+                ? { ...item, cantidad: getCantidadVisual(item), ...(saved?.empleados !== undefined ? { empleados: saved.empleados } : {}) }
+                : { ...item, cantidad: Number(item.cantidad) || 0 };
+            return merged;
         }
-        return item;
+        return saved ? { ...item, cantidad: saved.cantidad } : item;
     });
+
+    // Items seleccionados que NO están en la página actual (se anclan arriba)
+    const extras = (Array.isArray(selectedItems) ? selectedItems : []).filter((sv) => {
+        const inPageById = catalogItems.some((ci) => ci.id === sv.id);
+        if (inPageById) return false;
+        return !(sv.descripcion && catalogItems.some(
+            (ci) => ci.descripcion?.toLowerCase() === sv.descripcion.toLowerCase()
+        ));
+    });
+
+    // Mismo ordenamiento que InventarioTable.sortedData: seleccionados primero
+    const pageItemsSorted = [...pageItems].sort((a, b) => {
+        const cantA = Number(a.cantidad || 0);
+        const cantB = Number(b.cantidad || 0);
+        if (cantA > 0 && cantB === 0) return -1;
+        if (cantA === 0 && cantB > 0) return 1;
+        return 0;
+    });
+
+    const displayItems = [
+        ...extras.map((sv) => esLogisticaConMO ? { ...sv, cantidad: getCantidadVisual(sv) } : sv),
+        ...pageItemsSorted,
+    ];
     
     const [isModalOpen, setModalOpen] = useState(false);
     const [editItem, setEditItem] = useState(null);
@@ -114,7 +153,7 @@ export default function PresupuestoTable({
             setDiasLogistica(prev => ({ ...prev, [id]: dias }));
             const cantidadEfectiva = emp * dias;
 
-            const itemsActualizados = catalogItems.map(item => {
+            const itemsActualizados = displayItems.map(item => {
                 if (item.id === id) {
                     return {
                         ...item,
@@ -144,7 +183,7 @@ export default function PresupuestoTable({
             r.id === id ? { ...r, cantidad: nuevoValor } : r
         );
         
-        const itemsActualizados = catalogItems.map(item => {
+        const itemsActualizados = displayItems.map(item => {
             const updated = updatedItems.find(u => u.id === item.id);
             if (updated) {
                 return { ...item, cantidad: updated.cantidad };
@@ -169,7 +208,7 @@ export default function PresupuestoTable({
             setDiasLogistica(prev => ({ ...prev, [id]: dias }));
             const cantidadEfectiva = emp * dias;
 
-            const itemsActualizados = catalogItems.map(item => {
+            const itemsActualizados = displayItems.map(item => {
                 if (item.id === id) {
                     return {
                         ...item,
@@ -199,7 +238,7 @@ export default function PresupuestoTable({
             r.id === id ? { ...r, cantidad: nuevoValor } : r
         );
         
-        const itemsActualizados = catalogItems.map(item => {
+        const itemsActualizados = displayItems.map(item => {
             const updated = updatedItems.find(u => u.id === item.id);
             if (updated) {
                 return { ...item, cantidad: updated.cantidad };
@@ -210,17 +249,6 @@ export default function PresupuestoTable({
         if (setPresupuestoData) {
             setPresupuestoData((prev) => ({ ...prev, [tipo]: itemsActualizados }));
         }
-    };
-
-    // 🔍 Helper: busca un item en el presupuesto primero por ID, luego por descripción
-    // (necesario para edición, donde los IDs del backend NO coinciden con los del catálogo)
-    const findInPresupuesto = (item) => {
-        const byId = selectedMap[item.id];
-        if (byId) return byId;
-        const savedItems = Array.isArray(presupuestoData?.[tipo]) ? presupuestoData[tipo] : [];
-        return savedItems.find(
-            (x) => x.descripcion?.toLowerCase() === item.descripcion?.toLowerCase()
-        );
     };
 
     const handleRowClick = (e, item) => {
@@ -241,7 +269,7 @@ export default function PresupuestoTable({
                 setEmpleadosLogistica(prev => ({ ...prev, [item.id]: mo }));
                 const cantidadEfectiva = mo * diasInicial;
 
-                const itemsActuales = catalogItems
+                const itemsActuales = displayItems
                     .filter(i => findInPresupuesto(i))
                     .map(i => {
                         const saved = findInPresupuesto(i);
@@ -259,7 +287,7 @@ export default function PresupuestoTable({
                 return;
             }
 
-            const itemsActuales = catalogItems
+            const itemsActuales = displayItems
                 .filter(i => findInPresupuesto(i))
                 .map(i => ({ ...i, cantidad: findInPresupuesto(i).cantidad }));
             const itemsFiltrados = [
@@ -291,7 +319,7 @@ export default function PresupuestoTable({
 
             const cantidadEfectiva = emp * dias;
 
-            const itemsActualizados = catalogItems.map(item => {
+            const itemsActualizados = displayItems.map(item => {
                 if (item.id === id) {
                     return {
                         ...item,
@@ -499,13 +527,25 @@ export default function PresupuestoTable({
                 </table>
             </div>
 
-            <div className="mt-4 flex justify-end">
-                <button
-                    onClick={handleAddClick}
-                    className="px-4 py-2 bg-[#0B2C4D] text-white rounded-lg hover:bg-[#15385C] transition"
-                >
-                    + Agregar Registro
-                </button>
+            <div className="mt-4 flex items-center justify-between gap-4">
+                <div className="flex-1">
+                    {pagination && page && onPageChange && (
+                        <Paginator
+                            currentPage={page}
+                            totalCount={pagination.count}
+                            pageSize={20}
+                            onPageChange={onPageChange}
+                        />
+                    )}
+                </div>
+                <div className="flex justify-end">
+                    <button
+                        onClick={handleAddClick}
+                        className="px-4 py-2 bg-[#0B2C4D] text-white rounded-lg hover:bg-[#15385C] transition"
+                    >
+                        + Agregar Registro
+                    </button>
+                </div>
             </div>
 
             <Modal

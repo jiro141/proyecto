@@ -5,6 +5,7 @@ import StepForm from "../../../components/StepForm";
 import BounceLoader from "react-spinners/BounceLoader";
 import { useInventarioTableContainer } from "../hooks/useInventarioTableContainer";
 import { getItemById } from "../../../api/controllers/Inventario";
+import Paginator from "../../../components/Paginator";
 
 export default function InventarioTable(props) {
   const tipo = props.tipo;
@@ -113,6 +114,15 @@ export default function InventarioTable(props) {
               </tbody>
             </table>
           </div>
+        )}
+
+        {logic.pagination && logic.page && logic.setPage && (
+          <Paginator
+            currentPage={logic.page}
+            totalCount={logic.pagination.count}
+            pageSize={20}
+            onPageChange={logic.setPage}
+          />
         )}
 
         <div className="mt-4 flex justify-end">

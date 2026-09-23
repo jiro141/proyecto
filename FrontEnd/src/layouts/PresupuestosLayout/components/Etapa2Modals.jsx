@@ -32,6 +32,21 @@ export default function Etapa2Modals({
     refetchHerramientas,
     refetchEmpleados,
     refetchLogistica,
+    stockPage,
+    setStockPage,
+    stockPagination,
+    consPage,
+    setConsPage,
+    consPagination,
+    herramientasPage,
+    setHerramientasPage,
+    herramientasPagination,
+    empleadosPage,
+    setEmpleadosPage,
+    empleadosPagination,
+    logisticaPage,
+    setLogisticaPage,
+    logisticaPagination,
     formData, // ✅ Datos del contexto del presupuesto
 }) {
     const { formData: contextoFormData, currentAPUIndex, updateAPUSection } = usePresupuesto();
@@ -55,6 +70,9 @@ export default function Etapa2Modals({
         formFields,
         onRefetch,
         totalEmpleadosMO, // 👥 para logística
+        page, // 📄 página actual
+        onPageChange, // 📄 cambia de página
+        pagination, // 📄 { count, totalPages, ... }
     }) => {
         // ✅ Callback que sincroniza datos - pasar directo sin wrappers
         // El setPresupuestoData ya viene con la lógica de sincronización desde Etapa2
@@ -85,6 +103,10 @@ export default function Etapa2Modals({
                 onRefetch={onRefetch}
                 // 👥 Para logística: cuántos empleados hay en MO
                 totalEmpleadosMO={totalEmpleadosMO}
+                // 📄 Paginación server-side
+                page={page}
+                onPageChange={onPageChange}
+                pagination={pagination}
             />
         );
     };
@@ -98,6 +120,9 @@ export default function Etapa2Modals({
         loading,
         error,
         refetch,
+        page, // 📄 página actual
+        setPage, // 📄 cambia de página
+        pagination, // 📄 { count, totalPages, ... }
     }) => {
         const materiales = apuActual.materiales || {};
 
@@ -164,6 +189,9 @@ export default function Etapa2Modals({
                 onTotalChange={handleTotalChangeLocal}
                 onStockInsuficiente={(producto) => onStockInsuficiente(tipo, producto)}
                 refetch={refetch}
+                page={page}
+                setPage={setPage}
+                pagination={pagination}
             />
         );
     };
@@ -188,6 +216,9 @@ export default function Etapa2Modals({
                         loading: loadingStock,
                         error: errorStock,
                         refetch: refetchStock,
+                        page: stockPage,
+                        setPage: setStockPage,
+                        pagination: stockPagination,
                     })}
                 </div>
             </Modal>
@@ -207,6 +238,9 @@ export default function Etapa2Modals({
                         loading: loadingCons,
                         error: errorCons,
                         refetch: refetchCons,
+                        page: consPage,
+                        setPage: setConsPage,
+                        pagination: consPagination,
                     })}
                 </div>
             </Modal>
@@ -238,6 +272,9 @@ export default function Etapa2Modals({
                             { name: "depreciacion_bs_hora", label: "Depreciación (BS/Hora)", type: "number" },
                         ],
                         onRefetch: refetchHerramientas,
+                        page: herramientasPage,
+                        onPageChange: setHerramientasPage,
+                        pagination: herramientasPagination,
                     })}
                 </div>
             </Modal>
@@ -269,6 +306,9 @@ export default function Etapa2Modals({
                             { name: "precio_unitario", label: "Precio Unitario", type: "number" },
                         ],
                         onRefetch: refetchEmpleados,
+                        page: empleadosPage,
+                        onPageChange: setEmpleadosPage,
+                        pagination: empleadosPagination,
                     })}
                 </div>
             </Modal>
@@ -302,6 +342,9 @@ export default function Etapa2Modals({
                         ],
                         onRefetch: refetchLogistica,
                         totalEmpleadosMO: totalEmpleadosMO,
+                        page: logisticaPage,
+                        onPageChange: setLogisticaPage,
+                        pagination: logisticaPagination,
                     })}
                 </div>
             </Modal>

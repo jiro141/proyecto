@@ -70,6 +70,21 @@ export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
     refetchHerramientas,
     refetchEmpleados,
     refetchLogistica,
+    stockPage,
+    setStockPage,
+    stockPagination,
+    consPage,
+    setConsPage,
+    consPagination,
+    herramientasPage,
+    setHerramientasPage,
+    herramientasPagination,
+    empleadosPage,
+    setEmpleadosPage,
+    empleadosPagination,
+    logisticaPage,
+    setLogisticaPage,
+    logisticaPagination,
   } = useEtapa2Logic();
 
   // 🔄 Sincronizar datos del APU al estado local cada vez que cambia el APU activo
@@ -181,6 +196,22 @@ export const Etapa2 = ({ onStockInsuficiente, etapa }) => {
         refetchHerramientas={refetchHerramientas}
         refetchEmpleados={refetchEmpleados}
         refetchLogistica={refetchLogistica}
+        // ✅ Paginación server-side
+        stockPage={stockPage}
+        setStockPage={setStockPage}
+        stockPagination={stockPagination}
+        consPage={consPage}
+        setConsPage={setConsPage}
+        consPagination={consPagination}
+        herramientasPage={herramientasPage}
+        setHerramientasPage={setHerramientasPage}
+        herramientasPagination={herramientasPagination}
+        empleadosPage={empleadosPage}
+        setEmpleadosPage={setEmpleadosPage}
+        empleadosPagination={empleadosPagination}
+        logisticaPage={logisticaPage}
+        setLogisticaPage={setLogisticaPage}
+        logisticaPagination={logisticaPagination}
         // ✅ Agregar formData para que los modales vean los datos del APU actual
         formData={formData}
       />

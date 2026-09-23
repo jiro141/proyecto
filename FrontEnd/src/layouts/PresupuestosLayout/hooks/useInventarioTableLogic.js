@@ -70,7 +70,7 @@ export const useInventarioTableLogic = ({
     });
 
     // ======== Hook Inventario ========
-    const { data: fetchedData, loading, error, refetch } =
+    const { data: fetchedData, loading, error, refetch, page, setPage, pagination } =
         useInventario(tipo, query);
 
     // ======== Data fusionada (SOLO para render) ========
@@ -267,5 +267,8 @@ export const useInventarioTableLogic = ({
         loading,
         error,
         refetch,
+        page,
+        setPage,
+        pagination,
     };
 };

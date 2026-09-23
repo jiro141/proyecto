@@ -43,10 +43,11 @@ export default function useInventario(tipo, search = "") {
         setPagination({
           count: result.count || 0,
           totalPages: Math.ceil((result.count || 0) / 20),
+          pageSize: 20,
         });
       } else {
         setData(Array.isArray(result) ? result : []);
-        setPagination({ count: Array.isArray(result) ? result.length : 0, totalPages: 1 });
+        setPagination({ count: Array.isArray(result) ? result.length : 0, totalPages: 1, pageSize: 20 });
       }
     } catch (err) {
       setError(err.message || "Error al obtener datos");
