@@ -51,7 +51,7 @@ const SignIn = () => {
         setMode("login");
       }
     } catch (err) {
-      setError(err?.detail || "Error desconocido");
+      setError(err?.message || err?.detail || "Error desconocido");
     }
   };
   
