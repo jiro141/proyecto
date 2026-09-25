@@ -25,7 +25,12 @@ SECRET_KEY = "django-insecure-q6)o)pgb$^2gf5h*a)io6va_0=6d_zp&56a!x_x+q$2t^djuza
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "hermabe.cloud",
+    "www.hermabe.cloud",
+    "localhost",
+    "127.0.0.1",
+]
 
 
 # Application definition
@@ -159,7 +164,15 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # <- el origen de tu frontend
+    "http://localhost:5173",  # frontend local (Vite)
+    "https://hermabe.netlify.app",  # frontend en producción (Netlify)
+]
+
+# Orígenes HTTPS confiables para CSRF (admin de Django y formularios)
+CSRF_TRUSTED_ORIGINS = [
+    "https://hermabe.cloud",
+    "https://www.hermabe.cloud",
+    "https://hermabe.netlify.app",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
