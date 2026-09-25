@@ -46,6 +46,7 @@ class APUMaterialSerializer(serializers.ModelSerializer):
             "desperdicio",
             "precio_unitario",
             "total_material",
+            "sin_utilidad",
         ]
         read_only_fields = [
             "descripcion",

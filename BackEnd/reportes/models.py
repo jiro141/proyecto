@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from django.db.models import Sum
 from django.db import models
 from django.utils import timezone
@@ -540,6 +540,10 @@ class APUMaterial(models.Model):
     total_material = models.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal("0.00")
     )
+    sin_utilidad = models.BooleanField(
+        default=False,
+        help_text="Si está activo, el material de ferretería usa el costo sin el 15% de utilidad",
+    )
 
     def save(self, *args, **kwargs):
         # --- Obtener info desde inventario ---
@@ -549,8 +553,18 @@ class APUMaterial(models.Model):
 
             mts_ml_m2 = getattr(self.stock, "mts_ml_m2", None)
             utilidad_15 = getattr(self.stock, "utilidad_15", None)
+            costo = Decimal(self.stock.costo or 0)
+            factor = self.stock.factor_conversion
 
-            if mts_ml_m2:
+            if self.sin_utilidad:
+                # Mismo cálculo que Stock.calcular_costos() pero sin el 1.15
+                if factor and factor > 0:
+                    self.precio_unitario = (costo / factor).quantize(
+                        Decimal("0.01"), rounding=ROUND_HALF_UP
+                    )
+                else:
+                    self.precio_unitario = costo
+            elif mts_ml_m2:
                 self.precio_unitario = Decimal(mts_ml_m2)
             elif utilidad_15:
                 self.precio_unitario = Decimal(utilidad_15)

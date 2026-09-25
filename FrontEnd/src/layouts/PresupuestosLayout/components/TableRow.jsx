@@ -7,12 +7,14 @@ export default function TableRow({
   cantidad,
   isSelected,
   desp,
+  precioUnitario,
+  sinUtilidad,
+  onToggleUtilidad,
   onCantidadChange,
   onDepreciacionChange,
   onDescripcionClick,
   handleCantidadInputChange,
 }) {
-  const precioUnitario = item.mts_ml_m2 ?? item.utilidad_15 ?? item.costo ?? 0;
   const total = cantidad * (1 + desp / 100) * precioUnitario;
 
   return (
@@ -77,6 +79,23 @@ export default function TableRow({
       {tipo !== "EPP" && (
         <td className="py-2.5 px-2 text-sm text-gray-700 text-center">
           ${Number(precioUnitario || 0).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </td>
+      )}
+
+      {/* Toggle 15% utilidad (solo ferretería) */}
+      {tipo === "stock" && (
+        <td className="py-2.5 px-2 text-center">
+          <button
+            onClick={() => onToggleUtilidad(item.id)}
+            title={sinUtilidad ? "Aplicar 15% de utilidad" : "Quitar 15% de utilidad"}
+            className={`px-2 py-1 text-xs font-medium rounded border transition ${
+              sinUtilidad
+                ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
+                : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+            }`}
+          >
+            {sinUtilidad ? "Sin 15%" : "Con 15%"}
+          </button>
         </td>
       )}
 

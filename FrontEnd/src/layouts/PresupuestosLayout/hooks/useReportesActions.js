@@ -147,6 +147,7 @@ export default function useReportesActions() {
                             stock_id: Number(mat.id),
                             cantidad: Number(mat.cantidad),
                             desperdicio: Number(mat.desp || 0),
+                            sin_utilidad: !!mat.sin_utilidad,
                         });
                     }
 

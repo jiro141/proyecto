@@ -7,6 +7,7 @@ import {
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 import { useNavigate } from "react-router-dom";
 import { get, set, del } from "idb-keyval";
+import { getPreciosMaterial } from "./useInventarioTableLogic";
 
 export const useReporteActions = () => {
   const [selectedReporte, setSelectedReporte] = useState(null);
@@ -94,14 +95,20 @@ export const useReporteActions = () => {
           materiales: {
             stock_almacen: (apu.materiales || [])
               .filter((m) => m.stock)
-              .map((m) => ({
-                id: m.stock.id,
-                codigo: m.stock.codigo,
-                descripcion: m.descripcion,
-                cantidad: Number(m.cantidad),
-                costo: Number(m.precio_unitario),
-                desp: Number(m.desperdicio),
-              })),
+              .map((m) => {
+                const precios = getPreciosMaterial(m.stock);
+                return {
+                  id: m.stock.id,
+                  codigo: m.stock.codigo,
+                  descripcion: m.descripcion,
+                  cantidad: Number(m.cantidad),
+                  costo: Number(m.precio_unitario),
+                  desp: Number(m.desperdicio),
+                  sin_utilidad: !!m.sin_utilidad,
+                  precio_con_utilidad: precios.conUtilidad,
+                  precio_sin_utilidad: precios.sinUtilidad,
+                };
+              }),
             consumibles: (apu.materiales || [])
               .filter((m) => m.consumible)
               .map((m) => ({

@@ -54,6 +54,9 @@ export default function InventarioTable(props) {
                       Precio Unit.
                     </th>
                   )}
+                  {tipo === "stock" && (
+                    <th className="pb-2 px-2 text-center">Utilidad</th>
+                  )}
                   <th className="pb-2 px-2 text-center">Total</th>
                 </tr>
               </thead>
@@ -70,6 +73,9 @@ export default function InventarioTable(props) {
                         tipo={tipo}
                         cantidad={cantidad}
                         desp={logic.depreciaciones[item.id] || 0}
+                        precioUnitario={logic.getPrecio(item)}
+                        sinUtilidad={!!logic.sinUtilidad[item.id]}
+                        onToggleUtilidad={logic.handleToggleUtilidad}
                         isSelected={cantidad > 0}
                         onCantidadChange={logic.handleCantidadChange}
                         handleCantidadInputChange={logic.handleCantidadInputChange}
@@ -104,7 +110,7 @@ export default function InventarioTable(props) {
                 ) : (
                   <tr>
                     <td
-                      colSpan={tipo !== "EPP" ? 6 : 5}
+                      colSpan={tipo === "stock" ? 7 : tipo !== "EPP" ? 6 : 5}
                       className="text-center py-4 text-gray-500 italic"
                     >
                       No hay productos registrados

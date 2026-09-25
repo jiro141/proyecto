@@ -4,6 +4,27 @@ import useInventario from "../../../hooks/useInvetario";
 import { createItem, updateItem } from "../../../api/controllers/Inventario";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 
+const round2 = (n) => Math.round(n * 100) / 100;
+
+// Precio de un material con y sin el 15% de utilidad del inventario.
+// - Items del catálogo de ferretería traen utilidad_15 → se calcula desde costo base.
+// - Items persistidos en el APU ya traen ambos precios resueltos.
+export const getPreciosMaterial = (item) => {
+    if (item.utilidad_15 !== undefined) {
+        const costo = Number(item.costo) || 0;
+        const factor = Number(item.factor_conversion) || 0;
+        return {
+            conUtilidad: Number(item.mts_ml_m2 ?? item.utilidad_15 ?? item.costo ?? 0),
+            sinUtilidad: factor > 0 ? round2(costo / factor) : costo,
+        };
+    }
+    const precio = Number(item.costo ?? 0);
+    return {
+        conUtilidad: Number(item.precio_con_utilidad ?? precio),
+        sinUtilidad: Number(item.precio_sin_utilidad ?? precio),
+    };
+};
+
 export const useInventarioTableLogic = ({
     tipo,
     externalData = [],
@@ -69,6 +90,18 @@ export const useInventarioTableLogic = ({
         return inicial;
     });
 
+    // Solo ferretería (stock) lleva el 15% de utilidad desde el inventario
+    const [sinUtilidad, setSinUtilidad] = useState(() => {
+        const inicial = {};
+        if (tipo !== "stock") return inicial;
+
+        apuActual?.materiales?.stock_almacen?.forEach((item) => {
+            if (item.sin_utilidad) inicial[item.id] = true;
+        });
+
+        return inicial;
+    });
+
     // ======== Hook Inventario ========
     const { data: fetchedData, loading, error, refetch, page, setPage, pagination } =
         useInventario(tipo, query);
@@ -95,14 +128,17 @@ export const useInventarioTableLogic = ({
     }, [fetchedData, externalData, query]);
 
     // ======== Util ========
-    const calcularTotalCategoria = (cantidadesObj, despObj) => {
+    const getPrecio = (item, sinUtilObj = sinUtilidad) => {
+        const precios = getPreciosMaterial(item);
+        return sinUtilObj[item.id] ? precios.sinUtilidad : precios.conUtilidad;
+    };
+
+    const calcularTotalCategoria = (cantidadesObj, despObj, sinUtilObj) => {
         if (!data) return 0;
         return data.reduce((acc, item) => {
             const cantidad = cantidadesObj[item.id] || 0;
             const desp = despObj[item.id] || 0;
-            const precio = Number(
-                item.mts_ml_m2 ?? item.utilidad_15 ?? item.costo ?? 0
-            );
+            const precio = getPrecio(item, sinUtilObj);
             return acc + cantidad * (1 + desp / 100) * precio;
         }, 0);
     };
@@ -113,6 +149,35 @@ export const useInventarioTableLogic = ({
         epps: "epps",
     };
 
+    // Sincroniza total + items seleccionados con el padre y el contexto del APU
+    const sincronizarMateriales = (cantidadesObj, despObj, sinUtilObj) => {
+        const totalCategoria = calcularTotalCategoria(
+            cantidadesObj,
+            despObj,
+            sinUtilObj
+        );
+
+        const itemsActualizados = data
+            .filter((item) => (cantidadesObj[item.id] || 0) > 0)
+            .map((item) => {
+                const precios = getPreciosMaterial(item);
+                return {
+                    id: item.id,
+                    codigo: item.codigo,
+                    descripcion: item.descripcion,
+                    cantidad: cantidadesObj[item.id],
+                    desp: despObj[item.id] || 0,
+                    costo: getPrecio(item, sinUtilObj),
+                    sin_utilidad: !!sinUtilObj[item.id],
+                    precio_con_utilidad: precios.conUtilidad,
+                    precio_sin_utilidad: precios.sinUtilidad,
+                };
+            });
+
+        onTotalChange?.(tipo, totalCategoria, itemsActualizados);
+        updateAPUMateriales(SECTION_BY_TIPO[tipo], itemsActualizados);
+    };
+
     // ======== Handlers ========
     const handleCantidadInputChange = (id, value) => {
         setCantidades((prev) => {
@@ -120,33 +185,7 @@ export const useInventarioTableLogic = ({
             const actualizado = { ...prev, [id]: nuevo };
 
             onCantidadChange?.(id, nuevo);
-
-            const totalCategoria = calcularTotalCategoria(
-                actualizado,
-                depreciaciones
-            );
-
-            const itemsActualizados = data
-                .filter((item) => (actualizado[item.id] || 0) > 0)
-                .map((item) => ({
-                    id: item.id,
-                    codigo: item.codigo,
-                    descripcion: item.descripcion,
-                    cantidad: actualizado[item.id],
-                    desp: depreciaciones[item.id] || 0,
-                    costo: Number(
-                        item.mts_ml_m2 ??
-                            item.utilidad_15 ??
-                            item.costo ??
-                            0
-                    ),
-                }));
-
-            onTotalChange?.(tipo, totalCategoria, itemsActualizados);
-            updateAPUMateriales(
-                SECTION_BY_TIPO[tipo],
-                itemsActualizados
-            );
+            sincronizarMateriales(actualizado, depreciaciones, sinUtilidad);
 
             return actualizado;
         });
@@ -159,33 +198,7 @@ export const useInventarioTableLogic = ({
             const actualizado = { ...prev, [id]: nuevo };
 
             onCantidadChange?.(id, nuevo);
-
-            const totalCategoria = calcularTotalCategoria(
-                actualizado,
-                depreciaciones
-            );
-
-            const itemsActualizados = data
-                .filter((item) => (actualizado[item.id] || 0) > 0)
-                .map((item) => ({
-                    id: item.id,
-                    codigo: item.codigo,
-                    descripcion: item.descripcion,
-                    cantidad: actualizado[item.id],
-                    desp: depreciaciones[item.id] || 0,
-                    costo: Number(
-                        item.mts_ml_m2 ??
-                            item.utilidad_15 ??
-                            item.costo ??
-                            0
-                    ),
-                }));
-
-            onTotalChange?.(tipo, totalCategoria, itemsActualizados);
-            updateAPUMateriales(
-                SECTION_BY_TIPO[tipo],
-                itemsActualizados
-            );
+            sincronizarMateriales(actualizado, depreciaciones, sinUtilidad);
 
             return actualizado;
         });
@@ -195,32 +208,17 @@ export const useInventarioTableLogic = ({
         setDepreciaciones((prev) => {
             const actualizado = { ...prev, [id]: Number(val) || 0 };
 
-            const totalCategoria = calcularTotalCategoria(
-                cantidades,
-                actualizado
-            );
+            sincronizarMateriales(cantidades, actualizado, sinUtilidad);
 
-            const itemsActualizados = data
-                .filter((item) => (cantidades[item.id] || 0) > 0)
-                .map((item) => ({
-                    id: item.id,
-                    codigo: item.codigo,
-                    descripcion: item.descripcion,
-                    cantidad: cantidades[item.id] || 0,
-                    desp: actualizado[item.id] || 0,
-                    costo: Number(
-                        item.mts_ml_m2 ??
-                            item.utilidad_15 ??
-                            item.costo ??
-                            0
-                    ),
-                }));
+            return actualizado;
+        });
+    };
 
-            onTotalChange?.(tipo, totalCategoria, itemsActualizados);
-            updateAPUMateriales(
-                SECTION_BY_TIPO[tipo],
-                itemsActualizados
-            );
+    const handleToggleUtilidad = (id) => {
+        setSinUtilidad((prev) => {
+            const actualizado = { ...prev, [id]: !prev[id] };
+
+            sincronizarMateriales(cantidades, depreciaciones, actualizado);
 
             return actualizado;
         });
@@ -256,9 +254,12 @@ export const useInventarioTableLogic = ({
         data,
         cantidades,
         depreciaciones,
+        sinUtilidad,
+        getPrecio,
         handleCantidadChange,
         handleCantidadInputChange,
         handleDepreciacionChange,
+        handleToggleUtilidad,
         handleRowClick,
         isModalOpen,
         setModalOpen,

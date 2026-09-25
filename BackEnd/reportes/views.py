@@ -201,6 +201,7 @@ class DuplicarReporteView(APIView):
                             desperdicio=m.desperdicio,
                             precio_unitario=m.precio_unitario,
                             total_material=m.total_material,
+                            sin_utilidad=m.sin_utilidad,
                         )
                         for m in apu.materiales.all()
                     ])
