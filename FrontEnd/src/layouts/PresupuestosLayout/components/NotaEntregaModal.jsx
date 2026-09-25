@@ -11,6 +11,7 @@ import {
 import { toast } from "react-toastify";
 import { BounceLoader } from "react-spinners";
 import usePDFNotaEntrega from "../hooks/usePDFNotaEntrega";
+import { notifyError } from "../../../api/apiErrors";
 
 const initialItem = () => ({
   apu_id: null,
@@ -211,7 +212,7 @@ const [loading, setLoading] = useState(true);
       loadData();
     } catch (error) {
       console.error("Error completo:", error);
-      toast.error("Error al crear nota de entrega. ¿El backend está actualizado?");
+      notifyError(error, "Error al crear nota de entrega. ¿El backend está actualizado?");
     }
   };
 
@@ -223,7 +224,7 @@ const [loading, setLoading] = useState(true);
       setDeleteNotaId(null);
       loadData();
     } catch (error) {
-      toast.error("Error al eliminar nota de entrega");
+      notifyError(error, "Error al eliminar nota de entrega");
     }
   };
 

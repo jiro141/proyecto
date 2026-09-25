@@ -29,6 +29,7 @@ import {
   round2,
 } from "./utils";
 import usePDFFactura from "./hooks/usePDFFactura";
+import { notifyError } from "../../api/apiErrors";
 
 const initialItem = () => ({
   apu_id: null,
@@ -196,7 +197,7 @@ export default function CrearFacturaModal({ presupuestos, onClose }) {
         setItems(nuevosItems);
       } catch (error) {
         console.error("Error cargando presupuesto:", error);
-        toast.error("Error al cargar el presupuesto");
+        notifyError(error, "Error al cargar el presupuesto");
       } finally {
         if (!cancel) setLoadingReporte(false);
       }
@@ -515,10 +516,7 @@ export default function CrearFacturaModal({ presupuestos, onClose }) {
       navigate("/facturas/lista");
     } catch (error) {
       console.error("Error al crear factura:", error);
-      const msg = error.response?.data
-        ? JSON.stringify(error.response.data)
-        : error.message;
-      toast.error(`Error al crear factura: ${msg}`);
+      notifyError(error, "Error al crear factura");
     } finally {
       setGuardando(false);
     }

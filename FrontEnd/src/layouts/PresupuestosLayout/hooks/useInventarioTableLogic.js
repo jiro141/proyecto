@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import useInventario from "../../../hooks/useInvetario";
 import { createItem, updateItem } from "../../../api/controllers/Inventario";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
+import { notifyError } from "../../../api/apiErrors";
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
@@ -243,7 +244,7 @@ export const useInventarioTableLogic = ({
             setEditItem(null);
             refetch();
         } catch (err) {
-            toast.error(`Error al guardar ${tipo}`);
+            notifyError(err, `Error al guardar ${tipo}`);
         }
     };
 

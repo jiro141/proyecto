@@ -6,6 +6,7 @@ import Modal from "../../components/Modal";
 import StepForm from "../../components/StepForm";
 import { createItem, updateItem } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
+import { notifyError } from "../../api/apiErrors";
 const columns = [
   { key: "name", label: "Nombre" },
   { key: "proveedor", label: "Proveedor" },
@@ -77,7 +78,7 @@ export default function EppLayout() {
       refetch();
     } catch (err) {
       console.error("Error al crear proveedor:", err);
-      toast.error("Error al crear proveedor");
+      notifyError(err, "Error al crear proveedor");
     }
   };
 

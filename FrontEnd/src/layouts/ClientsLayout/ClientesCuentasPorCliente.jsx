@@ -8,6 +8,7 @@ import Paginator from "../../components/Paginator";
 import useCuentasPorCliente from "../../hooks/useCuentasPorCliente";
 import useCuentasExcelGenerator from "../PresupuestosLayout/hooks/useCuentasExcelGenerator";
 import { getReporteAbonos, createAbono } from "../../api/controllers/Cuentas";
+import { notifyError } from "../../api/apiErrors";
 
 const formatCurrency = (value) => {
   const num = parseFloat(value);
@@ -90,8 +91,8 @@ export default function ClientesCuentasPorCliente() {
       } else {
         toast.warning("No hay datos para exportar en el período seleccionado");
       }
-    } catch {
-      toast.error("Error al generar el Excel");
+    } catch (error) {
+      notifyError(error, "Error al generar el Excel");
     } finally {
       setLoadingExport(false);
     }
@@ -120,8 +121,8 @@ export default function ClientesCuentasPorCliente() {
       // Recargar abonos
       const result = await getReporteAbonos(selectedReporte.id);
       setAbonosReporte(result);
-    } catch {
-      toast.error("Error al registrar el abono");
+    } catch (error) {
+      notifyError(error, "Error al registrar el abono");
     }
   };
 

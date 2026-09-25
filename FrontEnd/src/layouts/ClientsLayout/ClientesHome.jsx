@@ -6,6 +6,7 @@ import { createCliente, updateCliente } from "../../api/controllers/Clientes";
 import { createItem } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
 import useClientes from "../../hooks/useClientes";
+import { notifyError } from "../../api/apiErrors";
 
 const columns = [
   { key: "nombre", label: "Nombre de la Empresa" },
@@ -48,7 +49,7 @@ export default function ClientesHome() {
       setEditItem(null);
     } catch (err) {
       console.error(err);
-      toast.error("Error al guardar Cliente");
+      notifyError(err, "Error al guardar Cliente");
     }
   };
 

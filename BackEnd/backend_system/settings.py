@@ -52,6 +52,8 @@ REST_FRAMEWORK = {
     # 🔹 Activar paginación global
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,  # Número de registros por página
+    # 🔹 Errores en formato JSON uniforme: {message, code, status, errors?, detalle?}
+    "EXCEPTION_HANDLER": "backend_system.exceptions.api_exception_handler",
 }
 
 
@@ -67,6 +69,8 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    # Después de CORS para que las respuestas JSON de error lleven cabeceras CORS
+    "backend_system.exceptions.ApiJsonErrorMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -135,7 +139,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+# Español: los mensajes de validación de Django/DRF/SimpleJWT salen traducidos
+LANGUAGE_CODE = "es"
 
 TIME_ZONE = "UTC"
 

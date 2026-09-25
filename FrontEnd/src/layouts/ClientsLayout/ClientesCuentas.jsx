@@ -10,6 +10,7 @@ import useCuentas from "../../hooks/useCuentas";
 import { createAbono, deleteAbono, getReportes, getReporteAbonos, getResumenCuentas } from "../../api/controllers/Cuentas";
 import useCuentasExcelGenerator from "../PresupuestosLayout/hooks/useCuentasExcelGenerator";
 import Paginator from "../../components/Paginator";
+import { notifyError } from "../../api/apiErrors";
 
 const formatCurrency = (value) => {
   const num = parseFloat(value);
@@ -79,7 +80,7 @@ export default function ClientesCuentas() {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Error al generar el Excel");
+      notifyError(err, "Error al generar el Excel");
     } finally {
       setLoadingExport(false);
     }
@@ -172,7 +173,7 @@ export default function ClientesCuentas() {
       });
       refetch();
     } catch (err) {
-      toast.error("Error al registrar el abono");
+      notifyError(err, "Error al registrar el abono");
       console.error(err);
     }
   };
@@ -189,7 +190,7 @@ export default function ClientesCuentas() {
         setAbonosReporte(result);
       }
     } catch (err) {
-      toast.error("Error al eliminar el abono");
+      notifyError(err, "Error al eliminar el abono");
     }
   };
 

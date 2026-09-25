@@ -3,6 +3,7 @@ import { FaTimes, FaBan, FaFileInvoiceDollar, FaDownload } from "react-icons/fa"
 import { toast } from "react-toastify";
 import { formatFecha, formatMoneda, EstadoBadge } from "../utils";
 import usePDFNotaDebito from "../hooks/usePDFNotaDebito";
+import { notifyError } from "../../../api/apiErrors";
 
 export default function NotaDebitoDetalleModal({ nota, onClose, onAnular }) {
   const { generarPDFNotaDebito, calcularMaxItems } = usePDFNotaDebito();
@@ -38,7 +39,7 @@ export default function NotaDebitoDetalleModal({ nota, onClose, onAnular }) {
       toast.success("PDF de la nota de débito descargado.");
     } catch (err) {
       console.error("Error generando PDF:", err);
-      toast.error("No se pudo generar el PDF.");
+      notifyError(err, "No se pudo generar el PDF.");
     } finally {
       setGenerando(false);
     }

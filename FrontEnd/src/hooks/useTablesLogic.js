@@ -6,6 +6,7 @@ import useLugaresConsumo from "../hooks/useLugaresConsumo";
 import useProveedores from "../hooks/useProveedores";
 import { deleteItem, createItem } from "../api/controllers/Inventario";
 import { toast } from "react-toastify";
+import { notifyError } from "../api/apiErrors";
 
 const useTablesLogic = ({
   onSearch,
@@ -96,8 +97,8 @@ const useTablesLogic = ({
       refetch && (await refetch());
       toast.success("Valor de taza actualizado correctamente");
       setEditando(false);
-    } catch {
-      toast.error("Error al actualizar el valor de taza");
+    } catch (error) {
+      notifyError(error, "Error al actualizar el valor de taza");
     }
   };
 

@@ -3,6 +3,7 @@ import { FaHistory, FaCheck, FaClock, FaTimes, FaPlay, FaCheckCircle, FaBan } fr
 import { updateReporteEstado } from "../../../api/controllers/Presupuesto";
 import { toast } from "react-toastify";
 import { BounceLoader } from "react-spinners";
+import { notifyError } from "../../../api/apiErrors";
 
 const ESTADOS = [
   { key: "EN_ESPERA", label: "En espera", icon: FaClock, color: "gray" },
@@ -101,7 +102,7 @@ export default function EstadoHistorial({ reporte, onEstadoActualizado }) {
       toast.success(`Estado actualizado a: ${updated.estado_display}`);
     } catch (err) {
       console.error(err);
-      toast.error("Error al actualizar el estado");
+      notifyError(err, "Error al actualizar el estado");
     } finally {
       setLoading(false);
     }

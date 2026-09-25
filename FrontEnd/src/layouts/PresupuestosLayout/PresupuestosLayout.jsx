@@ -13,6 +13,7 @@ import Modal from "../../components/Modal";
 import ReporteDetalleModal from "./components/ReporteDetalleModal";
 import NotaEntregaModal from "./components/NotaEntregaModal";
 import useReporteActions from "./hooks/useReporteActions";
+import { notifyError } from "../../api/apiErrors";
 
 export const columns = [
   { key: "n_presupuesto", label: "Presupuesto" },
@@ -135,7 +136,7 @@ export default function ReportesLayout({ clienteSeleccionado }) {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Error al duplicar presupuesto");
+      notifyError(err, "Error al duplicar presupuesto");
     }
   };
 
@@ -147,7 +148,7 @@ export default function ReportesLayout({ clienteSeleccionado }) {
       refetch();
     } catch (err) {
       console.error(err);
-      toast.error("Error al duplicar presupuesto");
+      notifyError(err, "Error al duplicar presupuesto");
     } finally {
       setConfirmOpen(false);
       setPendingReporte(null);

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { toast } from "react-toastify";
 import {
   getReporteDetalle,
   getNotasByReporte,
@@ -8,6 +7,7 @@ import { usePresupuesto } from "../../../context/PresupuestoContext";
 import { useNavigate } from "react-router-dom";
 import { get, set, del } from "idb-keyval";
 import { getPreciosMaterial } from "./useInventarioTableLogic";
+import { notifyError } from "../../../api/apiErrors";
 
 export const useReporteActions = () => {
   const [selectedReporte, setSelectedReporte] = useState(null);
@@ -26,7 +26,7 @@ export const useReporteActions = () => {
       setSelectedReporte(detalle);
     } catch (err) {
       console.error(err);
-      toast.error("Error al cargar los datos del reporte");
+      notifyError(err, "Error al cargar los datos del reporte");
     } finally {
       setLoadingDetalle(false);
     }
@@ -162,7 +162,7 @@ export const useReporteActions = () => {
       navigate("/informes/Crear");
     } catch (error) {
       console.error("Error al obtener detalles del reporte:", error);
-      toast.error("Error al cargar los datos del presupuesto");
+      notifyError(error, "Error al cargar los datos del presupuesto");
     }
   };
 

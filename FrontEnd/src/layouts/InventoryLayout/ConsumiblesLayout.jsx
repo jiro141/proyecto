@@ -9,6 +9,7 @@ import useLugaresConsumo from "../../hooks/useLugaresConsumo";
 import useProveedores from "../../hooks/useProveedores";
 import { createItem, updateItem } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
+import { notifyError } from "../../api/apiErrors";
 
 const columns = [
   { key: "codigo", label: "Codigo" },
@@ -49,7 +50,7 @@ export default function ConsumiblesLayout() {
       refetch();
     } catch (err) {
       console.error("Error al guardar consumible:", err);
-      toast.error("Error al guardar consumible");
+      notifyError(err, "Error al guardar consumible");
     }
   };
 
@@ -59,8 +60,8 @@ export default function ConsumiblesLayout() {
       toast.success("Departamento creado");
       refetchDepartamentos();
       setDeptModalOpen(false);
-    } catch {
-      toast.error("Error al crear departamento");
+    } catch (error) {
+      notifyError(error, "Error al crear departamento");
     }
   };
 
@@ -73,7 +74,7 @@ export default function ConsumiblesLayout() {
       refetch();
     } catch (err) {
       console.error("Error al crear proveedor:", err);
-      toast.error("Error al crear proveedor");
+      notifyError(err, "Error al crear proveedor");
     }
   };
 

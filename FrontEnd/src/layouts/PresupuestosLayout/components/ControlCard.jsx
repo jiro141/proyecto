@@ -3,6 +3,7 @@ import { FaHashtag, FaSave, FaSyncAlt } from "react-icons/fa";
 import { getControlConfig, createControlConfig } from "../../../api/controllers/ControlConfig";
 import { toast } from "react-toastify";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
+import { notifyError } from "../../../api/apiErrors";
 
 export default function ControlCard() {
   const { formData } = usePresupuesto();
@@ -37,7 +38,7 @@ export default function ControlCard() {
         }
       } catch (error) {
         console.error("Error al obtener el número de control:", error);
-        toast.error("Error al cargar el número de control.");
+        notifyError(error, "Error al cargar el número de control.");
       } finally {
         setLoading(false);
       }
@@ -63,7 +64,7 @@ export default function ControlCard() {
       setEditando(false);
     } catch (error) {
       console.error(error);
-      toast.error("Error al guardar el número de control.");
+      notifyError(error, "Error al guardar el número de control.");
     }
   };
 

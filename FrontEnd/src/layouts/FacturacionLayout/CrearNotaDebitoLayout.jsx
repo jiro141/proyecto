@@ -9,6 +9,7 @@ import {
   createNotaDebito,
 } from "../../api/controllers/Facturas";
 import { formatMoneda } from "./utils";
+import { notifyError } from "../../api/apiErrors";
 
 export default function CrearNotaDebitoLayout() {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ export default function CrearNotaDebitoLayout() {
         setFacturas(emitidas);
       } catch (error) {
         console.error(error);
-        toast.error("Error al cargar facturas");
+        notifyError(error, "Error al cargar facturas");
       } finally {
         setLoadingFacturas(false);
       }
@@ -59,7 +60,7 @@ export default function CrearNotaDebitoLayout() {
         setPendientes(data.apus || []);
       } catch (error) {
         console.error(error);
-        toast.error("Error al cargar pendientes");
+        notifyError(error, "Error al cargar pendientes");
       } finally {
         setLoadingPendientes(false);
       }
@@ -143,9 +144,7 @@ export default function CrearNotaDebitoLayout() {
       navigate("/facturas/notas-debito/lista");
     } catch (error) {
       console.error(error);
-      toast.error(
-        error.response?.data?.detail || "Error al crear la nota de débito"
-      );
+      notifyError(error, "Error al crear la nota de débito");
     } finally {
       setGuardando(false);
     }

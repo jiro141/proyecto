@@ -43,74 +43,70 @@ class AbonoViewSet(viewsets.ModelViewSet):
         Endpoint para obtener resumen de cuentas por cobrar en un rango de fechas.
         Parameters: fecha_desde, fecha_hasta
         """
-        try:
-            fecha_desde = request.query_params.get('fecha_desde')
-            fecha_hasta = request.query_params.get('fecha_hasta')
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
 
-            # Obtener TODOS los reportes ejecutados o pagados (no solo los que tienen abonos)
-            reportes_qs = Reporte.objects.filter(
-                estado__in=[EstadoChoices.EJECUTADO, EstadoChoices.PAGADO]
-            ).select_related('cliente').prefetch_related('abonos')
+        # Obtener TODOS los reportes ejecutados o pagados (no solo los que tienen abonos)
+        reportes_qs = Reporte.objects.filter(
+            estado__in=[EstadoChoices.EJECUTADO, EstadoChoices.PAGADO]
+        ).select_related('cliente').prefetch_related('abonos')
 
-            # Filtrar por fecha de creación del reporte si se especifica
-            if fecha_desde:
-                reportes_qs = reportes_qs.filter(fecha_creacion__date__gte=fecha_desde)
-            if fecha_hasta:
-                reportes_qs = reportes_qs.filter(fecha_creacion__date__lte=fecha_hasta)
+        # Filtrar por fecha de creación del reporte si se especifica
+        if fecha_desde:
+            reportes_qs = reportes_qs.filter(fecha_creacion__date__gte=fecha_desde)
+        if fecha_hasta:
+            reportes_qs = reportes_qs.filter(fecha_creacion__date__lte=fecha_hasta)
 
-            detalle = []
-            total_facturado = 0
-            total_abonado = 0
+        detalle = []
+        total_facturado = 0
+        total_abonado = 0
 
-            for reporte in reportes_qs:
-                try:
-                    # Calcular total abonado con manejo defensivo
-                    abonos_total = reporte.abonos.aggregate(total=Sum('monto'))['total']
-                    abonado = float(abonos_total) if abonos_total else 0
-                    
-                    # Manejar total_reporte defensivamente
-                    total_rep = float(reporte.total_reporte) if reporte.total_reporte else 0
-                    pendiente = total_rep - abonado
-                    
-                    # Nombre del cliente defensivo
-                    nombre_cliente = ''
-                    if reporte.cliente:
-                        try:
-                            nombre_cliente = reporte.cliente.nombre or ''
-                        except Exception:
-                            pass
-                    
-                    detalle.append({
-                        'reporte__id': reporte.id,
-                        'reporte__n_presupuesto': reporte.n_presupuesto or '',
-                        'reporte__descripcion': reporte.descripcion or '',
-                        'reporte__cliente__nombre': nombre_cliente,
-                        'reporte__total_reporte': total_rep,
-                        'reporte__fecha_creacion': reporte.fecha_creacion.isoformat() if reporte.fecha_creacion else None,
-                        'total_abonado': abonado,
-                        'cantidad_abonos': reporte.abonos.count(),
-                    })
-                    
-                    total_facturado += total_rep
-                    total_abonado += abonado
-                except Exception as e:
-                    # Skip problematic reports but log
-                    print(f"Error processing reporte {reporte.id}: {e}")
-                    continue
+        for reporte in reportes_qs:
+            try:
+                # Calcular total abonado con manejo defensivo
+                abonos_total = reporte.abonos.aggregate(total=Sum('monto'))['total']
+                abonado = float(abonos_total) if abonos_total else 0
+                
+                # Manejar total_reporte defensivamente
+                total_rep = float(reporte.total_reporte) if reporte.total_reporte else 0
+                pendiente = total_rep - abonado
+                
+                # Nombre del cliente defensivo
+                nombre_cliente = ''
+                if reporte.cliente:
+                    try:
+                        nombre_cliente = reporte.cliente.nombre or ''
+                    except Exception:
+                        pass
+                
+                detalle.append({
+                    'reporte__id': reporte.id,
+                    'reporte__n_presupuesto': reporte.n_presupuesto or '',
+                    'reporte__descripcion': reporte.descripcion or '',
+                    'reporte__cliente__nombre': nombre_cliente,
+                    'reporte__total_reporte': total_rep,
+                    'reporte__fecha_creacion': reporte.fecha_creacion.isoformat() if reporte.fecha_creacion else None,
+                    'total_abonado': abonado,
+                    'cantidad_abonos': reporte.abonos.count(),
+                })
+                
+                total_facturado += total_rep
+                total_abonado += abonado
+            except Exception as e:
+                # Skip problematic reports but log
+                print(f"Error processing reporte {reporte.id}: {e}")
+                continue
 
-            total_pendiente = total_facturado - total_abonado
+        total_pendiente = total_facturado - total_abonado
 
-            return Response({
-                'detalle': detalle,
-                'totales': {
-                    'total_facturado': total_facturado,
-                    'total_abonado': total_abonado,
-                    'total_pendiente': total_pendiente
-                }
-            })
-        except Exception as e:
-            import traceback
-            return Response({'error': str(e), 'trace': traceback.format_exc()}, status=500)
+        return Response({
+            'detalle': detalle,
+            'totales': {
+                'total_facturado': total_facturado,
+                'total_abonado': total_abonado,
+                'total_pendiente': total_pendiente
+            }
+        })
 
     @action(detail=False, methods=['get'])
     def por_cliente(self, request):

@@ -3,6 +3,7 @@ import Modal from "../../../components/Modal";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 import { updateReportePartial } from "../../../api/controllers/Presupuesto";
 import { toast } from "react-toastify";
+import { notifyError } from "../../../api/apiErrors";
 
 const formatoMoneda = (valor) =>
   valor?.toLocaleString("en-US", {
@@ -51,7 +52,7 @@ export const ClienteInfo = ({ formData, presupuestoEstimado }) => {
         });
         toast.success(`Descuento actualizado a ${nuevoPorcentaje}%`);
       } catch (error) {
-        toast.error("Error al guardar en el servidor");
+        notifyError(error, "Error al guardar en el servidor");
       } finally {
         setGuardando(false);
       }

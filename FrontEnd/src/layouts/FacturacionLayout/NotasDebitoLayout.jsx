@@ -8,6 +8,7 @@ import Modal from "../../components/Modal";
 import Paginator from "../../components/Paginator";
 import NotaDebitoDetalleModal from "./components/NotaDebitoDetalleModal";
 import { formatFecha, formatMoneda, EstadoBadge } from "./utils";
+import { notifyError } from "../../api/apiErrors";
 
 export default function NotasDebitoLayout() {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export default function NotasDebitoLayout() {
       setPagination({ count: data.count || 0 });
     } catch (error) {
       console.error(error);
-      toast.error("Error al cargar notas de débito");
+      notifyError(error, "Error al cargar notas de débito");
     } finally {
       setLoading(false);
     }
@@ -53,7 +54,7 @@ export default function NotasDebitoLayout() {
       setAnularId(null);
       fetchNotas();
     } catch (error) {
-      toast.error("Error al anular la nota de débito");
+      notifyError(error, "Error al anular la nota de débito");
       console.error(error);
     } finally {
       setAnulando(false);

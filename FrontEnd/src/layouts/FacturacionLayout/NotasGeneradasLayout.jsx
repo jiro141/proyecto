@@ -8,6 +8,7 @@ import Paginator from "../../components/Paginator";
 import NotaCreditoDetalleModal from "./components/NotaCreditoDetalleModal";
 import NotaDebitoDetalleModal from "./components/NotaDebitoDetalleModal";
 import { formatFecha, formatMoneda, EstadoBadge } from "./utils";
+import { notifyError } from "../../api/apiErrors";
 
 export default function NotasGeneradasLayout() {
   const [activeTab, setActiveTab] = useState("todas"); // "todas" | "credito" | "debito"
@@ -54,7 +55,7 @@ export default function NotasGeneradasLayout() {
       }
     } catch (error) {
       console.error(error);
-      toast.error("Error al cargar notas");
+      notifyError(error, "Error al cargar notas");
     } finally {
       setLoading(false);
     }
@@ -84,7 +85,7 @@ export default function NotasGeneradasLayout() {
       setTipoAnular(null);
       fetchNotas();
     } catch (error) {
-      toast.error("Error al anular la nota");
+      notifyError(error, "Error al anular la nota");
       console.error(error);
     } finally {
       setAnulando(false);

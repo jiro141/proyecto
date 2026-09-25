@@ -14,6 +14,7 @@ import { getPresupuestosDisponibles, getFacturas, anularFactura } from "../../ap
 import CrearFacturaModal from "./CrearFacturaModal";
 import FacturaDetalleModal from "./components/FacturaDetalleModal";
 import VerFacturasModal from "./components/VerFacturasModal";
+import { notifyError } from "../../api/apiErrors";
 
 const formatCurrency = (value) => {
   const num = parseFloat(value);
@@ -43,7 +44,7 @@ export default function CrearFacturaLayout() {
       setSelectedPresupuestos(null);
     } catch (error) {
       console.error(error);
-      toast.error("Error al cargar los presupuestos disponibles");
+      notifyError(error, "Error al cargar los presupuestos disponibles");
     } finally {
       setLoading(false);
     }
@@ -63,7 +64,7 @@ export default function CrearFacturaLayout() {
       setVerFacturasList(Array.isArray(facturas) ? facturas : []);
     } catch (error) {
       console.error(error);
-      toast.error("Error al cargar las facturas del presupuesto");
+      notifyError(error, "Error al cargar las facturas del presupuesto");
     } finally {
       setVerFacturasLoading(false);
     }
@@ -87,7 +88,7 @@ export default function CrearFacturaLayout() {
       load();
     } catch (error) {
       console.error(error);
-      toast.error("Error al anular la factura");
+      notifyError(error, "Error al anular la factura");
     }
   };
 

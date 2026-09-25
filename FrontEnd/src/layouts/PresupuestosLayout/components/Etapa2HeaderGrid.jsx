@@ -3,7 +3,7 @@ import DescripcionCard from "./DescripcionCard";
 import ProductividadCard from "./ProductividadCard";
 import PresupuestoCard from "./PresupuestoCard";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
-import { toast } from "react-toastify";
+import { notifyError } from "../../../api/apiErrors";
 
 export default function Etapa2HeaderGrid() {
     const {
@@ -55,7 +55,7 @@ export default function Etapa2HeaderGrid() {
             updateAPU(currentAPUIndex, apuActual);
         } catch (err) {
             console.error("Error al guardar APU:", err);
-            toast.error("❌ Error al guardar APU");
+            notifyError(err, "❌ Error al guardar APU");
         }
     }, [
         apuBody.descripcion,

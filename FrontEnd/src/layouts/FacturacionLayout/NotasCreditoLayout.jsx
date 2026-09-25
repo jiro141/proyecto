@@ -7,6 +7,7 @@ import Modal from "../../components/Modal";
 import Paginator from "../../components/Paginator";
 import NotaCreditoDetalleModal from "./components/NotaCreditoDetalleModal";
 import { formatFecha, formatMoneda, EstadoBadge } from "./utils";
+import { notifyError } from "../../api/apiErrors";
 
 export default function NotasCreditoLayout() {
   const [search, setSearch] = useState("");
@@ -27,7 +28,7 @@ export default function NotasCreditoLayout() {
       setPagination({ count: data.count || 0 });
     } catch (error) {
       console.error(error);
-      toast.error("Error al cargar notas de crédito");
+      notifyError(error, "Error al cargar notas de crédito");
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ export default function NotasCreditoLayout() {
       setAnularId(null);
       fetchNotas();
     } catch (error) {
-      toast.error("Error al anular la nota de crédito");
+      notifyError(error, "Error al anular la nota de crédito");
       console.error(error);
     } finally {
       setAnulando(false);

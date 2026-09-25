@@ -6,6 +6,7 @@ import { createItem, updateItem } from "../api/controllers/Inventario";
 import { toast } from "react-toastify";
 import useProveedores from "../hooks/useProveedores";
 import ArticulosProveedor from "../features/proveedores/ArticulosProveedor";
+import { notifyError } from "../api/apiErrors";
 
 const columns = [
   { key: "name", label: "Nombre de la Empresa" },
@@ -33,7 +34,7 @@ export default function ProveedoresHome() {
       refetch();
     } catch (err) {
       console.error(err);
-      toast.error("Error al guardar proveedor");
+      notifyError(err, "Error al guardar proveedor");
     }
   };
 

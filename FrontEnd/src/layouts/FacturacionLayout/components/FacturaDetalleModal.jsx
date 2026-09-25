@@ -5,6 +5,7 @@ import { formatFecha, formatMoneda, EstadoBadge } from "../utils";
 import usePDFFactura from "../hooks/usePDFFactura";
 import usePDFNotaCredito from "../hooks/usePDFNotaCredito";
 import usePDFNotaDebito from "../hooks/usePDFNotaDebito";
+import { notifyError } from "../../../api/apiErrors";
 
 export default function FacturaDetalleModal({ factura, onClose, onAnular }) {
   const { generarPDFFactura, calcularMaxItems } = usePDFFactura();
@@ -40,7 +41,7 @@ export default function FacturaDetalleModal({ factura, onClose, onAnular }) {
       toast.success("PDF de la factura descargado.");
     } catch (err) {
       console.error("Error generando PDF:", err);
-      toast.error("No se pudo generar el PDF de la factura.");
+      notifyError(err, "No se pudo generar el PDF de la factura.");
     } finally {
       setGenerando(false);
     }

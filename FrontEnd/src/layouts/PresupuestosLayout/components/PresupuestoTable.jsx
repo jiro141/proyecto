@@ -13,6 +13,7 @@ import {
   createLogistica,
   updateLogistica,
 } from "../../../api/controllers/Inventario";
+import { notifyError } from "../../../api/apiErrors";
 
 export default function PresupuestoTable({
     titulo,
@@ -395,7 +396,7 @@ export default function PresupuestoTable({
             if (onRefetch) onRefetch();
         } catch (error) {
             console.error("Error guardando:", error);
-            toast.error("Error al guardar");
+            notifyError(error, "Error al guardar");
         }
     };
 

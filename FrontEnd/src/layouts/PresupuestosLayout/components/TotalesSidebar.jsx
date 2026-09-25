@@ -3,6 +3,7 @@ import Modal from "../../../components/Modal";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 import { updateAPUPorcentajeAdmin } from "../../../api/controllers/Presupuesto";
 import { toast } from "react-toastify";
+import { notifyError } from "../../../api/apiErrors";
 
 const formatoMoneda = (valor) => {
   const numero = Number(valor ?? 0);
@@ -55,7 +56,7 @@ export const TotalesSidebar = ({
         await updateAPUPorcentajeAdmin(apuId, nuevoPorcentaje);
         toast.success(`Porcentaje actualizado a ${nuevoPorcentaje}%`);
       } catch (error) {
-        toast.error("Error al guardar en el servidor");
+        notifyError(error, "Error al guardar en el servidor");
       } finally {
         setGuardando(false);
       }

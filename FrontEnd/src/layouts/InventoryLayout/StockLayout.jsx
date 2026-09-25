@@ -7,6 +7,7 @@ import useDepartamentos from "../../hooks/useDepartamentos";
 import useProveedores from "../../hooks/useProveedores";
 import { createItem, updateItem, getItemById } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
+import { notifyError } from "../../api/apiErrors";
 
 const columns = [
   { key: "codigo", label: "Codigo" },
@@ -49,7 +50,7 @@ export default function StockLayout() {
       refetch();
     } catch (err) {
       console.error("Error al guardar stock:", err);
-      toast.error("Error al guardar stock");
+      notifyError(err, "Error al guardar stock");
     }
   };
 
@@ -68,7 +69,7 @@ export default function StockLayout() {
       refetch();
     } catch (err) {
       console.error("Error al crear proveedor:", err);
-      toast.error("Error al crear proveedor");
+      notifyError(err, "Error al crear proveedor");
     }
   };
   const handleAddOrEdit = async (item = null) => {

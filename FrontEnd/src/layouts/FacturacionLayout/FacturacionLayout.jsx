@@ -13,6 +13,7 @@ import { formatFecha, formatMoneda, EstadoBadge } from "./utils";
 // Hooks de PDF
 import usePDFNotaCredito from "./hooks/usePDFNotaCredito";
 import usePDFNotaDebito from "./hooks/usePDFNotaDebito";
+import { notifyError } from "../../api/apiErrors";
 
 export default function FacturacionLayout() {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ export default function FacturacionLayout() {
       setMotivo("");
       refetch();
     } catch (error) {
-      toast.error("Error al anular la factura");
+      notifyError(error, "Error al anular la factura");
       console.error(error);
     } finally {
       setAnulando(false);
@@ -92,7 +93,7 @@ export default function FacturacionLayout() {
       toast.success("PDF descargado.");
     } catch (err) {
       console.error("Error generando PDF:", err);
-      toast.error("No se pudo generar el PDF.");
+      notifyError(err, "No se pudo generar el PDF.");
     } finally {
       setGenerandoPDF(false);
     }

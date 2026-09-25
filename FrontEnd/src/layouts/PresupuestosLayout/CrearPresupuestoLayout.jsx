@@ -17,6 +17,7 @@ import { Etapa2 } from "./steps/Etapa2";
 import Etapa3 from "./steps/Etapa3";
 import PresupuestoPDF from "./components/PresupuestoPDF"; // ✅ import correcto
 import logo from "../../assets/img/logo.png";
+import { notifyError } from "../../api/apiErrors";
 
 export default function CrearPresupuestoLayout() {
   const { refetch: refetchReportes } = useReportes();
@@ -123,7 +124,7 @@ export default function CrearPresupuestoLayout() {
       }
     } catch (error) {
       console.error("Error al crear el presupuesto:", error);
-      toast.error("Error al crear el presupuesto");
+      notifyError(error, "Error al crear el presupuesto");
     }
   };
 

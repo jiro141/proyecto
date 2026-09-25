@@ -5,6 +5,7 @@ import Modal from "../../components/Modal";
 import StepForm from "../../components/StepForm";
 import { createItem, updateItem } from "../../api/controllers/Inventario";
 import { toast } from "react-toastify";
+import { notifyError } from "../../api/apiErrors";
 
 const columns = [
   { key: "descripcion", label: "Descripción" },
@@ -44,7 +45,7 @@ export default function EmpleadosLayout() {
       refetch();
     } catch (err) {
       console.error("Error al guardar empleado:", err);
-      toast.error("Error al guardar");
+      notifyError(err, "Error al guardar");
     }
   };
 

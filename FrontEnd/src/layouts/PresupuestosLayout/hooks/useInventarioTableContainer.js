@@ -8,6 +8,7 @@ import useLugaresConsumo from "../../../hooks/useLugaresConsumo";
 import useProveedores from "../../../hooks/useProveedores";
 
 import { useInventarioTableLogic } from "./useInventarioTableLogic";
+import { notifyError } from "../../../api/apiErrors";
 
 export function useInventarioTableContainer(props) {
     const { externalData, tipo, ubicaciones, lugares } = props;
@@ -177,8 +178,8 @@ export function useInventarioTableContainer(props) {
             setModalOpen(false);
             setEditItem(null);
             logic.refetch();
-        } catch {
-            toast.error(`Error al guardar ${tituloMap[tipo]}`);
+        } catch (error) {
+            notifyError(error, `Error al guardar ${tituloMap[tipo]}`);
         }
     };
 
