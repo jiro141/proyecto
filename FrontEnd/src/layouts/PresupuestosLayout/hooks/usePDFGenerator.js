@@ -94,12 +94,16 @@ export default function usePDFGenerator() {
       precio_total: `$${(apu.body?.presupuesto_base || 0).toFixed(2)}`,
     }));
 
-    autoTable(doc, {
-      startY: cursorY,
-      head: [
-        ["N°", "DESCRIPCIÓN", "UND.", "CANT.", "PRECIO UNIT.", "PRECIO TOTAL"],
-      ],
-      body: rows.map((r) => Object.values(r)),
+    const PAGE_H = doc.internal.pageSize.getHeight();
+    const MARGEN_SUP = 15;
+    const LIMITE = PAGE_H - 12; // margen inferior
+
+    const HEAD = [
+      ["N°", "DESCRIPCIÓN", "UND.", "CANT.", "PRECIO UNIT.", "PRECIO TOTAL"],
+    ];
+
+    // Anchos fijos: la tabla se dibuja en dos partes y deben quedar alineadas
+    const tablaBase = {
       theme: "grid",
       styles: { fontSize: 9, halign: "center" },
       headStyles: {
@@ -107,101 +111,197 @@ export default function usePDFGenerator() {
         textColor: 0,
         fontStyle: "bold",
       },
+      margin: { top: MARGEN_SUP, left: 14, right: 14 },
       columnStyles: {
+        0: { cellWidth: 10 },
         1: { halign: "left", cellWidth: 70 },
+        2: { cellWidth: 18 },
+        3: { cellWidth: 18 },
+        4: { cellWidth: 32 },
+        5: { cellWidth: 34 },
       },
-    });
+    };
 
     /* =========================
-           TOTALES
+           CIERRE: TOTALES, PIE, TÉRMINOS, NOTAS Y SELLO
         ========================= */
-    let finalY = doc.lastAutoTable.finalY + 10;
     const subtotal = formData.presupuesto_estimado || 0;
     const descuento = Number(formData.porcentaje_descuento || 0);
     const montoDescuento = subtotal * (descuento / 100);
     const total = subtotal - montoDescuento;
 
-    doc.setFontSize(9);
-    doc.text(`SUB-TOTAL: $${subtotal.toFixed(2)}`, 150, finalY);
-    if (descuento > 0) {
-      doc.text(`DESCUENTO (${descuento}%): -$${montoDescuento.toFixed(2)}`, 150, finalY + 7);
-      doc.text(`TOTAL: $${total.toFixed(2)}`, 150, finalY + 14);
-    } else {
-      doc.text(`TOTAL: $${total.toFixed(2)}`, 150, finalY + 7);
-    }
-
-    /* =========================
-           PIE DE DOCUMENTO
-        ========================= */
-    finalY += 20;
-    doc.setFont("helvetica", "bold");
-    doc.text("ELABORADO POR:", 10, finalY);
-    doc.setFont("helvetica", "normal");
-    doc.text("ING. CESAR BECERRA CIV N° 309740", 40, finalY);
-
-    doc.setFont("helvetica", "bold");
-    doc.text("FECHA:", 10, finalY + 7);
-    doc.setFont("helvetica", "normal");
-    doc.text(new Date().toLocaleDateString(), 25, finalY + 7);
-
-    doc.setFont("helvetica", "bold");
-    doc.text("VALIDEZ DE LA OFERTA:", 10, finalY + 14);
-    doc.setFont("helvetica", "normal");
-    doc.text(formData?.validez_oferta || "5 DÍAS", 50, finalY + 14);
-
-    doc.setFont("helvetica", "bold");
-    doc.text("FORMA DE PAGO:", 10, finalY + 21);
-    doc.setFont("helvetica", "normal");
-    doc.text(formData?.forma_pago || "60% ANTICIPO  40% A SU ENTREGA", 40, finalY + 21);
-
-    finalY += 35;
-    doc.setFont("helvetica", "normal");
     const terminos = formData?.terminos_condiciones || "LOS PRECIOS NO INCLUYEN IVA; LO QUE NO ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.";
-    doc.text(terminos, 10, finalY, { maxWidth: 190, align: "justify" });
+
     // NOTA ESPECIAL PARA SAN SIMON
     const nombreCliente =
       formData?.cliente?.nombre?.trim()?.toUpperCase() || "";
-
     const esSanSimon = nombreCliente === "INVERSIONES LACTEAS SAN SIMON C.A";
-
     const notaSanSimon = "LOGISTICA, ALIMENTACION Y HOSPEDAJE ASUME SAN SIMON";
 
-    // FUNCION PARA DIBUJAR BLOQUE DE NOTA
-    const dibujarNota = (titulo, contenido) => {
-      if (!titulo && !contenido) return;
+    const altoLinea = (d) =>
+      (d.getFontSize() * d.getLineHeightFactor()) / d.internal.scaleFactor;
 
-      finalY += 15;
+    // Dibuja el cierre desde yInicio y devuelve la Y final.
+    // paginar=false se usa para medir el alto en un documento auxiliar.
+    const dibujarCierre = (d, yInicio, paginar) => {
+      // Si el bloque no entra en la página, continúa en una nueva
+      const espacio = (y, alto) => {
+        if (paginar && y + alto > LIMITE) {
+          d.addPage();
+          return MARGEN_SUP;
+        }
+        return y;
+      };
 
-      if (titulo) {
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(15);
-        doc.setTextColor(0, 0, 0);
-        doc.text(titulo.toUpperCase(), 10, finalY);
-        finalY += 8;
+      /* ---- TOTALES ---- */
+      let finalY = espacio(yInicio + 10, 14);
+      d.setFontSize(9);
+      d.text(`SUB-TOTAL: $${subtotal.toFixed(2)}`, 150, finalY);
+      if (descuento > 0) {
+        d.text(`DESCUENTO (${descuento}%): -$${montoDescuento.toFixed(2)}`, 150, finalY + 7);
+        d.text(`TOTAL: $${total.toFixed(2)}`, 150, finalY + 14);
+      } else {
+        d.text(`TOTAL: $${total.toFixed(2)}`, 150, finalY + 7);
       }
 
-      if (contenido) {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.setTextColor(85, 85, 85);
+      /* ---- PIE DE DOCUMENTO ---- */
+      finalY = espacio(finalY + 20, 21);
+      d.setFont("helvetica", "bold");
+      d.text("ELABORADO POR:", 10, finalY);
+      d.setFont("helvetica", "normal");
+      d.text("ING. CESAR BECERRA CIV N° 309740", 40, finalY);
 
-        const lineas = doc.splitTextToSize(contenido.toUpperCase(), 190);
-        doc.text(lineas, 10, finalY);
+      d.setFont("helvetica", "bold");
+      d.text("FECHA:", 10, finalY + 7);
+      d.setFont("helvetica", "normal");
+      d.text(new Date().toLocaleDateString(), 25, finalY + 7);
+
+      d.setFont("helvetica", "bold");
+      d.text("VALIDEZ DE LA OFERTA:", 10, finalY + 14);
+      d.setFont("helvetica", "normal");
+      d.text(formData?.validez_oferta || "5 DÍAS", 50, finalY + 14);
+
+      d.setFont("helvetica", "bold");
+      d.text("FORMA DE PAGO:", 10, finalY + 21);
+      d.setFont("helvetica", "normal");
+      d.text(formData?.forma_pago || "60% ANTICIPO  40% A SU ENTREGA", 40, finalY + 21);
+
+      /* ---- TÉRMINOS ---- */
+      d.setFont("helvetica", "normal");
+      const lineasTerminos = d.splitTextToSize(terminos, 190);
+      finalY = espacio(finalY + 35, lineasTerminos.length * altoLinea(d));
+      d.text(terminos, 10, finalY, { maxWidth: 190, align: "justify" });
+      finalY += (lineasTerminos.length - 1) * altoLinea(d);
+
+      /* ---- NOTAS ---- */
+      const dibujarNota = (titulo, contenido) => {
+        if (!titulo && !contenido) return;
+
+        finalY += 15;
+
+        if (titulo) {
+          d.setFont("helvetica", "bold");
+          d.setFontSize(15);
+          d.setTextColor(0, 0, 0);
+          // El título no queda solo al pie: necesita lugar para una línea más
+          finalY = espacio(finalY, 8 + 5);
+          d.text(titulo.toUpperCase(), 10, finalY);
+          finalY += 8;
+        }
+
+        if (contenido) {
+          d.setFont("helvetica", "normal");
+          d.setFontSize(10);
+          d.setTextColor(85, 85, 85);
+
+          const lh = altoLinea(d);
+          const lineas = d.splitTextToSize(contenido.toUpperCase(), 190);
+          lineas.forEach((linea, i) => {
+            finalY = espacio(finalY, lh);
+            d.text(linea, 10, finalY);
+            if (i < lineas.length - 1) finalY += lh;
+          });
+        }
+      };
+
+      // 👉 1. NOTA SAN SIMON (SI APLICA)
+      if (esSanSimon) {
+        dibujarNota("NOTA SAN SIMON", notaSanSimon);
       }
+
+      // 👉 2. OTRAS NOTAS (SI EXISTEN)
+      if (formData?.notas) {
+        dibujarNota(formData?.titulo || "NOTA", formData?.notas);
+      }
+
+      /* ---- SELLO ---- */
+      d.setTextColor(0, 0, 0);
+      const ySello = espacio(finalY + 15, 15);
+      d.addImage(sello, "PNG", 155, ySello, 45, 15);
+
+      return ySello + 15;
     };
 
-    // 👉 1. NOTA SAN SIMON (SI APLICA)
-    if (esSanSimon) {
-      dibujarNota("NOTA SAN SIMON", notaSanSimon);
+    /* =========================
+           MEDICIONES (documento auxiliar muy alto, sin saltos de página)
+        ========================= */
+    const nuevoMedidor = () => new jsPDF("p", "mm", [210, 3000]);
+
+    const altoCierre = dibujarCierre(nuevoMedidor(), 0, false);
+
+    const body = rows.map((r) => Object.values(r));
+    const ultimaFila = body[body.length - 1];
+    const filasPrevias = body.slice(0, -1);
+
+    const medirTabla = (filas, conHead) => {
+      const medidor = nuevoMedidor();
+      autoTable(medidor, {
+        ...tablaBase,
+        startY: 0,
+        head: HEAD,
+        showHead: conHead ? "firstPage" : "never",
+        body: filas,
+      });
+      return medidor.lastAutoTable.finalY;
+    };
+
+    /* =========================
+           TABLA EN DOS PARTES
+           Si la última fila + el cierre (con las notas) no entran en la
+           página, la última fila pasa a la página siguiente junto al cierre.
+        ========================= */
+    let yTabla = cursorY;
+
+    if (!ultimaFila) {
+      // Sin APUs: solo el encabezado de la tabla
+      autoTable(doc, { ...tablaBase, startY: yTabla, head: HEAD, body: [] });
+    } else {
+      if (filasPrevias.length) {
+        autoTable(doc, { ...tablaBase, startY: yTabla, head: HEAD, body: filasPrevias });
+        yTabla = doc.lastAutoTable.finalY;
+      }
+
+      let conHead = filasPrevias.length === 0;
+      const altoUltima = medirTabla([ultimaFila], conHead);
+
+      // Solo se mueve si hay filas previas: mover la única fila dejaría
+      // la primera página con el encabezado solo
+      if (filasPrevias.length && yTabla + altoUltima + altoCierre > LIMITE) {
+        doc.addPage();
+        yTabla = MARGEN_SUP;
+        conHead = true;
+      }
+
+      autoTable(doc, {
+        ...tablaBase,
+        startY: yTabla,
+        head: HEAD,
+        showHead: conHead ? "firstPage" : "never",
+        body: [ultimaFila],
+      });
     }
 
-    // 👉 2. OTRAS NOTAS (SI EXISTEN)
-    if (formData?.notas) {
-      dibujarNota(formData?.titulo || "NOTA", formData?.notas);
-    }
-
-    doc.setTextColor(0, 0, 0);
-    doc.addImage(sello, "PNG", 155, finalY + 15, 45, 15);
+    dibujarCierre(doc, doc.lastAutoTable.finalY, true);
 
     /* =========================
            GUARDAR
