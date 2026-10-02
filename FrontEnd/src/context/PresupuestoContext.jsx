@@ -149,25 +149,21 @@ export const PresupuestoProvider = ({ children }) => {
   useEffect(() => {
     const hydrateFromStorage = async () => {
       try {
-        // 1️⃣ Primero: verificar si viene de edición (presupuesto_edicion)
-        const edicionData = await get(EDICION_KEY);
-        if (edicionData) {
-          await del(EDICION_KEY);
-          setFormData({
-            ...initialPresupuesto(),
-            ...edicionData,
-          });
-          setLoading(false);
-          return;
-        }
-
-        // 2️⃣ Segundo: verificar si hay un borrador (presupuesto_draft)
+        // El borrador (presupuesto_draft) se guarda en cada cambio, también al
+        // editar, así que es la copia más reciente. presupuesto_edicion queda
+        // solo como respaldo si no hubiera borrador.
         const saved = await get(STORAGE_KEY);
-        if (saved) {
+        const edicionData = await get(EDICION_KEY);
+        if (edicionData) await del(EDICION_KEY);
+
+        const data = saved || edicionData;
+        if (data) {
           setFormData({
             ...initialPresupuesto(),
-            ...saved,
-            fechaCulminacion: new Date(saved.fechaCulminacion),
+            ...data,
+            fechaCulminacion: data.fechaCulminacion
+              ? new Date(data.fechaCulminacion)
+              : new Date(),
           });
         }
       } catch (e) {
@@ -185,9 +181,9 @@ export const PresupuestoProvider = ({ children }) => {
     const persistDraft = async () => {
       if (loading) return;
 
-      const edicionPendiente = await get(EDICION_KEY);
-      if (edicionPendiente) return;
-
+      // Guardar siempre, también durante una edición: antes se saltaba mientras
+      // existiera presupuesto_edicion y los cambios (ej. "Sin 15%") se perdían
+      // al recargar la página.
       await set(STORAGE_KEY, formData);
       console.log("💾 [PresupuestoContext] Draft guardado en IndexedDB. APUs:", formData.apus?.length);
       console.log("📦 Objeto completo:", formData);
