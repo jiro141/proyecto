@@ -7,6 +7,7 @@ import Modal from "../../components/Modal";
 import Paginator from "../../components/Paginator";
 import useCuentasPorCliente from "../../hooks/useCuentasPorCliente";
 import useCuentasExcelGenerator from "../PresupuestosLayout/hooks/useCuentasExcelGenerator";
+import ReciboAbonoModal from "./components/ReciboAbonoModal";
 import { getReporteAbonos, createAbono } from "../../api/controllers/Cuentas";
 import { notifyError } from "../../api/apiErrors";
 
@@ -61,6 +62,9 @@ export default function ClientesCuentasPorCliente() {
   // Hook para generar Excel
   const { generarExcelCuentas, generarExcelPorCliente } = useCuentasExcelGenerator();
 
+  // Abono recién registrado → abre el modal para generar el recibo
+  const [reciboAbono, setReciboAbono] = useState(null);
+
   // Exportar Excel por cliente específico
   const handleExportExcelPorCliente = (clienteData) => {
     if (clienteData && clienteData.reportes && clienteData.reportes.length > 0) {
@@ -105,13 +109,22 @@ export default function ClientesCuentasPorCliente() {
       return;
     }
     try {
-      await createAbono({
+      const abono = await createAbono({
         reporte: selectedReporte.id,
         monto: parseFloat(formData.monto),
         referencia_pago: formData.referencia_pago || "",
         fecha_abono: formData.fecha_abono || new Date().toISOString(),
       });
       toast.success("Abono registrado exitosamente");
+
+      setReciboAbono({
+        abono,
+        cliente: {
+          nombre: selectedReporte.cliente_nombre,
+          rif: selectedReporte.cliente_rif,
+        },
+      });
+
       setModalOpen(false);
       setFormData({ 
         monto: "", 
@@ -146,8 +159,14 @@ export default function ClientesCuentasPorCliente() {
   };
 
   // Abrir modal de abonos al hacer click en un reporte
-  const handleOpenAbonosFromClient = async (reporte) => {
-    setSelectedReporte(reporte);
+  const handleOpenAbonosFromClient = async (reporte, cliente = {}) => {
+    // Los presupuestos vienen agrupados por cliente: se adjunta su nombre/RIF
+    // para el modal y el recibo PDF
+    setSelectedReporte({
+      ...reporte,
+      cliente_nombre: reporte.cliente_nombre || cliente.nombre,
+      cliente_rif: reporte.cliente_rif || cliente.rif,
+    });
     setLoadingAbonos(true);
     setDetalleOpen(true);
     setCurrentPage(1);
@@ -381,7 +400,7 @@ export default function ClientesCuentasPorCliente() {
                                       paginatedReportes.map((reporte) => (
                                         <tr 
                                           key={reporte.id} 
-                                          onClick={() => handleOpenAbonosFromClient(reporte)}
+                                          onClick={() => handleOpenAbonosFromClient(reporte, cliente)}
                                           className="border-b hover:bg-blue-50 cursor-pointer transition"
                                         >
                                           <td className="px-4 py-2 font-medium text-[#0b2c4d]">
@@ -761,6 +780,13 @@ export default function ClientesCuentasPorCliente() {
           </div>
         </div>
       </Modal>
+
+      {/* Modal Abono Registrado: generar recibo PDF */}
+      <ReciboAbonoModal
+        abono={reciboAbono?.abono}
+        cliente={reciboAbono?.cliente}
+        onClose={() => setReciboAbono(null)}
+      />
     </div>
   );
 }

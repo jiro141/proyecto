@@ -9,6 +9,7 @@ import Select from "react-select";
 import useCuentas from "../../hooks/useCuentas";
 import { createAbono, deleteAbono, getReportes, getReporteAbonos, getResumenCuentas } from "../../api/controllers/Cuentas";
 import useCuentasExcelGenerator from "../PresupuestosLayout/hooks/useCuentasExcelGenerator";
+import ReciboAbonoModal from "./components/ReciboAbonoModal";
 import Paginator from "../../components/Paginator";
 import { notifyError } from "../../api/apiErrors";
 
@@ -60,6 +61,9 @@ export default function ClientesCuentas() {
 
   // Hook para generar Excel
   const { generarExcelCuentas } = useCuentasExcelGenerator();
+
+  // Abono recién registrado → abre el modal para generar el recibo
+  const [reciboAbono, setReciboAbono] = useState(null);
 
   const handleOpenExportModal = () => {
     setFechaDesde("");
@@ -157,13 +161,22 @@ export default function ClientesCuentas() {
       return;
     }
     try {
-      await createAbono({
+      const abono = await createAbono({
         reporte: formData.reporte.value,
         monto: parseFloat(formData.monto),
         referencia_pago: formData.referencia_pago || "",
         fecha_abono: formData.fecha_abono || new Date().toISOString(),
       });
       toast.success("Abono registrado exitosamente");
+
+      setReciboAbono({
+        abono,
+        cliente: {
+          nombre: formData.reporte.data?.cliente_nombre,
+          rif: formData.reporte.data?.cliente_rif,
+        },
+      });
+
       setModalOpen(false);
       setFormData({ 
         reporte: null, 
@@ -750,6 +763,13 @@ export default function ClientesCuentas() {
           </div>
         </div>
       </Modal>
+
+      {/* Modal Abono Registrado: generar recibo PDF */}
+      <ReciboAbonoModal
+        abono={reciboAbono?.abono}
+        cliente={reciboAbono?.cliente}
+        onClose={() => setReciboAbono(null)}
+      />
     </div>
   );
 }
