@@ -18,11 +18,12 @@ const formatFecha = (valor) => {
 
 export default function usePDFReciboAbono() {
   /**
-   * Genera el recibo PDF de un abono recién registrado.
-   * @param {Object} abono - respuesta de createAbono (AbonoSerializer)
+   * Genera el recibo PDF de un abono.
+   * @param {Object} abono - abono (AbonoSerializer) con monto_restante al momento del abono
    * @param {Object} cliente - { nombre, rif } del cliente del presupuesto
+   * @param {number} numero - N° de recibo dentro del presupuesto (1, 2, 3...)
    */
-  const generarReciboAbono = (abono, cliente = {}) => {
+  const generarReciboAbono = (abono, cliente = {}, numero = 1) => {
     const doc = new jsPDF("p", "mm", "a4");
     const rojoHermabe = [227, 6, 19];
 
@@ -30,7 +31,7 @@ export default function usePDFReciboAbono() {
     const monto = Number(abono.monto) || 0;
     const restante = Number(abono.monto_restante) || 0;
     const abonosAnteriores = Math.max(total - restante - monto, 0);
-    const nRecibo = String(abono.id ?? "").padStart(6, "0");
+    const nRecibo = String(numero);
     const nombreCliente = (cliente.nombre || "—").toUpperCase();
 
     /* =========================
@@ -159,5 +160,34 @@ export default function usePDFReciboAbono() {
     doc.save(`Recibo_Abono_${abono.n_presupuesto || ""}_${nRecibo}.pdf`);
   };
 
-  return { generarReciboAbono };
+  /**
+   * Recibo de un abono a partir del historial de su presupuesto. Se usa tanto
+   * para un abono recién registrado como para uno del historial.
+   *
+   * Todo se calcula por orden de REGISTRO (id), no por la fecha elegida, así
+   * cada recibo refleja el estado del presupuesto cuando se emitió:
+   * - N° de recibo: el primer abono es 1; si ya había 2, el nuevo es 3.
+   * - Saldo: el monto_restante del backend es el saldo ACTUAL; se recalcula
+   *   sumando solo los abonos registrados antes que este.
+   * @param {Object} abono - abono a imprimir
+   * @param {Array} historial - todos los abonos del mismo presupuesto (incluido este)
+   * @param {Object} cliente - { nombre, rif }
+   */
+  const generarReciboHistorial = (abono, historial = [], cliente = {}) => {
+    const previos = historial.filter((a) => a.id < abono.id);
+    const numero = previos.length + 1;
+
+    const anteriores = previos.reduce((sum, a) => sum + (Number(a.monto) || 0), 0);
+
+    const total = Number(abono.monto_total_reporte) || 0;
+    const restanteEnEseMomento = total - anteriores - (Number(abono.monto) || 0);
+
+    generarReciboAbono(
+      { ...abono, monto_restante: Math.max(restanteEnEseMomento, 0) },
+      cliente,
+      numero,
+    );
+  };
+
+  return { generarReciboAbono, generarReciboHistorial };
 }

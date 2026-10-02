@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import Modal from "../../../components/Modal";
 import usePDFReciboAbono from "../../PresupuestosLayout/hooks/usePDFReciboAbono";
+import { getReporteAbonos } from "../../../api/controllers/Cuentas";
 import { notifyError } from "../../../api/apiErrors";
 
 const formatCurrency = (value) => {
@@ -14,14 +15,21 @@ const formatCurrency = (value) => {
  * @param {Object} cliente - { nombre, rif } para el recibo
  */
 export default function ReciboAbonoModal({ abono, cliente, onClose }) {
-  const { generarReciboAbono } = usePDFReciboAbono();
+  const { generarReciboHistorial } = usePDFReciboAbono();
+  const [generando, setGenerando] = useState(false);
 
-  const handleGenerarRecibo = () => {
+  // El N° de recibo y el saldo salen del historial del presupuesto, igual
+  // que al imprimir desde el historial de pagos
+  const handleGenerarRecibo = async () => {
+    setGenerando(true);
     try {
-      generarReciboAbono(abono, cliente);
+      const historial = await getReporteAbonos(abono.reporte);
+      generarReciboHistorial(abono, Array.isArray(historial) ? historial : [abono], cliente);
     } catch (error) {
       console.error(error);
       notifyError(error, "No se pudo generar el recibo PDF");
+    } finally {
+      setGenerando(false);
     }
   };
 
@@ -47,7 +55,8 @@ export default function ReciboAbonoModal({ abono, cliente, onClose }) {
           <div className="flex justify-center gap-6">
             <button
               onClick={handleGenerarRecibo}
-              className="flex items-center gap-2 px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white font-semibold"
+              disabled={generando}
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white font-semibold disabled:opacity-60"
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path
@@ -56,7 +65,7 @@ export default function ReciboAbonoModal({ abono, cliente, onClose }) {
                   clipRule="evenodd"
                 />
               </svg>
-              Generar Recibo
+              {generando ? "Generando..." : "Generar Recibo"}
             </button>
           </div>
         </div>

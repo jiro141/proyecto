@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BounceLoader } from "react-spinners";
-import { FaSearch, FaMoneyBillWave, FaBuilding, FaChevronDown, FaChevronUp, FaHistory, FaPlus, FaFileExcel } from "react-icons/fa";
+import { FaSearch, FaMoneyBillWave, FaBuilding, FaChevronDown, FaChevronUp, FaHistory, FaPlus, FaFileExcel, FaFilePdf } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Modal from "../../components/Modal";
@@ -8,6 +8,7 @@ import Paginator from "../../components/Paginator";
 import useCuentasPorCliente from "../../hooks/useCuentasPorCliente";
 import useCuentasExcelGenerator from "../PresupuestosLayout/hooks/useCuentasExcelGenerator";
 import ReciboAbonoModal from "./components/ReciboAbonoModal";
+import usePDFReciboAbono from "../PresupuestosLayout/hooks/usePDFReciboAbono";
 import { getReporteAbonos, createAbono } from "../../api/controllers/Cuentas";
 import { notifyError } from "../../api/apiErrors";
 
@@ -64,6 +65,20 @@ export default function ClientesCuentasPorCliente() {
 
   // Abono recién registrado → abre el modal para generar el recibo
   const [reciboAbono, setReciboAbono] = useState(null);
+  const { generarReciboHistorial } = usePDFReciboAbono();
+
+  // Recibo de un abono del historial
+  const handleReciboHistorial = (abono) => {
+    try {
+      generarReciboHistorial(abono, abonosReporte, {
+        nombre: selectedReporte?.cliente_nombre,
+        rif: selectedReporte?.cliente_rif,
+      });
+    } catch (error) {
+      console.error(error);
+      notifyError(error, "No se pudo generar el recibo PDF");
+    }
+  };
 
   // Exportar Excel por cliente específico
   const handleExportExcelPorCliente = (clienteData) => {
@@ -582,6 +597,7 @@ export default function ClientesCuentasPorCliente() {
                       <th className="px-4 py-3 text-left font-semibold">Fecha</th>
                       <th className="px-4 py-3 text-left font-semibold">Monto</th>
                       <th className="px-4 py-3 text-left font-semibold">Referencia</th>
+                      <th className="px-4 py-3 text-center font-semibold">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -590,6 +606,15 @@ export default function ClientesCuentasPorCliente() {
                         <td className="px-4 py-3">{formatDate(abono.fecha_abono)}</td>
                         <td className="px-4 py-3 text-green-600 font-medium">{formatCurrency(abono.monto)}</td>
                         <td className="px-4 py-3">{abono.referencia_pago || "-"}</td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => handleReciboHistorial(abono)}
+                            className="text-red-600 hover:text-red-800 p-1"
+                            title="Generar recibo PDF"
+                          >
+                            <FaFilePdf size={18} />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

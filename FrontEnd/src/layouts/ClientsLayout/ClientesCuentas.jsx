@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { BounceLoader } from "react-spinners";
-import { FaSearch, FaMoneyBillWave, FaPlus, FaHistory, FaFileExcel } from "react-icons/fa";
+import { FaSearch, FaMoneyBillWave, FaPlus, FaHistory, FaFileExcel, FaFilePdf } from "react-icons/fa";
 import { FaRegTrashCan, FaChevronLeft, FaChevronRight } from "react-icons/fa6";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -10,6 +10,7 @@ import useCuentas from "../../hooks/useCuentas";
 import { createAbono, deleteAbono, getReportes, getReporteAbonos, getResumenCuentas } from "../../api/controllers/Cuentas";
 import useCuentasExcelGenerator from "../PresupuestosLayout/hooks/useCuentasExcelGenerator";
 import ReciboAbonoModal from "./components/ReciboAbonoModal";
+import usePDFReciboAbono from "../PresupuestosLayout/hooks/usePDFReciboAbono";
 import Paginator from "../../components/Paginator";
 import { notifyError } from "../../api/apiErrors";
 
@@ -64,6 +65,20 @@ export default function ClientesCuentas() {
 
   // Abono recién registrado → abre el modal para generar el recibo
   const [reciboAbono, setReciboAbono] = useState(null);
+  const { generarReciboHistorial } = usePDFReciboAbono();
+
+  // Recibo de un abono del historial
+  const handleReciboHistorial = (abono) => {
+    try {
+      generarReciboHistorial(abono, abonosReporte, {
+        nombre: selectedReporte?.cliente_nombre,
+        rif: selectedReporte?.cliente_rif,
+      });
+    } catch (error) {
+      console.error(error);
+      notifyError(error, "No se pudo generar el recibo PDF");
+    }
+  };
 
   const handleOpenExportModal = () => {
     setFechaDesde("");
@@ -620,13 +635,22 @@ export default function ClientesCuentas() {
                         <td className="px-4 py-3 text-green-600 font-medium">{formatCurrency(abono.monto)}</td>
                         <td className="px-4 py-3">{abono.referencia_pago || "-"}</td>
                         <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => setDeleteId(abono.id)}
-                            className="text-red-600 hover:text-red-800 transition"
-                            title="Eliminar"
-                          >
-                            <FaRegTrashCan size={16} />
-                          </button>
+                          <div className="flex justify-end items-center gap-3">
+                            <button
+                              onClick={() => handleReciboHistorial(abono)}
+                              className="text-red-600 hover:text-red-800 p-1 transition"
+                              title="Generar recibo PDF"
+                            >
+                              <FaFilePdf size={16} />
+                            </button>
+                            <button
+                              onClick={() => setDeleteId(abono.id)}
+                              className="text-red-600 hover:text-red-800 transition"
+                              title="Eliminar"
+                            >
+                              <FaRegTrashCan size={16} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
