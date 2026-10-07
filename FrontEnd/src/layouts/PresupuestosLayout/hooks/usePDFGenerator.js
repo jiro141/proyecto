@@ -96,7 +96,7 @@ export default function usePDFGenerator() {
 
     const PAGE_H = doc.internal.pageSize.getHeight();
     const MARGEN_SUP = 15;
-    const LIMITE = PAGE_H - 12; // margen inferior
+    const LIMITE = PAGE_H - 10; // margen inferior
 
     const HEAD = [
       ["N°", "DESCRIPCIÓN", "UND.", "CANT.", "PRECIO UNIT.", "PRECIO TOTAL"],
@@ -141,7 +141,8 @@ export default function usePDFGenerator() {
     const altoLinea = (d) =>
       (d.getFontSize() * d.getLineHeightFactor()) / d.internal.scaleFactor;
 
-    // Dibuja el cierre desde yInicio y devuelve la Y final.
+    // Dibuja el cierre desde yInicio. Devuelve { finTexto }: la Y de la última
+    // línea de texto (notas incluidas), sin contar el sello.
     // paginar=false se usa para medir el alto en un documento auxiliar.
     const dibujarCierre = (d, yInicio, paginar) => {
       // Si el bloque no entra en la página, continúa en una nueva
@@ -184,7 +185,17 @@ export default function usePDFGenerator() {
       d.setFont("helvetica", "bold");
       d.text("FORMA DE PAGO:", 10, finalY + 21);
       d.setFont("helvetica", "normal");
-      d.text(formData?.forma_pago || "60% ANTICIPO  40% A SU ENTREGA", 40, finalY + 21);
+      const formaPago = formData?.forma_pago || "60% ANTICIPO  40% A SU ENTREGA";
+      d.text(formaPago, 40, finalY + 21);
+
+      // Posición del pie: el sello puede ir a su derecha si no entra abajo
+      const yPie = finalY;
+      const paginaPie = d.getCurrentPageInfo().pageNumber;
+      const bordeDerechoPie = Math.max(
+        40 + d.getTextWidth("ING. CESAR BECERRA CIV N° 309740"),
+        50 + d.getTextWidth(formData?.validez_oferta || "5 DÍAS"),
+        40 + d.getTextWidth(formaPago),
+      );
 
       /* ---- TÉRMINOS ---- */
       d.setFont("helvetica", "normal");
@@ -235,11 +246,26 @@ export default function usePDFGenerator() {
       }
 
       /* ---- SELLO ---- */
+      // 1) Debajo de las notas, si entra.
+      // 2) Si no, a la derecha del pie (ELABORADO POR / FECHA), que está libre,
+      //    para no llevarse una página solo por el sello.
+      // 3) Último recurso: página siguiente.
       d.setTextColor(0, 0, 0);
-      const ySello = espacio(finalY + 15, 15);
+      const finTexto = finalY;
+      const yDebajo = finalY + 15;
+      const pieEnEstaPagina = d.getCurrentPageInfo().pageNumber === paginaPie;
+
+      let ySello;
+      if (!paginar || yDebajo + 15 <= LIMITE) {
+        ySello = yDebajo;
+      } else if (pieEnEstaPagina && bordeDerechoPie < 152) {
+        ySello = yPie - 4;
+      } else {
+        ySello = espacio(yDebajo, 15);
+      }
       d.addImage(sello, "PNG", 155, ySello, 45, 15);
 
-      return ySello + 15;
+      return { finTexto };
     };
 
     /* =========================
@@ -247,7 +273,8 @@ export default function usePDFGenerator() {
         ========================= */
     const nuevoMedidor = () => new jsPDF("p", "mm", [210, 3000]);
 
-    const altoCierre = dibujarCierre(nuevoMedidor(), 0, false);
+    // Alto hasta la última línea de las notas (el sello se acomoda aparte)
+    const altoCierre = dibujarCierre(nuevoMedidor(), 0, false).finTexto;
 
     const body = rows.map((r) => Object.values(r));
     const ultimaFila = body[body.length - 1];
@@ -267,8 +294,8 @@ export default function usePDFGenerator() {
 
     /* =========================
            TABLA EN DOS PARTES
-           Si la última fila + el cierre (con las notas) no entran en la
-           página, la última fila pasa a la página siguiente junto al cierre.
+           La última fila pasa a la página siguiente SOLO si con ella las
+           notas no se alcanzan a mostrar completas en esta página.
         ========================= */
     let yTabla = cursorY;
 
