@@ -46,7 +46,8 @@ export default function useInventario(tipo, search = "") {
           pageSize: 20,
         });
       } else {
-        setData(Array.isArray(result) ? result : []);
+        // Endpoints sin lista (ej. taza) devuelven un objeto único: se conserva tal cual
+        setData(Array.isArray(result) ? result : result ?? []);
         setPagination({ count: Array.isArray(result) ? result.length : 0, totalPages: 1, pageSize: 20 });
       }
     } catch (err) {
