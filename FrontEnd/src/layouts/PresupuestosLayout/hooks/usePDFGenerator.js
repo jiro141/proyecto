@@ -175,7 +175,10 @@ export default function usePDFGenerator() {
       d.setFont("helvetica", "bold");
       d.text("FECHA:", 10, finalY + 7);
       d.setFont("helvetica", "normal");
-      d.text(new Date().toLocaleDateString(), 25, finalY + 7);
+      const fechaPresupuesto = formData?.fecha_creacion
+        ? new Date(formData.fecha_creacion)
+        : new Date();
+      d.text(fechaPresupuesto.toLocaleDateString(), 25, finalY + 7);
 
       d.setFont("helvetica", "bold");
       d.text("VALIDEZ DE LA OFERTA:", 10, finalY + 14);

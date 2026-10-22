@@ -179,7 +179,13 @@ export default function useExcelGenerator() {
         ["", "", "", "", "TOTAL:", total],
         [],
         ["ELABORADO POR:", "ING. CESAR BECERRA CIV N° 309740"],
-        ["FECHA:", new Date().toLocaleDateString()],
+        [
+          "FECHA:",
+          (formData?.fecha_creacion
+            ? new Date(formData.fecha_creacion)
+            : new Date()
+          ).toLocaleDateString(),
+        ],
         ["VALIDEZ DE LA OFERTA:", formData?.validez_oferta || "5 DÍAS"],
         ["FORMA DE PAGO:", formData?.forma_pago || "60% ANTICIPO  40% A SU ENTREGA"],
         [],

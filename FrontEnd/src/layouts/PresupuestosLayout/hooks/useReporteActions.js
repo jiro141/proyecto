@@ -59,6 +59,7 @@ export const useReporteActions = () => {
         id: reporte.id,
         n_presupuesto: reporte.n_presupuesto, // ← Guardar número de presupuesto
         orden_servicio: reporte.orden_servicio || "", // ← Orden de servicio
+        fecha_creacion: reporte.fecha_creacion,
         cliente: {
           id: reporte.cliente,
           nombre: reporte.cliente_nombre,
@@ -170,6 +171,7 @@ export const useReporteActions = () => {
   const prepareExcelData = (detalle) => {
     return {
       id: detalle.id,
+      fecha_creacion: detalle.fecha_creacion,
       cliente: {
         id: detalle.cliente,
         nombre: detalle.cliente_nombre,
@@ -269,6 +271,7 @@ export const useReporteActions = () => {
       titulo: notaData.titulo,
       notas: notaData.notas,
       orden_servicio: detalle.orden_servicio || "",
+      fecha_creacion: detalle.fecha_creacion,
       // ✅ Agregar fecha de culminación del backend
       fechaCulminacion: detalle.fecha_estimacion_culminacion 
         ? new Date(detalle.fecha_estimacion_culminacion) 
