@@ -123,6 +123,7 @@ export default function usePDFNotaEntrega() {
       const monto = cantidad * precio;
       return [
         String(cantidad),
+        (item.unidad || "UND").toUpperCase(),
         (item.apu_descripcion || "—").toUpperCase(),
         `$${precio.toFixed(2)}`,
         `$${monto.toFixed(2)}`,
@@ -136,22 +137,24 @@ export default function usePDFNotaEntrega() {
     }, 0);
 
     // Filtrar items según conMonto
-    const filteredRows = conMonto ? rows : rows.map(row => [row[0], row[1]]);
-    
-    const tableHead = conMonto 
-      ? [["CANTIDAD", "DESCRIPCIÓN", "PRECIO UNIT.", "MONTO"]]
-      : [["CANTIDAD", "DESCRIPCIÓN"]];
-    
+    const filteredRows = conMonto ? rows : rows.map(row => [row[0], row[1], row[2]]);
+
+    const tableHead = conMonto
+      ? [["CANTIDAD", "PZA", "DESCRIPCIÓN", "PRECIO UNIT.", "MONTO"]]
+      : [["CANTIDAD", "PZA", "DESCRIPCIÓN"]];
+
     const tableColumns = conMonto
       ? {
           0: { halign: "center", cellWidth: 18 },
-          1: { halign: "left", cellWidth: 85 },
-          2: { halign: "right", cellWidth: 22 },
+          1: { halign: "center", cellWidth: 14 },
+          2: { halign: "left", cellWidth: 71 },
           3: { halign: "right", cellWidth: 22 },
+          4: { halign: "right", cellWidth: 22 },
         }
       : {
           0: { halign: "center", cellWidth: 20 },
-          1: { halign: "left", cellWidth: 140 },
+          1: { halign: "center", cellWidth: 14 },
+          2: { halign: "left", cellWidth: 126 },
         };
 
     autoTable(doc, {

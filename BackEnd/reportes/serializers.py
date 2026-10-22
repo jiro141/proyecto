@@ -358,12 +358,14 @@ class NotaEntregaItemSerializer(serializers.ModelSerializer):
         max_digits=10, decimal_places=2, read_only=True
     )
     apu_id = serializers.IntegerField(source='apu.id', read_only=True, allow_null=True)
+    unidad = serializers.CharField(source='apu.unidad', read_only=True, allow_null=True)
 
     class Meta:
         model = NotaEntregaItem
         fields = [
             "id",
             "apu_id",
+            "unidad",
             "apu_descripcion",
             "cantidad_total",
             "cantidad_entregada",
