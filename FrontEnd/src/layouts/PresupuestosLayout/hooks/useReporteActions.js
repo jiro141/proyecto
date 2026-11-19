@@ -172,6 +172,7 @@ export const useReporteActions = () => {
     return {
       id: detalle.id,
       fecha_creacion: detalle.fecha_creacion,
+      orden_servicio: detalle.orden_servicio,
       cliente: {
         id: detalle.cliente,
         nombre: detalle.cliente_nombre,

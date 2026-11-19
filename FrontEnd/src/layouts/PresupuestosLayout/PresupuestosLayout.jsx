@@ -5,7 +5,6 @@ import { toast } from "react-toastify";
 import useReportes from "../../hooks/useReportes";
 import useExcelGenerator from "./hooks/useExcelGenerator";
 import usePDFGenerator from "./hooks/usePDFGenerator";
-import { usePresupuesto } from "../../context/PresupuestoContext";
 import { duplicarReporte } from "../../api/controllers/Presupuesto";
 
 // Componentes importados
@@ -73,7 +72,6 @@ export default function ReportesLayout({ clienteSeleccionado }) {
 
   const { generarExcelAPUs } = useExcelGenerator();
   const { generarPDF } = usePDFGenerator();
-  const { hydratePresupuesto } = usePresupuesto();
   
   const {
     selectedReporte,
@@ -111,10 +109,7 @@ export default function ReportesLayout({ clienteSeleccionado }) {
 
       if (action === "excel") {
         const excelData = prepareExcelData(detalle);
-        hydratePresupuesto(excelData);
-        setTimeout(() => {
-          generarExcelAPUs(null, detalle.n_presupuesto);
-        }, 0);
+        generarExcelAPUs(excelData, detalle.n_presupuesto);
         return;
       }
 

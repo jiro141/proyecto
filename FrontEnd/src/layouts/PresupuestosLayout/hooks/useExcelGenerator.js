@@ -1,36 +1,42 @@
 // src/hooks/useExcelGenerator.js
 import * as XLSX from "xlsx-js-style";
-import { excelStyles, columnWidths } from "./useExcelStyles";
+import {
+  agregarMembrete,
+  ajustarAlto,
+  columnWidths,
+  combinar,
+  excelStyles,
+  resumenColumnWidths,
+} from "./presupuestoExcelLayout";
+import { guardarPresupuestoExcel } from "./guardarPresupuestoExcel";
 import { usePresupuesto } from "../../../context/PresupuestoContext";
 
 // Función para limpiar caracteres inválidos de nombres de hojas en Excel
 const cleanSheetName = (name, usedNames = new Set()) => {
-  if (!name) return "APU";
-  // Caracteres inválidos: \ / ? * [ ] :
-  let cleanName = (
-    name
-      .replace(/[\\\/:*?[\]]/g, "")
-      .substring(0, 31)
-      .trim() || "APU"
-  );
-
-  // Si ya existe, agregar sufijo numérico
-  if (usedNames.has(cleanName)) {
-    let counter = 1;
-    while (usedNames.has(`${cleanName}_${counter}`)) {
-      counter++;
-    }
-    cleanName = `${cleanName}_${counter}`;
+  const base = name?.replace(/[\\/:*?[\]]/g, "").slice(0, 31).trim().replace(/^'+|'+$/g, "") || "APU";
+  let sheetName = base;
+  let counter = 1;
+  while (usedNames.has(sheetName.toLowerCase())) {
+    const suffix = `_${counter++}`;
+    sheetName = `${base.slice(0, 31 - suffix.length)}${suffix}`;
   }
 
-  usedNames.add(cleanName);
-  return cleanName;
+  usedNames.add(sheetName.toLowerCase());
+  return sheetName;
+};
+
+const estilizarFila = (ws, row, columns, styleForColumn) => {
+  for (const col of columns) {
+    const cell = ws[`${col}${row}`];
+    if (cell) cell.s = styleForColumn(col);
+  }
 };
 
 export default function useExcelGenerator() {
-  const { formData } = usePresupuesto();
+  const { formData: presupuestoActual } = usePresupuesto();
 
-  const generarExcelAPUs = (otro, nPresupuesto) => {
+  const generarExcelAPUs = (datos, nPresupuesto) => {
+    const formData = datos ?? presupuestoActual;
     if (!formData?.apus?.length) return;
 
     // ✅ función helpers - definida primero para usarla en todo el scope
@@ -75,170 +81,107 @@ export default function useExcelGenerator() {
            HOJA 1: RESUMEN (como PDF)
         ========================= */
     const wsResumen = XLSX.utils.aoa_to_sheet([]);
+    wsResumen["!cols"] = resumenColumnWidths;
+    agregarMembrete(wsResumen, "F");
 
-    const clienteNombre = formData?.cliente?.nombre?.toUpperCase() || "—";
-    const clienteRif = formData?.cliente?.rif
-      ? `, ${formData.cliente.rif}`
-      : "";
+    const clienteNombre = formData.cliente?.nombre?.toUpperCase() || "—";
+    const clienteRif = formData.cliente?.rif ? `, ${formData.cliente.rif}` : "";
     const clienteTexto = `${clienteNombre}${clienteRif}`;
-    const descripcion = formData?.descripcion?.toUpperCase() || "—";
+    const descripcion = formData.descripcion?.toUpperCase() || "—";
 
-    // ✅ Fecha de culminación
-    const fechaCulminacion = formData?.fechaCulminacion
-      ? new Date(formData.fechaCulminacion).toLocaleDateString("es-VE")
-      : "—";
-
-    // Encabezado empresa
+    combinar(wsResumen, "A7:F7", "PRESUPUESTO", excelStyles.tituloPrincipal);
+    ajustarAlto(wsResumen, 7, [], 26);
+    combinar(wsResumen, "B8:C8", clienteTexto, excelStyles.texto);
+    combinar(wsResumen, "D8:E8", "ORDEN DE SERVICIO", excelStyles.referenciaLabel);
+    combinar(wsResumen, "D9:E9", formData.orden_servicio || "—", excelStyles.referenciaValue);
+    XLSX.utils.sheet_add_aoa(wsResumen, [["CLIENTE:"]], { origin: "A8" });
+    wsResumen.A8.s = excelStyles.resumenLabel;
     XLSX.utils.sheet_add_aoa(
       wsResumen,
-      [
-        ["Cesar Augusto Becerra Ramírez"],
-        ["S.T.I. HERMABE"],
-        ["RIF: V-14368387-3"],
-        ["Carrera 7 N° 12-81, San Vicente, San Cristóbal, Edo. Táchira"],
-        ["Telfs: 0277-2912496 / 0424-7189106"],
-        [],
-        ["PRESUPUESTO"],
-        [],
-        [
-          "CLIENTE:",
-          clienteTexto,
-          "",
-          "",
-          "ORDEN DE SERVICIO",
-          "N° PRESUPUESTO",
-          String(nPresupuesto || "----"),
-        ],
-        [],
-        [descripcion],
-        [],
-        ["FECHA DE CULMINACIÓN:", fechaCulminacion],
-      ],
-      { origin: "A1" },
+      [["N° PRESUPUESTO"], [String(nPresupuesto || "----")]],
+      { origin: "F8" },
     );
+    wsResumen.F8.s = excelStyles.referenciaLabel;
+    wsResumen.F9.s = excelStyles.referenciaValue;
+    ajustarAlto(wsResumen, 8, [
+      { value: clienteTexto, columns: [1, 2] },
+      { value: "ORDEN DE SERVICIO", columns: [3, 4], fontSize: 10, bold: true },
+      { value: "N° PRESUPUESTO", columns: [5], fontSize: 10, bold: true },
+    ], 22);
+    ajustarAlto(wsResumen, 9, [
+      { value: formData.orden_servicio, columns: [3, 4], fontSize: 12, bold: true },
+    ], 22);
 
-    // Estilos básicos del encabezado
-    if (wsResumen["A1"]) wsResumen["A1"].s = excelStyles.empresaTitulo;
-    if (wsResumen["A2"]) wsResumen["A2"].s = excelStyles.tituloPrincipal;
-    if (wsResumen["A3"]) wsResumen["A3"].s = excelStyles.empresaSubtitulo;
-    if (wsResumen["A4"]) wsResumen["A4"].s = excelStyles.empresaDireccion;
-    if (wsResumen["A5"]) wsResumen["A5"].s = excelStyles.empresaDireccion;
-    if (wsResumen["A7"]) wsResumen["A7"].s = excelStyles.tituloPrincipal;
-    if (wsResumen["A9"]) wsResumen["A9"].s = excelStyles.resumenLabel;
-    if (wsResumen["B9"]) wsResumen["B9"].s = excelStyles.resumenValue;
-    if (wsResumen["E9"]) wsResumen["E9"].s = excelStyles.resumenLabel;
-    if (wsResumen["F9"]) wsResumen["F9"].s = excelStyles.resumenLabel;
-    if (wsResumen["G9"]) wsResumen["G9"].s = excelStyles.resumenValue;
-    if (wsResumen["A11"]) wsResumen["A11"].s = excelStyles.subtitulo;
+    combinar(wsResumen, "A11:F11", descripcion, excelStyles.subtitulo);
+    ajustarAlto(wsResumen, 11, [
+      { value: descripcion, columns: [0, 1, 2, 3, 4, 5], bold: true },
+    ], 26);
 
-    // Tabla de APUs
-    const resumenHeaders = [
-      ["N°", "DESCRIPCIÓN", "UND.", "CANT.", "PRECIO UNIT.", "PRECIO TOTAL"],
-    ];
-    XLSX.utils.sheet_add_aoa(wsResumen, resumenHeaders, { origin: "A13" });
+    const resumenHeaders = ["N°", "DESCRIPCIÓN", "UND.", "CANT.", "PRECIO UNIT.", "PRECIO TOTAL"];
+    const filaEncabezadoResumen = 13;
+    XLSX.utils.sheet_add_aoa(wsResumen, [resumenHeaders], { origin: `A${filaEncabezadoResumen}` });
+    estilizarFila(wsResumen, filaEncabezadoResumen, "ABCDEF", () => excelStyles.tablaHeader);
+    ajustarAlto(wsResumen, filaEncabezadoResumen, resumenHeaders.map((value, col) => ({ value, columns: [col], bold: true })), 25);
 
-    ["A", "B", "C", "D", "E", "F"].forEach((col) => {
-      if (wsResumen[`${col}13`])
-        wsResumen[`${col}13`].s = excelStyles.tablaHeader;
-    });
+    let filaResumen = filaEncabezadoResumen + 1;
 
-    const rows = (formData?.apus || []).map((apu, index) => {
+    apus.forEach((apu, index) => {
       const cantidad = apu.body?.cantidad || 1;
       const presupuestoBase = apu.body?.presupuesto_base || 0;
+      const descripcionAPU = apu.body?.descripcion || "—";
+      const unidad = apu.body?.unidad || "UND";
+      const row = [index + 1, descripcionAPU, unidad, cantidad, presupuestoBase / cantidad, presupuestoBase];
 
-      return [
-        index + 1,
-        apu.body?.descripcion || "—",
-        apu.body?.unidad || "UND",
-        cantidad,
-        presupuestoBase / cantidad,
-        presupuestoBase,
-      ];
-    });
-
-    let filaResumen = 14;
-
-    rows.forEach((row) => {
       XLSX.utils.sheet_add_aoa(wsResumen, [row], { origin: `A${filaResumen}` });
-
-      ["A", "B", "C", "D", "E", "F"].forEach((col) => {
-        if (wsResumen[`${col}${filaResumen}`]) {
-          wsResumen[`${col}${filaResumen}`].s = excelStyles.tablaCelda;
-        }
+      estilizarFila(wsResumen, filaResumen, "ABCDEF", (col) => {
+        if (col === "B") return excelStyles.tablaDescripcion;
+        if (col === "E" || col === "F") return excelStyles.tablaMonto;
+        return excelStyles.tablaCelda;
       });
-
+      ajustarAlto(wsResumen, filaResumen, [
+        { value: descripcionAPU, columns: [1] },
+        { value: unidad, columns: [2] },
+      ]);
       filaResumen++;
     });
 
-    // Totales
     XLSX.utils.sheet_add_aoa(
       wsResumen,
-      [
-        [],
-        ["", "", "", "", "SUB-TOTAL:", total],
-        ["", "", "", "", "TOTAL:", total],
-        [],
-        ["ELABORADO POR:", "ING. CESAR BECERRA CIV N° 309740"],
-        [
-          "FECHA:",
-          (formData?.fecha_creacion
-            ? new Date(formData.fecha_creacion)
-            : new Date()
-          ).toLocaleDateString(),
-        ],
-        ["VALIDEZ DE LA OFERTA:", formData?.validez_oferta || "5 DÍAS"],
-        ["FORMA DE PAGO:", formData?.forma_pago || "60% ANTICIPO  40% A SU ENTREGA"],
-        [],
-        [
-          formData?.terminos_condiciones || "LOS PRECIOS NO INCLUYEN IVA; LO QUE NO SE ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.",
-        ],
-      ],
-      { origin: `A${filaResumen}` },
+      [["SUB-TOTAL:", total], ["TOTAL:", total]],
+      { origin: `E${filaResumen + 1}` },
     );
+    estilizarFila(wsResumen, filaResumen + 1, "EF", (col) => (
+      col === "E" ? excelStyles.resumenLabel : excelStyles.resumenValue
+    ));
+    estilizarFila(wsResumen, filaResumen + 2, "EF", (col) => (
+      col === "E" ? excelStyles.resumenLabel : excelStyles.resumenValue
+    ));
 
-    // Estilos para totales y pie
-    const subTotalRow = filaResumen + 1;
-    const totalRow = filaResumen + 2;
-
-    if (wsResumen[`E${subTotalRow}`])
-      wsResumen[`E${subTotalRow}`].s = excelStyles.resumenLabel;
-    if (wsResumen[`F${subTotalRow}`])
-      wsResumen[`F${subTotalRow}`].s = excelStyles.resumenValue;
-    if (wsResumen[`E${totalRow}`])
-      wsResumen[`E${totalRow}`].s = excelStyles.resumenLabel;
-    if (wsResumen[`F${totalRow}`])
-      wsResumen[`F${totalRow}`].s = excelStyles.resumenValue;
-
-    wsResumen["!cols"] = [
-      { wch: 8 }, // A
-      { wch: 55 }, // B
-      { wch: 10 }, // C
-      { wch: 10 }, // D
-      { wch: 15 }, // E
-      { wch: 18 }, // F
-      { wch: 15 }, // G
+    const pie = [
+      ["ELABORADO POR:", "ING. CESAR BECERRA CIV N° 309740"],
+      ["FECHA:", (formData.fecha_creacion ? new Date(formData.fecha_creacion) : new Date()).toLocaleDateString()],
+      ["VALIDEZ DE LA OFERTA:", formData.validez_oferta || "5 DÍAS"],
+      ["FORMA DE PAGO:", formData.forma_pago || "60% ANTICIPO  40% A SU ENTREGA"],
     ];
+    pie.forEach(([label, value], index) => {
+      const row = filaResumen + 4 + index;
+      combinar(wsResumen, `A${row}:B${row}`, label, excelStyles.resumenLabel);
+      combinar(wsResumen, `C${row}:F${row}`, value, excelStyles.texto);
+      ajustarAlto(wsResumen, row, [{ value, columns: [2, 3, 4, 5] }]);
+    });
 
-    // Combinar celdas para que se vea más parecido al PDF
-    wsResumen["!merges"] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }, // A1:F1
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }, // A2:F2
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 5 } }, // A3:F3
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 5 } }, // A4:F4
-      { s: { r: 4, c: 0 }, e: { r: 4, c: 5 } }, // A5:F5
-      { s: { r: 6, c: 0 }, e: { r: 6, c: 5 } }, // A7:F7
-      { s: { r: 8, c: 1 }, e: { r: 8, c: 3 } }, // B9:D9
-      { s: { r: 8, c: 4 }, e: { r: 8, c: 4 } }, // E9
-      { s: { r: 10, c: 0 }, e: { r: 10, c: 5 } }, // A11:F11
-      { s: { r: filaResumen + 8, c: 0 }, e: { r: filaResumen + 8, c: 5 } }, // aviso final
-    ];
+    const terminos = formData.terminos_condiciones
+      || "LOS PRECIOS NO INCLUYEN IVA; LO QUE NO SE ENCUENTRE EN EL PRESENTE PRESUPUESTO SERÁ PRESUPUESTADO POR APARTE.";
+    const filaTerminos = filaResumen + 9;
+    combinar(wsResumen, `A${filaTerminos}:F${filaTerminos}`, terminos, excelStyles.texto);
+    ajustarAlto(wsResumen, filaTerminos, [{ value: terminos, columns: [0, 1, 2, 3, 4, 5] }]);
 
     XLSX.utils.book_append_sheet(wb, wsResumen, "RESUMEN");
 
     /* =========================
            HOJAS APU
         ========================= */
-    const usedSheetNames = new Set();
+    const usedSheetNames = new Set(["resumen", "history"]);
     formData.apus.forEach((apu, index) => {
       const ws = XLSX.utils.aoa_to_sheet([]);
       const hojaNombre = cleanSheetName(
@@ -246,27 +189,16 @@ export default function useExcelGenerator() {
         usedSheetNames
       );
 
-      XLSX.utils.sheet_add_aoa(
-        ws,
-        [
-          ["S.T.I. HERMABE"],
-          ["RIF V-14368387-3"],
-          [
-            "Carrera 7 N° 12-81, San Vicente, telfs. 0277-2912496; 0424-7188106",
-          ],
-          ["San Juan de Colón, Estado Táchira"],
-          [],
-          ["ANÁLISIS DE PRECIOS UNITARIOS"],
-          [apu.body?.descripcion?.toUpperCase() || "SIN DESCRIPCIÓN"],
-        ],
-        { origin: "A1" },
-      );
+      ws["!cols"] = columnWidths;
+      agregarMembrete(ws, "G");
 
-      ws["A1"].s = excelStyles.empresaTitulo;
-      ws["A2"].s = excelStyles.empresaSubtitulo;
-      ws["A3"].s = excelStyles.empresaDireccion;
-      ws["A6"].s = excelStyles.tituloPrincipal;
-      ws["A7"].s = excelStyles.subtitulo;
+      const descripcionAPU = apu.body?.descripcion?.toUpperCase() || "SIN DESCRIPCIÓN";
+      combinar(ws, "A6:G6", "ANÁLISIS DE PRECIOS UNITARIOS", excelStyles.tituloPrincipal);
+      combinar(ws, "A7:G7", descripcionAPU, excelStyles.subtitulo);
+      ajustarAlto(ws, 6, [], 26);
+      ajustarAlto(ws, 7, [
+        { value: descripcionAPU, columns: [0, 1, 2, 3, 4, 5, 6], bold: true },
+      ], 26);
 
       let currentRow = 9;
 
@@ -279,30 +211,37 @@ export default function useExcelGenerator() {
         [["RENDIMIENTO", rendimiento, "UNIDAD", unidad, "CANTIDAD", cantidad]],
         { origin: `A${currentRow}` },
       );
+      estilizarFila(ws, currentRow, "ACE", () => excelStyles.tablaHeader);
+      estilizarFila(ws, currentRow, "BDF", () => excelStyles.tablaCelda);
+      ajustarAlto(ws, currentRow, [
+        { value: "RENDIMIENTO", columns: [0], bold: true },
+        { value: unidad, columns: [3] },
+      ], 21);
       currentRow += 2;
 
       const agregarTabla = (titulo, headers, data) => {
-        XLSX.utils.sheet_add_aoa(ws, [[titulo]], { origin: `A${currentRow}` });
-        ws[`A${currentRow}`].s = excelStyles.seccionTitulo;
+        combinar(ws, `A${currentRow}:G${currentRow}`, titulo, excelStyles.seccionTitulo);
+        ajustarAlto(ws, currentRow, [], 22);
         currentRow++;
 
         XLSX.utils.sheet_add_aoa(ws, [headers], { origin: `A${currentRow}` });
-        ["A", "B", "C", "D", "E", "F", "G"].forEach((col) => {
-          if (ws[`${col}${currentRow}`])
-            ws[`${col}${currentRow}`].s = excelStyles.tablaHeader;
-        });
+        estilizarFila(ws, currentRow, "ABCDEFG", () => excelStyles.tablaHeader);
+        ajustarAlto(ws, currentRow, headers.map((value, col) => ({ value, columns: [col], bold: true })), 24);
         currentRow++;
 
         const startRow = currentRow;
+        const estiloPartida = (col) => {
+          if (col === "B") return excelStyles.tablaDescripcion;
+          if (col === "F" || col === "G") return excelStyles.tablaMonto;
+          return excelStyles.tablaCelda;
+        };
 
         if (!data || data.length === 0) {
           XLSX.utils.sheet_add_aoa(ws, [["", "", "", 0, 0, 0, 0]], {
             origin: `A${currentRow}`,
           });
-          ["A", "B", "C", "D", "E", "F", "G"].forEach((col) => {
-            if (ws[`${col}${currentRow}`])
-              ws[`${col}${currentRow}`].s = excelStyles.tablaCelda;
-          });
+          estilizarFila(ws, currentRow, "ABCDEFG", estiloPartida);
+          ajustarAlto(ws, currentRow, []);
           currentRow++;
         } else {
           data.forEach((item) => {
@@ -330,10 +269,12 @@ export default function useExcelGenerator() {
               f: `=D${currentRow}*(1+E${currentRow}/100)*F${currentRow}`,
             };
 
-            ["A", "B", "C", "D", "E", "F", "G"].forEach((col) => {
-              if (ws[`${col}${currentRow}`])
-                ws[`${col}${currentRow}`].s = excelStyles.tablaCelda;
-            });
+            estilizarFila(ws, currentRow, "ABCDEFG", estiloPartida);
+            ajustarAlto(ws, currentRow, [
+              { value: item.codigo, columns: [0] },
+              { value: item.descripcion, columns: [1] },
+              { value: item.unidad, columns: [2] },
+            ]);
             currentRow++;
           });
         }
@@ -350,8 +291,9 @@ export default function useExcelGenerator() {
           ? { f: `=IF(B9<>0, ${totalFormula}, 0)` }
           : { f: `=${totalFormula}` };
 
-        ws[`E${currentRow}`].s = excelStyles.resumenLabel;
-        ws[`F${currentRow}`].s = excelStyles.resumenValue;
+        ws[`F${currentRow}`].s = excelStyles.resumenLabel;
+        ws[`G${currentRow}`].s = excelStyles.resumenValue;
+        ajustarAlto(ws, currentRow, [], 20);
 
         currentRow += 2;
 
@@ -467,18 +409,19 @@ export default function useExcelGenerator() {
         { origin: `E${resumenStart}` },
       );
 
-      for (let i = 0; i < 14; i++) {
-        const c1 = `E${resumenStart + i}`;
-        const c2 = `F${resumenStart + i}`;
-        if (ws[c1]) ws[c1].s = excelStyles.resumenLabel;
-        if (ws[c2]) ws[c2].s = excelStyles.resumenValue;
+      for (let i = 0; i < 12; i++) {
+        const summaryRow = resumenStart + i;
+        const labelAddress = `E${summaryRow}`;
+        const label = ws[labelAddress].v;
+        combinar(ws, `B${summaryRow}:E${summaryRow}`, label, excelStyles.resumenLabel);
+        ws[`F${summaryRow}`].s = excelStyles.resumenValue;
+        ajustarAlto(ws, summaryRow, [], 19);
       }
 
-      ws["!cols"] = columnWidths;
       XLSX.utils.book_append_sheet(wb, ws, hojaNombre);
     });
 
-    XLSX.writeFile(
+    guardarPresupuestoExcel(
       wb,
       `${nPresupuesto}_${cleanSheetName(formData?.descripcion)}_${cleanSheetName(formData?.cliente?.nombre)}_${
         new Date().toISOString().split("T")[0]
